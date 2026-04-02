@@ -1,0 +1,22 @@
+// Auto-generated DTO Common Header
+// Generated: {{ generated_at }}
+// DO NOT EDIT MANUALLY
+
+#pragma once
+
+{% for include in includes %}
+{{ include }}
+{% endfor %}
+
+namespace farado
+{
+namespace dto
+{
+
+// Forward declarations
+{% for name in dto_names %}
+class {{ name }};
+{% endfor %}
+
+} // namespace dto
+} // namespace farado

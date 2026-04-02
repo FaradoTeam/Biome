@@ -1,0 +1,87 @@
+// Auto-generated DTO: {{ dto.name }}
+// Generated: {{ generated_at }}
+// DO NOT EDIT MANUALLY
+
+#pragma once
+
+{% for include in includes %}
+{{ include }}
+{% endfor %}
+
+{% if dependencies %}
+// Forward declarations for dependencies
+{% for dep in dependencies %}
+class {{ dep }};
+{% endfor %}
+{% endif %}
+
+// Include print helpers for Boost.Test
+#include "common/dto/dto_print_helpers.h"
+
+namespace farado
+{
+namespace dto
+{
+
+/**
+ * @brief {{ dto.description }}
+ */
+class {{ dto.name }}
+{
+public:
+    using Ptr = std::shared_ptr<{{ dto.name }}>;
+    using ConstPtr = std::shared_ptr<const {{ dto.name }}>;
+
+    {{ dto.name }}() = default;
+    explicit {{ dto.name }}(const nlohmann::json& json);
+    
+    // Getters
+    {% for field in dto.fields %}
+    const {{ field.cpp_type }}& {{ field.name_camel }}() const { return m_{{ field.name_camel }}; }
+    {% endfor %}
+
+    // Setters
+    {% for field in dto.fields %}
+    void set{{ field.name_pascal }}(const {{ field.cpp_type }}& value)
+    {
+        m_{{ field.name_camel }} = value;
+    }
+    void set{{ field.name_pascal }}({{ field.cpp_type }}&& value)
+    {
+        m_{{ field.name_camel }} = std::move(value);
+    }
+    {% endfor %}
+
+    // Serialization
+    nlohmann::json toJson() const;
+    bool fromJson(const nlohmann::json& json);
+    
+    // Validation
+    bool isValid() const;
+    std::string validationError() const;
+    
+    // Comparison
+    bool operator==(const {{ dto.name }}& other) const;
+    bool operator!=(const {{ dto.name }}& other) const
+    {
+        return !(*this == other);
+    }
+    
+    // Stream output for debugging
+    friend std::ostream& operator<<(std::ostream& os, const {{ dto.name }}& dto);
+
+private:
+    {% for field in dto.fields %}
+    {{ field.cpp_type }} m_{{ field.name_camel }}{% if field.default %} = {{ field.default }}{% endif %};
+    {% endfor %}
+};
+
+// Stream operator implementation
+inline std::ostream& operator<<(std::ostream& os, const {{ dto.name }}& dto)
+{
+    os << dto.toJson().dump(2);
+    return os;
+}
+
+} // namespace dto
+} // namespace farado
