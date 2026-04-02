@@ -1,0 +1,4078 @@
+openapi: 3.0.3
+
+info:
+  title: Farado API
+  description: Спецификация API для системы управления проектами Farado, задачами, рабочими процессами и правами доступа.
+  version: 1.0.0
+
+servers:
+  - url: https://farado.lan/api/v1
+    description: Production server
+  - url: http://localhost:8080/api/v1
+    description: Development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # =====================================================
+    # 1. ПОЛЬЗОВАТЕЛИ И КОМАНДЫ (Users and Teams)
+    # =====================================================
+    User:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор пользователя }
+        login: { type: string, description: Логин пользователя (уникальный) }
+        firstName: { type: string, description: Имя пользователя }
+        middleName: { type: string, description: Отчество пользователя }
+        lastName: { type: string, description: Фамилия пользователя }
+        email: { type: string, description: Email пользователя (уникальный) }
+        password: { type: string, description: Пароль, writeOnly: true }
+        needChangePassword: { type: boolean, description: Флаг необходимости смены пароля при следующем входе }
+        isBlocked: { type: boolean, description: Флаг блокировки пользователя (запрет входа) }
+        isSuperAdmin: { type: boolean, description: Флаг супер-администратора (имеет все права) }
+        isHidden: { type: boolean, description: Флаг скрытого пользователя (не отображается в списках) }
+    Team:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор команды }
+        caption: { type: string, description: Название команды }
+        description: { type: string, description: Описание команды }
+    Role:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор роли }
+        caption: { type: string, description: Название роли }
+        description: { type: string, description: Описание роли }
+    Rule:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор правила }
+        roleId: { type: integer, description: Идентификатор роли }
+        isRootProjectCreator: { type: boolean, description: Право на создание корневых проектов }
+    RuleProject:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        ruleId: { type: integer, description: Идентификатор правила }
+        projectId: { type: integer, description: Идентификатор проекта }
+        isReader: { type: boolean, description: Право на просмотр элементов (items) проекта }
+        isWriter: { type: boolean, description: Право на создание и изменение элементов (items) проекта }
+        isProjectEditor: { type: boolean, description: Право на создание и изменение подпроектов }
+        isPhaseEditor: { type: boolean, description: Право на создание и изменение фаз }
+        isBoardEditor: { type: boolean, description: Право на создание и изменение досок }
+    RuleItemType:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        ruleId: { type: integer, description: Идентификатор правила }
+        itemTypeId: { type: integer, description: Идентификатор типа элемента }
+        isReader: { type: boolean, description: Право на чтение элементов данного типа }
+        isWriter: { type: boolean, description: Право на создание и изменение элементов данного типа }
+    RuleState:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        ruleId: { type: integer, description: Идентификатор правила }
+        stateId: { type: integer, description: Идентификатор целевого состояния }
+        isStateAllowed: { type: boolean, description: Разрешение на перевод элемента в это состояние }
+    UserTeamRole:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        userId: { type: integer, description: Идентификатор пользователя }
+        teamId: { type: integer, description: Идентификатор команды }
+        roleId: { type: integer, description: Идентификатор роли }
+
+    # =====================================================
+    # 2. ПРОЕКТЫ И ФАЗЫ (Projects and Phases)
+    # =====================================================
+    Project:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор проекта }
+        parentId: { type: integer, nullable: true, description: Идентификатор родительского проекта (null для корневых) }
+        caption: { type: string, description: Название проекта }
+        description: { type: string, description: Описание проекта }
+        createdAt: { type: string, format: date-time, description: Дата и время создания }
+        updatedAt: { type: string, format: date-time, description: Дата и время последнего обновления }
+        isArchive: { type: boolean, description: Флаг архивации (мягкое удаление) }
+    Phase:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор фазы }
+        projectId: { type: integer, description: Идентификатор проекта }
+        caption: { type: string, description: Название фазы }
+        description: { type: string, description: Описание фазы }
+        beginDate: { type: string, format: date-time, description: Дата начала фазы }
+        endDate: { type: string, format: date-time, description: Дата окончания фазы }
+        isArchive: { type: boolean, description: Флаг архивации фазы }
+    ProjectTeam:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        projectId: { type: integer, description: Идентификатор проекта }
+        teamId: { type: integer, description: Идентификатор команды }
+
+    # =====================================================
+    # 3. РАБОЧИЕ ПРОЦЕССЫ (Workflows)
+    # =====================================================
+    Workflow:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        caption: { type: string, description: Название рабочего процесса }
+        description: { type: string, description: Описание рабочего процесса }
+    State:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        workflowId: { type: integer, description: Идентификатор рабочего процесса }
+        caption: { type: string, description: Название состояния }
+        description: { type: string, description: Описание состояния }
+        weight: { type: integer, description: Вес состояния (для метрик) }
+        orderNumber: { type: integer, description: Порядковый номер для сортировки }
+        isArchive: { type: boolean, description: Флаг архивного состояния (редко отображается) }
+        isQueue: { type: boolean, description: Флаг очереди (для определения активных работ) }
+    Edge:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        beginStateId: { type: integer, description: Начальное состояние }
+        endStateId: { type: integer, description: Конечное состояние }
+
+    # =====================================================
+    # 4. ТИПЫ ЭЛЕМЕНТОВ И ПОЛЯ (Item Types and Fields)
+    # =====================================================
+    ItemType:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        workflowId: { type: integer, description: Идентификатор рабочего процесса }
+        defaultStateId: { type: integer, description: Состояние по умолчанию для новых элементов }
+        caption: { type: string, description: Название типа }
+        kind: { type: string, enum: [issue, folder, test-case, test-cycle, test-run, requirement], description: Вид элемента }
+        defaultContent: { type: string, description: Содержимое по умолчанию (шаблон для создания новых item) }
+    FieldType:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        itemTypeId: { type: integer, description: Идентификатор типа элемента }
+        caption: { type: string, description: Название поля }
+        description: { type: string, description: Описание поля }
+        valueType: { type: string, enum: [String, MarkdownText, Integer, Float, Bool, DateTime, Date, Uri, Select, SelectMulti, ItemId, UserId, ProjectId, PhaseId, ItemsIds, UsersIds, ProjectsIds, PhasesIds], description: Тип значения }
+        isBoardVisible: { type: boolean, description: Отображать поле на канбан-доске }
+    FieldTypePossibleValue:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        fieldTypeId: { type: integer, description: Идентификатор типа поля }
+        value: { type: string, description: Значение для выбора }
+
+    # =====================================================
+    # 5. ЭЛЕМЕНТЫ (Items)
+    # =====================================================
+    Item:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        itemTypeId: { type: integer, description: Идентификатор типа элемента }
+        parentId: { type: integer, nullable: true, description: Идентификатор родительского элемента }
+        stateId: { type: integer, description: Идентификатор текущего состояния }
+        phaseId: { type: integer, description: Идентификатор фазы }
+        caption: { type: string, description: Название элемента }
+        content: { type: string, description: Содержимое элемента }
+        isDeleted: { type: boolean, description: Флаг удаления (мягкое удаление) }
+    ItemField:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        itemId: { type: integer, description: Идентификатор элемента }
+        fieldTypeId: { type: integer, description: Идентификатор типа поля }
+        value: { type: string, description: Значение поля (в сериализованном виде) }
+    ItemHistory:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        itemId: { type: integer, description: Идентификатор элемента }
+        userId: { type: integer, description: Идентификатор пользователя, внесшего изменение }
+        timestamp: { type: string, format: date-time, description: Время изменения }
+        diff: { type: string, description: JSON с изменениями (diff) }
+    ItemUserState:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        itemId: { type: integer, description: Идентификатор элемента }
+        userId: { type: integer, description: Идентификатор пользователя }
+        stateId: { type: integer, description: Идентификатор состояния }
+        comment: { type: string, description: Комментарий к переходу }
+        timestamp: { type: string, format: date-time, description: Время перехода }
+
+    # =====================================================
+    # 6. СВЯЗИ (Links)
+    # =====================================================
+    LinkType:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        sourceItemTypeId: { type: integer, description: Исходный тип элемента }
+        destinationItemTypeId: { type: integer, description: Целевой тип элемента }
+        isBidirectional: { type: boolean, description: Флаг двунаправленной связи }
+        caption: { type: string, description: Название типа связи }
+    ItemLink:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        linkTypeId: { type: integer, description: Идентификатор типа связи }
+        sourceItemId: { type: integer, description: Исходный элемент }
+        destinationItemId: { type: integer, description: Целевой элемент }
+
+    # =====================================================
+    # 7. ДОКУМЕНТЫ И КОММЕНТАРИИ (Documents and Comments)
+    # =====================================================
+    Document:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        caption: { type: string, description: Название документа }
+        description: { type: string, description: Описание документа }
+        path: { type: string, description: Путь к файлу на диске }
+        filename: { type: string, description: Исходное имя файла }
+        size: { type: integer, description: Размер файла в байтах }
+        mimeType: { type: string, description: MIME-тип файла }
+        uploadedAt: { type: string, format: date-time, description: Время загрузки }
+        uploadedByUserId: { type: integer, description: Идентификатор пользователя, загрузившего файл }
+    ItemDocument:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        itemId: { type: integer, description: Идентификатор элемента }
+        documentId: { type: integer, description: Идентификатор документа }
+    Comment:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        userId: { type: integer, description: Идентификатор автора }
+        itemId: { type: integer, description: Идентификатор элемента }
+        createdAt: { type: string, format: date-time, description: Время создания }
+        content: { type: string, description: Текст комментария }
+    CommentDocument:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        commentId: { type: integer, description: Идентификатор комментария }
+        documentId: { type: integer, description: Идентификатор документа }
+
+    # =====================================================
+    # 8. ДОСКИ (Kanban Boards)
+    # =====================================================
+    Board:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        workflowId: { type: integer, description: Идентификатор рабочего процесса }
+        projectId: { type: integer, description: Идентификатор проекта }
+        phaseId: { type: integer, nullable: true, description: Идентификатор фазы (опционально) }
+        caption: { type: string, description: Название доски }
+        description: { type: string, description: Описание доски }
+    BoardColumn:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        boardId: { type: integer, description: Идентификатор доски }
+        stateId: { type: integer, description: Идентификатор состояния }
+        orderNumber: { type: integer, description: Порядковый номер колонки на доске }
+        settings: { type: string, description: JSON с настройками (WIP limit, цвет и т.д.) }
+
+    # =====================================================
+    # 9. КАЛЕНДАРЬ И РАБОЧЕЕ ВРЕМЯ (Calendar and Working Time)
+    # =====================================================
+    StandardDay:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        weekDayNumber: { type: integer, minimum: 0, maximum: 6, description: Номер дня недели (0-6) }
+        weekOrder: { type: integer, description: Порядковый номер недели (для сменного графика) }
+        isWorkDay: { type: boolean, description: Является ли день рабочим }
+        beginWorkTime: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", description: Время начала работы (HH:MM) }
+        endWorkTime: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", description: Время окончания работы (HH:MM) }
+        breakDuration: { type: integer, description: Длительность перерыва в минутах }
+    SpecialDay:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        date: { type: string, format: date, description: Дата (уникальная) }
+        isWorkDay: { type: boolean, description: Является ли день рабочим }
+        beginWorkTime: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", description: Время начала работы (если рабочий) }
+        endWorkTime: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", description: Время окончания работы (если рабочий) }
+        breakDuration: { type: integer, description: Длительность перерыва в минутах }
+    UserDay:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        userId: { type: integer, description: Идентификатор пользователя }
+        date: { type: string, format: date, description: Дата (уникальна в паре с userId) }
+        isWorkDay: { type: boolean, description: Является ли день рабочим для пользователя }
+        beginWorkTime: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", description: Время начала работы (если рабочий) }
+        endWorkTime: { type: string, pattern: "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", description: Время окончания работы (если рабочий) }
+        breakDuration: { type: integer, description: Длительность перерыва в минутах }
+        description: { type: string, description: Причина (отпуск, больничный и т.д.) }
+
+    # =====================================================
+    # 10. СООБЩЕНИЯ И УВЕДОМЛЕНИЯ (Messages and Notifications)
+    # =====================================================
+    PrivateMessage:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        senderUserId: { type: integer, description: Идентификатор отправителя }
+        receiverUserId: { type: integer, description: Идентификатор получателя }
+        creationTimestamp: { type: string, format: date-time, description: Время отправки }
+        content: { type: string, description: Текст сообщения }
+        isViewed: { type: boolean, description: Флаг прочтения }
+    TeamMessage:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        senderUserId: { type: integer, description: Идентификатор отправителя }
+        teamId: { type: integer, description: Идентификатор команды }
+        creationTimestamp: { type: string, format: date-time, description: Время отправки }
+        content: { type: string, description: Текст сообщения }
+    UserNotification:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        userId: { type: integer, description: Идентификатор пользователя }
+        itemId: { type: integer, description: Идентификатор элемента }
+
+    # =====================================================
+    # 11. ДЕЙСТВИЯ И ЗАДАЧИ (Actions and Tasks)
+    # =====================================================
+    UserAction:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        userId: { type: integer, description: Идентификатор пользователя }
+        timestamp: { type: string, format: date-time, description: Время действия }
+        caption: { type: string, description: Краткое описание действия }
+        description: { type: string, description: Подробное описание (контекст) }
+    UserTodo:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        userId: { type: integer, description: Идентификатор пользователя }
+        isDone: { type: boolean, description: Флаг выполнения }
+        caption: { type: string, description: Текст задачи }
+      ItemPlanning:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        itemId: { type: integer, description: Идентификатор элемента }
+        userId: { type: integer, description: Идентификатор пользователя }
+        startDate: { type: string, format: date-time, description: Плановая дата начала }
+        endDate: { type: string, format: date-time, description: Плановая дата окончания }
+
+    # =====================================================
+    # 12. СПРАВОЧНИКИ (Directories)
+    # =====================================================
+    RoleMenuItem:
+      type: object
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        roleId: { type: integer, description: Идентификатор роли }
+        caption: { type: string, description: Название пункта меню }
+        link: { type: string, description: Ссылка (URL) }
+        icon: { type: string, description: Значок пункта меню }
+
+    # =====================================================
+    # ОБЩИЕ КОМПОНЕНТЫ (Common Components)
+    # =====================================================
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: integer, description: Код ошибки HTTP }
+        message: { type: string, description: Сообщение об ошибке }
+        details: { type: string, description: Дополнительные детали ошибки }
+    PageResponse:
+      type: object
+      properties:
+        items: { type: array, items: {} }
+        totalCount: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    AuthRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login: { type: string }
+        password: { type: string }
+    AuthResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        tokenType: { type: string, default: Bearer }
+    ChangePasswordRequest:
+      type: object
+      required: [oldPassword, newPassword]
+      properties:
+        oldPassword: { type: string }
+        newPassword: { type: string }
+
+security:
+  - bearerAuth: []
+
+paths:
+  # =====================================================
+  # АУТЕНТИФИКАЦИЯ
+  # =====================================================
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Вход в систему
+      description: Аутентификация пользователя по логину и паролю
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Не авторизован (неверный логин или пароль)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен (пользователь заблокирован)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Выход из системы
+      description: Инвалидация текущей сессии/токена
+      responses:
+        '204':
+          description: Успешный выход из системы
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/change-password:
+    post:
+      tags: [Authentication]
+      summary: Смена пароля
+      description: Изменение пароля текущего аутентифицированного пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: Пароль успешно изменен
+        '400':
+          description: Некорректный запрос (неверный старый пароль или несоответствие политикам)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # =====================================================
+  # 1. ПОЛЬЗОВАТЕЛИ И КОМАНДЫ
+  # =====================================================
+  /users:
+    get:
+      tags: [Users]
+      summary: Получить список пользователей
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: login
+          in: query
+          schema: { type: string }
+          description: Фильтр по логину
+        - name: name
+          in: query
+          schema: { type: string }
+          description: Фильтр по ФИО
+        - name: email
+          in: query
+          schema: { type: string }
+          description: Фильтр по email
+        - name: isBlocked
+          in: query
+          schema: { type: boolean }
+          description: Фильтр по статусу блокировки
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/User' }
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Users]
+      summary: Создать пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Конфликт (логин или email уже существуют)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Получить пользователя по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Users]
+      summary: Обновить пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Пользователь обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Конфликт (логин или email уже существуют)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Users]
+      summary: Удалить пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204':
+          description: Пользователь удален
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /teams:
+    get:
+      tags: [Teams]
+      summary: Получить список команд
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: caption
+          in: query
+          schema: { type: string }
+          description: Фильтр по названию
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Team' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Teams]
+      summary: Создать команду
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+      responses:
+        '201': { description: Команда создана, content: { application/json: { schema: { $ref: '#/components/schemas/Team' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /teams/{id}:
+    get:
+      tags: [Teams]
+      summary: Получить команду по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Team' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Команда не найдена }
+    put:
+      tags: [Teams]
+      summary: Обновить команду
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Team'
+      responses:
+        '200': { description: Команда обновлена, content: { application/json: { schema: { $ref: '#/components/schemas/Team' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Команда не найдена }
+    delete:
+      tags: [Teams]
+      summary: Удалить команду
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Команда удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Команда не найдена }
+
+  /roles:
+    get:
+      tags: [Roles]
+      summary: Получить список ролей
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Role' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Roles]
+      summary: Создать роль
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '201': { description: Роль создана, content: { application/json: { schema: { $ref: '#/components/schemas/Role' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /roles/{id}:
+    get:
+      tags: [Roles]
+      summary: Получить роль по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Role' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Роль не найдена }
+    put:
+      tags: [Roles]
+      summary: Обновить роль
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Role'
+      responses:
+        '200': { description: Роль обновлена, content: { application/json: { schema: { $ref: '#/components/schemas/Role' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Роль не найдена }
+    delete:
+      tags: [Roles]
+      summary: Удалить роль
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Роль удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Роль не найдена }
+
+  /rules:
+    get:
+      tags: [Rules]
+      summary: Получить список правил
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: roleId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по идентификатору роли
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Rule' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Rules]
+      summary: Создать правило
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Rule'
+      responses:
+        '201': { description: Правило создано, content: { application/json: { schema: { $ref: '#/components/schemas/Rule' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /rules/{id}:
+    get:
+      tags: [Rules]
+      summary: Получить правило по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Rule' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Правило не найдено }
+    put:
+      tags: [Rules]
+      summary: Обновить правило
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Rule'
+      responses:
+        '200': { description: Правило обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/Rule' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Правило не найдено }
+    delete:
+      tags: [Rules]
+      summary: Удалить правило
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Правило удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Правило не найдено }
+
+  /rule-projects:
+    get:
+      tags: [RuleProjects]
+      summary: Получить список прав на проекты
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: ruleId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по идентификатору правила
+        - name: projectId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по идентификатору проекта
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/RuleProject' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [RuleProjects]
+      summary: Создать право на проект
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleProject'
+      responses:
+        '201': { description: Право создано, content: { application/json: { schema: { $ref: '#/components/schemas/RuleProject' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (такая пара ruleId+projectId уже существует) }
+  /rule-projects/{id}:
+    get:
+      tags: [RuleProjects]
+      summary: Получить право на проект по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/RuleProject' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+    put:
+      tags: [RuleProjects]
+      summary: Обновить право на проект
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleProject'
+      responses:
+        '200': { description: Право обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/RuleProject' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+    delete:
+      tags: [RuleProjects]
+      summary: Удалить право на проект
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Право удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+
+  /rule-item-types:
+    get:
+      tags: [RuleItemTypes]
+      summary: Получить список прав на типы элементов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: ruleId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по идентификатору правила
+        - name: itemTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по идентификатору типа элемента
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/RuleItemType' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [RuleItemTypes]
+      summary: Создать право на тип элемента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleItemType'
+      responses:
+        '201': { description: Право создано, content: { application/json: { schema: { $ref: '#/components/schemas/RuleItemType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (такая пара ruleId+itemTypeId уже существует) }
+  /rule-item-types/{id}:
+    get:
+      tags: [RuleItemTypes]
+      summary: Получить право на тип элемента по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/RuleItemType' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+    put:
+      tags: [RuleItemTypes]
+      summary: Обновить право на тип элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleItemType'
+      responses:
+        '200': { description: Право обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/RuleItemType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+    delete:
+      tags: [RuleItemTypes]
+      summary: Удалить право на тип элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Право удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+
+  /rule-states:
+    get:
+      tags: [RuleStates]
+      summary: Получить список прав на состояния
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: ruleId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по идентификатору правила
+        - name: stateId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по идентификатору состояния
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/RuleState' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [RuleStates]
+      summary: Создать право на состояние
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleState'
+      responses:
+        '201': { description: Право создано, content: { application/json: { schema: { $ref: '#/components/schemas/RuleState' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (такая пара ruleId+stateId уже существует) }
+  /rule-states/{id}:
+    get:
+      tags: [RuleStates]
+      summary: Получить право на состояние по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/RuleState' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+    put:
+      tags: [RuleStates]
+      summary: Обновить право на состояние
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleState'
+      responses:
+        '200': { description: Право обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/RuleState' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+    delete:
+      tags: [RuleStates]
+      summary: Удалить право на состояние
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Право удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Право не найдено }
+
+  /user-team-roles:
+    get:
+      tags: [UserTeamRoles]
+      summary: Получить список назначений пользователей в команды
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+        - name: teamId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по команде
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/UserTeamRole' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [UserTeamRoles]
+      summary: Создать назначение пользователя в команду
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserTeamRole'
+      responses:
+        '201': { description: Назначение создано, content: { application/json: { schema: { $ref: '#/components/schemas/UserTeamRole' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (пользователь уже имеет роль в этой команде) }
+  /user-team-roles/{id}:
+    get:
+      tags: [UserTeamRoles]
+      summary: Получить назначение по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/UserTeamRole' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Назначение не найдено }
+    put:
+      tags: [UserTeamRoles]
+      summary: Обновить назначение
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserTeamRole'
+      responses:
+        '200': { description: Назначение обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/UserTeamRole' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Назначение не найдено }
+    delete:
+      tags: [UserTeamRoles]
+      summary: Удалить назначение
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Назначение удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Назначение не найдено }
+
+  # =====================================================
+  # 2. ПРОЕКТЫ И ФАЗЫ (Projects and Phases)
+  # =====================================================
+  /projects:
+    get:
+      tags: [Projects]
+      summary: Получить список проектов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: parentId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по родительскому проекту
+        - name: isArchive
+          in: query
+          schema: { type: boolean }
+          description: Фильтр по статусу архивации
+        - name: caption
+          in: query
+          schema: { type: string }
+          description: Фильтр по названию (поиск)
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Project' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Projects]
+      summary: Создать проект
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '201': { description: Проект создан, content: { application/json: { schema: { $ref: '#/components/schemas/Project' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /projects/{id}:
+    get:
+      tags: [Projects]
+      summary: Получить проект по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Project' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Проект не найден }
+    put:
+      tags: [Projects]
+      summary: Обновить проект
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+      responses:
+        '200': { description: Проект обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/Project' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Проект не найден }
+    delete:
+      tags: [Projects]
+      summary: Удалить проект (архивировать)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Проект удален (архивирован) }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Проект не найден }
+
+  /phases:
+    get:
+      tags: [Phases]
+      summary: Получить список фаз
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: projectId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по проекту
+        - name: isArchive
+          in: query
+          schema: { type: boolean }
+          description: Фильтр по статусу архивации
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Phase' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Phases]
+      summary: Создать фазу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Phase'
+      responses:
+        '201': { description: Фаза создана, content: { application/json: { schema: { $ref: '#/components/schemas/Phase' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /phases/{id}:
+    get:
+      tags: [Phases]
+      summary: Получить фазу по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Phase' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Фаза не найдена }
+    put:
+      tags: [Phases]
+      summary: Обновить фазу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Phase'
+      responses:
+        '200': { description: Фаза обновлена, content: { application/json: { schema: { $ref: '#/components/schemas/Phase' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Фаза не найдена }
+    delete:
+      tags: [Phases]
+      summary: Удалить фазу (архивировать)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Фаза удалена (архивирована) }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Фаза не найдена }
+
+  /project-teams:
+    get:
+      tags: [ProjectTeams]
+      summary: Получить список связей проектов с командами
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: projectId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по проекту
+        - name: teamId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по команде
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ProjectTeam' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [ProjectTeams]
+      summary: Создать связь проекта с командой
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectTeam'
+      responses:
+        '201': { description: Связь создана, content: { application/json: { schema: { $ref: '#/components/schemas/ProjectTeam' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (такая связь уже существует) }
+  /project-teams/{id}:
+    get:
+      tags: [ProjectTeams]
+      summary: Получить связь по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ProjectTeam' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Связь не найдена }
+    delete:
+      tags: [ProjectTeams]
+      summary: Удалить связь проекта с командой
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Связь удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Связь не найдена }
+
+  # =====================================================
+  # 3. РАБОЧИЕ ПРОЦЕССЫ (Workflows)
+  # =====================================================
+  /workflows:
+    get:
+      tags: [Workflows]
+      summary: Получить список рабочих процессов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Workflow' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Workflows]
+      summary: Создать рабочий процесс
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '201': { description: Рабочий процесс создан, content: { application/json: { schema: { $ref: '#/components/schemas/Workflow' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /workflows/{id}:
+    get:
+      tags: [Workflows]
+      summary: Получить рабочий процесс по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Workflow' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Рабочий процесс не найден }
+    put:
+      tags: [Workflows]
+      summary: Обновить рабочий процесс
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '200': { description: Рабочий процесс обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/Workflow' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Рабочий процесс не найден }
+    delete:
+      tags: [Workflows]
+      summary: Удалить рабочий процесс
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Рабочий процесс удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Рабочий процесс не найден }
+
+  /states:
+    get:
+      tags: [States]
+      summary: Получить список состояний
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: workflowId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по рабочему процессу
+        - name: isArchive
+          in: query
+          schema: { type: boolean }
+          description: Фильтр по статусу архивации
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/State' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [States]
+      summary: Создать состояние
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/State'
+      responses:
+        '201': { description: Состояние создано, content: { application/json: { schema: { $ref: '#/components/schemas/State' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /states/{id}:
+    get:
+      tags: [States]
+      summary: Получить состояние по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/State' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Состояние не найдено }
+    put:
+      tags: [States]
+      summary: Обновить состояние
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/State'
+      responses:
+        '200': { description: Состояние обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/State' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Состояние не найдено }
+    delete:
+      tags: [States]
+      summary: Удалить состояние (архивировать)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Состояние удалено (архивировано) }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Состояние не найдено }
+
+  /edges:
+    get:
+      tags: [Edges]
+      summary: Получить список переходов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: beginStateId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по начальному состоянию
+        - name: endStateId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по конечному состоянию
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Edge' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Edges]
+      summary: Создать переход
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Edge'
+      responses:
+        '201': { description: Переход создан, content: { application/json: { schema: { $ref: '#/components/schemas/Edge' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (такой переход уже существует) }
+  /edges/{id}:
+    get:
+      tags: [Edges]
+      summary: Получить переход по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Edge' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Переход не найден }
+    delete:
+      tags: [Edges]
+      summary: Удалить переход
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Переход удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Переход не найден }
+
+  # =====================================================
+  # 4. ТИПЫ ЭЛЕМЕНТОВ И ПОЛЯ (Item Types and Fields)
+  # =====================================================
+  /item-types:
+    get:
+      tags: [ItemTypes]
+      summary: Получить список типов элементов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: workflowId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по рабочему процессу
+        - name: kind
+          in: query
+          schema: { type: string, enum: [issue, folder, test-case, test-cycle, test-run, requirement] }
+          description: Фильтр по виду элемента
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemType' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [ItemTypes]
+      summary: Создать тип элемента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemType'
+      responses:
+        '201': { description: Тип элемента создан, content: { application/json: { schema: { $ref: '#/components/schemas/ItemType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /item-types/{id}:
+    get:
+      tags: [ItemTypes]
+      summary: Получить тип элемента по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemType' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип элемента не найден }
+    put:
+      tags: [ItemTypes]
+      summary: Обновить тип элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemType'
+      responses:
+        '200': { description: Тип элемента обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/ItemType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип элемента не найден }
+    delete:
+      tags: [ItemTypes]
+      summary: Удалить тип элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Тип элемента удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип элемента не найден }
+
+  /field-types:
+    get:
+      tags: [FieldTypes]
+      summary: Получить список типов полей
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по типу элемента
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/FieldType' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [FieldTypes]
+      summary: Создать тип поля
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldType'
+      responses:
+        '201': { description: Тип поля создан, content: { application/json: { schema: { $ref: '#/components/schemas/FieldType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /field-types/{id}:
+    get:
+      tags: [FieldTypes]
+      summary: Получить тип поля по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/FieldType' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип поля не найден }
+    put:
+      tags: [FieldTypes]
+      summary: Обновить тип поля
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldType'
+      responses:
+        '200': { description: Тип поля обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/FieldType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип поля не найден }
+    delete:
+      tags: [FieldTypes]
+      summary: Удалить тип поля
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Тип поля удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип поля не найден }
+
+  /field-type-values:
+    get:
+      tags: [FieldTypeValues]
+      summary: Получить список возможных значений полей
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: fieldTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по типу поля
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/FieldTypePossibleValue' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [FieldTypeValues]
+      summary: Создать возможное значение поля
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldTypePossibleValue'
+      responses:
+        '201': { description: Значение создано, content: { application/json: { schema: { $ref: '#/components/schemas/FieldTypePossibleValue' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /field-type-values/{id}:
+    get:
+      tags: [FieldTypeValues]
+      summary: Получить возможное значение по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/FieldTypePossibleValue' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Значение не найдено }
+    put:
+      tags: [FieldTypeValues]
+      summary: Обновить возможное значение
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FieldTypePossibleValue'
+      responses:
+        '200': { description: Значение обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/FieldTypePossibleValue' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Значение не найдено }
+    delete:
+      tags: [FieldTypeValues]
+      summary: Удалить возможное значение
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Значение удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Значение не найдено }
+
+  # =====================================================
+  # 5. ЭЛЕМЕНТЫ (Items)
+  # =====================================================
+  /items:
+    get:
+      tags: [Items]
+      summary: Получить список элементов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по типу элемента
+        - name: parentId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по родительскому элементу
+        - name: phaseId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по фазе
+        - name: stateId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по состоянию
+        - name: isDeleted
+          in: query
+          schema: { type: boolean }
+          description: Фильтр по статусу удаления
+        - name: caption
+          in: query
+          schema: { type: string }
+          description: Поиск по названию
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Item' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Items]
+      summary: Создать элемент
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Item'
+      responses:
+        '201': { description: Элемент создан, content: { application/json: { schema: { $ref: '#/components/schemas/Item' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /items/{id}:
+    get:
+      tags: [Items]
+      summary: Получить элемент по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Item' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+    put:
+      tags: [Items]
+      summary: Обновить элемент
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Item'
+      responses:
+        '200': { description: Элемент обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/Item' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+    delete:
+      tags: [Items]
+      summary: Удалить элемент (мягкое удаление)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Элемент удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+
+  /item-fields:
+    get:
+      tags: [ItemFields]
+      summary: Получить список значений полей элементов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по элементу
+        - name: fieldTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по типу поля
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemField' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [ItemFields]
+      summary: Создать значение поля элемента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemField'
+      responses:
+        '201': { description: Значение создано, content: { application/json: { schema: { $ref: '#/components/schemas/ItemField' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (поле уже имеет значение для этого элемента) }
+  /item-fields/{id}:
+    get:
+      tags: [ItemFields]
+      summary: Получить значение поля по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemField' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Значение не найдено }
+    put:
+      tags: [ItemFields]
+      summary: Обновить значение поля
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemField'
+      responses:
+        '200': { description: Значение обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/ItemField' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Значение не найдено }
+    delete:
+      tags: [ItemFields]
+      summary: Удалить значение поля
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Значение удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Значение не найдено }
+
+  /item-histories:
+    get:
+      tags: [ItemHistories]
+      summary: Получить историю изменений элементов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по элементу
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemHistory' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /item-histories/{id}:
+    get:
+      tags: [ItemHistories]
+      summary: Получить запись истории по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemHistory' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Запись не найдена }
+
+  /item-user-states:
+    get:
+      tags: [ItemUserStates]
+      summary: Получить историю состояний по пользователям
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по элементу
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemUserState' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [ItemUserStates]
+      summary: Создать запись о переходе состояния
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemUserState'
+      responses:
+        '201': { description: Запись создана, content: { application/json: { schema: { $ref: '#/components/schemas/ItemUserState' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /item-user-states/{id}:
+    get:
+      tags: [ItemUserStates]
+      summary: Получить запись по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemUserState' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Запись не найдена }
+    delete:
+      tags: [ItemUserStates]
+      summary: Удалить запись
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Запись удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Запись не найдена }
+
+  # =====================================================
+  # 6. СВЯЗИ (Links)
+  # =====================================================
+  /link-types:
+    get:
+      tags: [LinkTypes]
+      summary: Получить список типов связей
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: sourceItemTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по исходному типу
+        - name: destinationItemTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по целевому типу
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/LinkType' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [LinkTypes]
+      summary: Создать тип связи
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkType'
+      responses:
+        '201': { description: Тип связи создан, content: { application/json: { schema: { $ref: '#/components/schemas/LinkType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /link-types/{id}:
+    get:
+      tags: [LinkTypes]
+      summary: Получить тип связи по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/LinkType' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип связи не найден }
+    put:
+      tags: [LinkTypes]
+      summary: Обновить тип связи
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinkType'
+      responses:
+        '200': { description: Тип связи обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/LinkType' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип связи не найден }
+    delete:
+      tags: [LinkTypes]
+      summary: Удалить тип связи
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Тип связи удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Тип связи не найден }
+
+  /item-links:
+    get:
+      tags: [ItemLinks]
+      summary: Получить список связей между элементами
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: linkTypeId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по типу связи
+        - name: sourceItemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по исходному элементу
+        - name: destinationItemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по целевому элементу
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemLink' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [ItemLinks]
+      summary: Создать связь между элементами
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemLink'
+      responses:
+        '201': { description: Связь создана, content: { application/json: { schema: { $ref: '#/components/schemas/ItemLink' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (такая связь уже существует) }
+  /item-links/{id}:
+    get:
+      tags: [ItemLinks]
+      summary: Получить связь по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemLink' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Связь не найдена }
+    delete:
+      tags: [ItemLinks]
+      summary: Удалить связь
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Связь удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Связь не найдена }
+
+  # =====================================================
+  # 7. ДОКУМЕНТЫ И КОММЕНТАРИИ (Documents and Comments)
+  # =====================================================
+  /documents:
+    get:
+      tags: [Documents]
+      summary: Получить список документов
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: uploadedByUserId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по загрузившему пользователю
+        - name: caption
+          in: query
+          schema: { type: string }
+          description: Поиск по названию
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Document' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Documents]
+      summary: Загрузить документ
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                caption:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201': { description: Документ загружен, content: { application/json: { schema: { $ref: '#/components/schemas/Document' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /documents/{id}:
+    get:
+      tags: [Documents]
+      summary: Получить документ по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Документ не найден }
+    delete:
+      tags: [Documents]
+      summary: Удалить документ
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Документ удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Документ не найден }
+  /documents/{id}/download:
+    get:
+      tags: [Documents]
+      summary: Скачать документ
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Файл документа
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Документ не найден }
+
+  /item-documents:
+    get:
+      tags: [ItemDocuments]
+      summary: Получить список связей элементов с документами
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по элементу
+        - name: documentId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по документу
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemDocument' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [ItemDocuments]
+      summary: Привязать документ к элементу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemDocument'
+      responses:
+        '201': { description: Связь создана, content: { application/json: { schema: { $ref: '#/components/schemas/ItemDocument' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (связь уже существует) }
+  /item-documents/{id}:
+    delete:
+      tags: [ItemDocuments]
+      summary: Удалить связь элемента с документом
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Связь удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Связь не найдена }
+
+  /comments:
+    get:
+      tags: [Comments]
+      summary: Получить список комментариев
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по элементу
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по автору
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Comment' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Comments]
+      summary: Создать комментарий
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '201': { description: Комментарий создан, content: { application/json: { schema: { $ref: '#/components/schemas/Comment' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /comments/{id}:
+    get:
+      tags: [Comments]
+      summary: Получить комментарий по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Comment' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Комментарий не найден }
+    put:
+      tags: [Comments]
+      summary: Обновить комментарий
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '200': { description: Комментарий обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/Comment' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Комментарий не найден }
+    delete:
+      tags: [Comments]
+      summary: Удалить комментарий
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Комментарий удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Комментарий не найден }
+
+  /comment-documents:
+    get:
+      tags: [CommentDocuments]
+      summary: Получить список связей комментариев с документами
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: commentId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по комментарию
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/CommentDocument' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [CommentDocuments]
+      summary: Привязать документ к комментарию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentDocument'
+      responses:
+        '201': { description: Связь создана, content: { application/json: { schema: { $ref: '#/components/schemas/CommentDocument' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (связь уже существует) }
+  /comment-documents/{id}:
+    delete:
+      tags: [CommentDocuments]
+      summary: Удалить связь комментария с документом
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Связь удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Связь не найдена }
+
+  # =====================================================
+  # 8. ДОСКИ (Kanban Boards)
+  # =====================================================
+  /boards:
+    get:
+      tags: [Boards]
+      summary: Получить список досок
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: projectId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по проекту
+        - name: phaseId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по фазе
+        - name: workflowId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по рабочему процессу
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Board' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Boards]
+      summary: Создать доску
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Board'
+      responses:
+        '201': { description: Доска создана, content: { application/json: { schema: { $ref: '#/components/schemas/Board' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /boards/{id}:
+    get:
+      tags: [Boards]
+      summary: Получить доску по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/Board' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Доска не найдена }
+    put:
+      tags: [Boards]
+      summary: Обновить доску
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Board'
+      responses:
+        '200': { description: Доска обновлена, content: { application/json: { schema: { $ref: '#/components/schemas/Board' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Доска не найдена }
+    delete:
+      tags: [Boards]
+      summary: Удалить доску
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Доска удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Доска не найдена }
+
+  /board-columns:
+    get:
+      tags: [BoardColumns]
+      summary: Получить список колонок досок
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: boardId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по доске
+        - name: stateId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по состоянию
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/BoardColumn' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [BoardColumns]
+      summary: Создать колонку доски
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardColumn'
+      responses:
+        '201': { description: Колонка создана, content: { application/json: { schema: { $ref: '#/components/schemas/BoardColumn' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (состояние уже используется на этой доске) }
+  /board-columns/{id}:
+    get:
+      tags: [BoardColumns]
+      summary: Получить колонку по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/BoardColumn' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Колонка не найдена }
+    put:
+      tags: [BoardColumns]
+      summary: Обновить колонку
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardColumn'
+      responses:
+        '200': { description: Колонка обновлена, content: { application/json: { schema: { $ref: '#/components/schemas/BoardColumn' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Колонка не найдена }
+    delete:
+      tags: [BoardColumns]
+      summary: Удалить колонку
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Колонка удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Колонка не найдена }
+
+  # =====================================================
+  # 9. КАЛЕНДАРЬ И РАБОЧЕЕ ВРЕМЯ (Calendar and Working Time)
+  # =====================================================
+  /standard-days:
+    get:
+      tags: [Calendar]
+      summary: Получить список стандартных дней
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: weekDayNumber
+          in: query
+          schema: { type: integer }
+          description: Фильтр по дню недели
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/StandardDay' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    put:
+      tags: [Calendar]
+      summary: Обновить стандартный день
+      parameters:
+        - name: weekDayNumber
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandardDay'
+      responses:
+        '200': { description: День обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/StandardDay' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+
+  /special-days:
+    get:
+      tags: [Calendar]
+      summary: Получить список особых дней
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: year
+          in: query
+          schema: { type: integer }
+          description: Фильтр по году
+        - name: month
+          in: query
+          schema: { type: integer }
+          description: Фильтр по месяцу
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/SpecialDay' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Calendar]
+      summary: Создать особый день
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecialDay'
+      responses:
+        '201': { description: День создан, content: { application/json: { schema: { $ref: '#/components/schemas/SpecialDay' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (день уже существует) }
+  /special-days/{id}:
+    get:
+      tags: [Calendar]
+      summary: Получить особый день по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/SpecialDay' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: День не найден }
+    put:
+      tags: [Calendar]
+      summary: Обновить особый день
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecialDay'
+      responses:
+        '200': { description: День обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/SpecialDay' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: День не найден }
+    delete:
+      tags: [Calendar]
+      summary: Удалить особый день
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: День удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: День не найден }
+
+  /user-days:
+    get:
+      tags: [Calendar]
+      summary: Получить список пользовательских дней
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date }
+          description: Дата начала периода
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date }
+          description: Дата окончания периода
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/UserDay' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Calendar]
+      summary: Создать пользовательский день
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDay'
+      responses:
+        '201': { description: День создан, content: { application/json: { schema: { $ref: '#/components/schemas/UserDay' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (день уже существует для этого пользователя) }
+  /user-days/{id}:
+    get:
+      tags: [Calendar]
+      summary: Получить пользовательский день по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/UserDay' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: День не найден }
+    put:
+      tags: [Calendar]
+      summary: Обновить пользовательский день
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDay'
+      responses:
+        '200': { description: День обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/UserDay' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: День не найден }
+    delete:
+      tags: [Calendar]
+      summary: Удалить пользовательский день
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: День удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: День не найден }
+
+  # =====================================================
+  # 10. СООБЩЕНИЯ И УВЕДОМЛЕНИЯ (Messages and Notifications)
+  # =====================================================
+  /private-messages:
+    get:
+      tags: [Messages]
+      summary: Получить список личных сообщений
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: withUserId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по собеседнику (отправитель или получатель)
+        - name: isViewed
+          in: query
+          schema: { type: boolean }
+          description: Фильтр по статусу прочтения
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/PrivateMessage' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Messages]
+      summary: Отправить личное сообщение
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivateMessage'
+      responses:
+        '201': { description: Сообщение отправлено, content: { application/json: { schema: { $ref: '#/components/schemas/PrivateMessage' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /private-messages/{id}:
+    get:
+      tags: [Messages]
+      summary: Получить личное сообщение по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/PrivateMessage' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Сообщение не найдено }
+    put:
+      tags: [Messages]
+      summary: Отметить сообщение как прочитанное
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isViewed:
+                  type: boolean
+      responses:
+        '200': { description: Сообщение обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/PrivateMessage' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Сообщение не найдено }
+    delete:
+      tags: [Messages]
+      summary: Удалить личное сообщение
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Сообщение удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Сообщение не найдено }
+
+  /team-messages:
+    get:
+      tags: [Messages]
+      summary: Получить список сообщений в командах
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: teamId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по команде
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/TeamMessage' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Messages]
+      summary: Отправить сообщение в команду
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamMessage'
+      responses:
+        '201': { description: Сообщение отправлено, content: { application/json: { schema: { $ref: '#/components/schemas/TeamMessage' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /team-messages/{id}:
+    get:
+      tags: [Messages]
+      summary: Получить сообщение по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/TeamMessage' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Сообщение не найдено }
+    delete:
+      tags: [Messages]
+      summary: Удалить сообщение
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Сообщение удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Сообщение не найдено }
+
+  /user-notifications:
+    get:
+      tags: [Notifications]
+      summary: Получить список подписок пользователя
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+        - name: itemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по элементу
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/UserNotification' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Notifications]
+      summary: Подписаться на элемент
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNotification'
+      responses:
+        '201': { description: Подписка создана, content: { application/json: { schema: { $ref: '#/components/schemas/UserNotification' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (подписка уже существует) }
+  /user-notifications/{id}:
+    delete:
+      tags: [Notifications]
+      summary: Отписаться от элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Подписка удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Подписка не найдена }
+
+  # =====================================================
+  # 11. ДЕЙСТВИЯ И ЗАДАЧИ (Actions and Tasks)
+  # =====================================================
+  /user-actions:
+    get:
+      tags: [Audit]
+      summary: Получить список действий пользователей
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата начала периода
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата окончания периода
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/UserAction' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+
+  /user-todos:
+    get:
+      tags: [Todos]
+      summary: Получить список личных задач
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+        - name: isDone
+          in: query
+          schema: { type: boolean }
+          description: Фильтр по статусу выполнения
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/UserTodo' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Todos]
+      summary: Создать личную задачу
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserTodo'
+      responses:
+        '201': { description: Задача создана, content: { application/json: { schema: { $ref: '#/components/schemas/UserTodo' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /user-todos/{id}:
+    get:
+      tags: [Todos]
+      summary: Получить задачу по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/UserTodo' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Задача не найдена }
+    put:
+      tags: [Todos]
+      summary: Обновить задачу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserTodo'
+      responses:
+        '200': { description: Задача обновлена, content: { application/json: { schema: { $ref: '#/components/schemas/UserTodo' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Задача не найдена }
+    delete:
+      tags: [Todos]
+      summary: Удалить задачу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Задача удалена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Задача не найдена }
+
+  /item-plannings:
+    get:
+      tags: [Planning]
+      summary: Получить список планирований
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: itemId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по элементу
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по пользователю
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата начала периода
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата окончания периода
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemPlanning' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Planning]
+      summary: Создать планирование
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemPlanning'
+      responses:
+        '201': { description: Планирование создано, content: { application/json: { schema: { $ref: '#/components/schemas/ItemPlanning' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (элемент уже запланирован для этого пользователя) }
+  /item-plannings/{id}:
+    get:
+      tags: [Planning]
+      summary: Получить планирование по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemPlanning' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Планирование не найдено }
+    put:
+      tags: [Planning]
+      summary: Обновить планирование
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemPlanning'
+      responses:
+        '200': { description: Планирование обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/ItemPlanning' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Планирование не найдено }
+    delete:
+      tags: [Planning]
+      summary: Удалить планирование
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Планирование удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Планирование не найдено }
+
+  # =====================================================
+  # 12. СПРАВОЧНИКИ (Directories)
+  # =====================================================
+  /role-menu-items:
+    get:
+      tags: [Menu]
+      summary: Получить список пунктов меню для ролей
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: roleId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по роли
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/RoleMenuItem' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+    post:
+      tags: [Menu]
+      summary: Создать пункт меню для роли
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleMenuItem'
+      responses:
+        '201': { description: Пункт меню создан, content: { application/json: { schema: { $ref: '#/components/schemas/RoleMenuItem' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+  /role-menu-items/{id}:
+    get:
+      tags: [Menu]
+      summary: Получить пункт меню по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/RoleMenuItem' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Пункт меню не найден }
+    put:
+      tags: [Menu]
+      summary: Обновить пункт меню
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleMenuItem'
+      responses:
+        '200': { description: Пункт меню обновлен, content: { application/json: { schema: { $ref: '#/components/schemas/RoleMenuItem' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Пункт меню не найден }
+    delete:
+      tags: [Menu]
+      summary: Удалить пункт меню
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Пункт меню удален }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Пункт меню не найдем }
