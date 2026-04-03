@@ -1,0 +1,93 @@
+// Автоматически сгенерированный DTO: {{ dto.name }}
+// Сгенерирован: {{ generated_at }}
+// НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+#pragma once
+
+{% for include in includes %}
+{{ include }}
+{% endfor %}
+#include "common/helpers/print_helpers.h"
+
+{% if dependencies %}
+{% for dep in dependencies %}
+class {{ dep }};
+{% endfor %}
+{% endif %}
+
+namespace farado
+{
+namespace dto
+{
+
+/**
+ * @brief {{ dto.description }}
+ */
+class {{ dto.name }} final
+{
+public:
+    using Ptr = std::shared_ptr<{{ dto.name }}>;
+    using ConstPtr = std::shared_ptr<const {{ dto.name }}>;
+
+    {{ dto.name }}() = default;
+    explicit {{ dto.name }}(const nlohmann::json& json);
+    
+    // Геттеры
+    {% for field in dto.fields %}
+    {% if field.const_value %}
+    const {{ field.cpp_type }}& {{ field.name_camel }}() const { return m_{{ field.name_camel }}; }
+    {% else %}
+    const {{ field.cpp_type }}& {{ field.name_camel }}() const { return m_{{ field.name_camel }}; }
+    {% endif %}
+    {% endfor %}
+
+    // Сеттеры
+    {% for field in dto.fields %}
+    {% if not field.const_value %}
+    void set{{ field.name_pascal }}(const {{ field.cpp_type }}& value)
+    {
+        m_{{ field.name_camel }} = value;
+    }
+    void set{{ field.name_pascal }}({{ field.cpp_type }}&& value)
+    {
+        m_{{ field.name_camel }} = std::move(value);
+    }
+    {% endif %}
+    {% endfor %}
+
+    // Сериализация
+    nlohmann::json toJson() const;
+    bool fromJson(const nlohmann::json& json);
+    
+    // Валидация
+    bool isValid() const;
+    std::string validationError() const;
+    
+    // Сравнение
+    bool operator==(const {{ dto.name }}& other) const;
+    bool operator!=(const {{ dto.name }}& other) const
+    {
+        return !(*this == other);
+    }
+    
+    // Потоковый вывод для отладки
+    friend std::ostream& operator<<(std::ostream& os, const {{ dto.name }}& dto);
+
+private:
+    {% for field in dto.fields %}
+    {% if field.const_value %}
+    static inline const {{ field.cpp_type }} m_{{ field.name_camel }} = "{{ field.const_value }}";
+    {% else %}
+    {{ field.cpp_type }} m_{{ field.name_camel }}{% if field.default %} = {{ field.default }}{% elif field.cpp_type == 'int64_t' %} = 0{% elif field.cpp_type == 'int32_t' %} = 0{% elif field.cpp_type == 'bool' %} = false{% elif field.cpp_type == 'float' %} = 0.0f{% elif field.cpp_type == 'double' %} = 0.0{% endif %};
+    {% endif %}
+    {% endfor %}
+};
+
+inline std::ostream& operator<<(std::ostream& os, const {{ dto.name }}& dto)
+{
+    os << dto.toJson().dump(2);
+    return os;
+}
+
+} // namespace dto
+} // namespace farado

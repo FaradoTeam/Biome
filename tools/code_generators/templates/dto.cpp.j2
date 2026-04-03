@@ -1,0 +1,201 @@
+// Автоматически сгенерированный DTO: {{ dto.name }}
+// Сгенерированный: {{ generated_at }}
+// НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
+
+#include <chrono>
+#include <ctime>
+
+#include <nlohmann/json.hpp>
+
+#include "common/helpers/time_helpers.h"
+
+#include "{{ dto.name_snake }}.h"
+
+namespace farado
+{
+namespace dto
+{
+
+{{ dto.name }}::{{ dto.name }}(const nlohmann::json& json)
+{
+    fromJson(json);
+}
+
+nlohmann::json {{ dto.name }}::toJson() const
+{
+    nlohmann::json result;
+
+    {% for field in dto.fields %}
+    // {{ field.description or field.name }}
+    {% if field.const_value %}
+    result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
+    {% else %}
+        {% if field.cpp_type == 'std::string' %}
+    if (!m_{{ field.name_camel }}.empty())
+    {
+        result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
+    }
+        {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
+    if (m_{{ field.name_camel }}.time_since_epoch().count() != 0)
+    {
+        result["{{ field.name_snake }}"] = timePointToSeconds(m_{{ field.name_camel }});
+    }
+        {% elif field.cpp_type.startswith('std::vector<') %}
+    if (!m_{{ field.name_camel }}.empty())
+    {
+        nlohmann::json arr = nlohmann::json::array();
+        for (const auto& item : m_{{ field.name_camel }})
+        {
+            arr.push_back(item);
+        }
+        result["{{ field.name_snake }}"] = arr;
+    }
+        {% elif field.cpp_type.startswith('std::unordered_map') %}
+    if (!m_{{ field.name_camel }}.empty())
+    {
+        nlohmann::json obj = nlohmann::json::object();
+        for (const auto& [key, value] : m_{{ field.name_camel }})
+        {
+            obj[key] = value;
+        }
+        result["{{ field.name_snake }}"] = obj;
+    }
+        {% elif field.cpp_type == 'nlohmann::json' %}
+    if (!m_{{ field.name_camel }}.is_null())
+    {
+        result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
+    }
+        {% elif field.cpp_type in ['bool', 'int64_t', 'int32_t', 'float', 'double'] %}
+    result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
+        {% else %}
+    result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
+        {% endif %}
+    {% endif %}
+    {% endfor %}
+
+    return result;
+}
+
+bool {{ dto.name }}::fromJson(const nlohmann::json& json)
+{
+    bool success = true;
+
+    {% for field in dto.fields %}
+    // {{ field.description or field.name }}
+    {% if field.const_value %}
+    // Constant field - ignore value from JSON
+    {% else %}
+    if (json.contains("{{ field.name_snake }}"))
+    {
+        try
+        {
+            {% if field.cpp_type == 'std::string' %}
+            m_{{ field.name_camel }} = json["{{ field.name_snake }}"].get<std::string>();
+            {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
+            auto timestamp = json["{{ field.name_snake }}"].get<int64_t>();
+            m_{{ field.name_camel }} = secondsToTimePoint(timestamp);
+            {% elif field.cpp_type.startswith('std::vector<') %}
+            m_{{ field.name_camel }}.clear();
+            for (const auto& item : json["{{ field.name_snake }}"])
+            {
+                {% if field.array_item_type in ['int64_t', 'int32_t', 'double', 'float'] %}
+                m_{{ field.name_camel }}.push_back(item.get<{{ field.array_item_type }}>());
+                {% elif field.array_item_type == 'std::string' %}
+                m_{{ field.name_camel }}.push_back(item.get<std::string>());
+                {% else %}
+                m_{{ field.name_camel }}.push_back(item);
+                {% endif %}
+            }
+            {% elif field.cpp_type.startswith('std::unordered_map') %}
+            m_{{ field.name_camel }}.clear();
+            for (auto& [key, value] : json["{{ field.name_snake }}"].items())
+            {
+                m_{{ field.name_camel }}[key] = value.get<std::string>();
+            }
+            {% elif field.cpp_type == 'nlohmann::json' %}
+            m_{{ field.name_camel }} = json["{{ field.name_snake }}"];
+            {% else %}
+            m_{{ field.name_camel }} = json["{{ field.name_snake }}"].get<{{ field.cpp_type }}>();
+            {% endif %}
+        }
+        catch (const std::exception& e)
+        {
+            success = false;
+        }
+    }
+    else if ({{ field.required | lower }})
+    {
+        success = false;
+    }
+    {% endif %}
+    {% endfor %}
+
+    return success;
+}
+
+bool {{ dto.name }}::isValid() const
+{
+    bool valid = true;
+
+    {% for field in dto.fields %}
+    {% if field.required and not field.const_value %}
+        {% if field.cpp_type == 'std::string' %}
+    if (m_{{ field.name_camel }}.empty())
+    {
+        valid = false;
+    }
+        {% elif field.cpp_type.startswith('std::vector<') %}
+    if (m_{{ field.name_camel }}.empty())
+    {
+        valid = false;
+    }
+        {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
+    if (m_{{ field.name_camel }}.time_since_epoch().count() == 0)
+    {
+        valid = false;
+    }
+        {% endif %}
+    {% endif %}
+    {% endfor %}
+
+    return valid;
+}
+
+std::string {{ dto.name }}::validationError() const
+{
+    {% for field in dto.fields %}
+    {% if field.required and not field.const_value %}
+        {% if field.cpp_type == 'std::string' %}
+    if (m_{{ field.name_camel }}.empty())
+    {
+        return "Field '{{ field.name_snake }}' is required";
+    }
+        {% elif field.cpp_type.startswith('std::vector<') %}
+    if (m_{{ field.name_camel }}.empty())
+    {
+        return "Field '{{ field.name_snake }}' must have at least one element";
+        }
+        {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
+    if (m_{{ field.name_camel }}.time_since_epoch().count() == 0)
+    {
+        return "Field '{{ field.name_snake }}' is required";
+    }
+        {% endif %}
+    {% endif %}
+    {% endfor %}
+
+    return "";
+}
+
+bool {{ dto.name }}::operator==(const {{ dto.name }}& other) const
+{
+    return
+    {% for field in dto.fields -%}
+    {%- if not field.const_value %}
+        {% if not loop.first %}&&{% endif %} m_{{ field.name_camel }} == other.m_{{ field.name_camel }}
+    {% endif -%}
+    {%- endfor %};
+}
+
+} // namespace dto
+} // namespace farado

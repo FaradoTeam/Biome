@@ -39,3 +39,17 @@
 
 # debug information files
 *.dwo
+
+# IDE
+.cache
+.vscode
+compile_commands.json
+
+# Build artifacts
+.build
+build
+install
+CMakeUserPresets.json
+
+# Conan
+conan-imports
