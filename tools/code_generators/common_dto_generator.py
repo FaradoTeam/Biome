@@ -6,7 +6,6 @@ Generates DTO classes with serialization/deserialization to/from JSON
 
 import argparse
 import yaml
-import json
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -104,6 +103,8 @@ class DTOGenerator:
             default = schema['default']
             if isinstance(default, str):
                 return f'"{default}"'
+            elif isinstance(default, bool):
+                return 'true' if default else 'false'
             return str(default)
         return None
 
@@ -230,13 +231,16 @@ class DTOGenerator:
 
     def collect_includes(self, dto: Dict[str, Any]) -> List[str]:
         """Collect includes for a DTO"""
-        includes = set()
-        includes.add('#include <nlohmann/json.hpp>')
-        includes.add('#include <string>')
-        includes.add('#include <vector>')
-        includes.add('#include <unordered_map>')
-        includes.add('#include <memory>')
-        includes.add('#include <chrono>')
+        includes = list()
+        includes.append('#include <chrono>')
+        includes.append('#include <ctime>')
+        includes.append('#include <memory>')
+        includes.append('#include <string>')
+        includes.append('#include <vector>')
+        includes.append('#include <unordered_map>')
+        includes.append('')
+        includes.append('#include <nlohmann/json.hpp>')
+        includes.append('')
 
         # Add includes for dependencies
         for field in dto['fields']:
@@ -244,15 +248,15 @@ class DTOGenerator:
 
             # Add include for the DTO itself if it's a dependency
             if cpp_type in self.dto_names:
-                includes.add(f'#include "{self.to_snake_case(cpp_type)}.h"')
+                includes.append(f'#include "{self.to_snake_case(cpp_type)}.h"')
 
             # Add include for vector items
             if cpp_type.startswith('std::vector<'):
                 inner_type = cpp_type[12:-1]
                 if inner_type in self.dto_names:
-                    includes.add(f'#include "{self.to_snake_case(inner_type)}.h"')
+                    includes.append(f'#include "{self.to_snake_case(inner_type)}.h"')
 
-        return sorted(list(includes))
+        return includes
 
     def generate_dto_header(self, dto: Dict[str, Any], template: Template) -> str:
         """Generate header file for a DTO"""

@@ -1,8 +1,13 @@
-// Auto-generated DTO: {{ dto.name }}
-// Generated: {{ generated_at }}
-// DO NOT EDIT MANUALLY
+// Автоматически сгенерированный DTO: {{ dto.name }}
+// Сгенерированный: {{ generated_at }}
+// НЕ РЕДАКТИРУЙТЕ ВРУЧНУЮ
+
+#include <chrono>
+#include <ctime>
 
 #include <nlohmann/json.hpp>
+
+#include "common/helpers/time_helpers.h"
 
 #include "{{ dto.name_snake }}.h"
 
@@ -23,7 +28,7 @@ nlohmann::json {{ dto.name }}::toJson() const
     {% for field in dto.fields %}
     // {{ field.description or field.name }}
     {% if field.const_value %}
-    result["{{ field.name_snake }}"] = "{{ field.const_value }}";
+    result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
     {% else %}
         {% if field.cpp_type == 'std::string' %}
     if (!m_{{ field.name_camel }}.empty())
@@ -33,9 +38,7 @@ nlohmann::json {{ dto.name }}::toJson() const
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
     if (m_{{ field.name_camel }}.time_since_epoch().count() != 0)
     {
-        result["{{ field.name_snake }}"] = std::chrono::duration_cast<std::chrono::seconds>(
-            m_{{ field.name_camel }}.time_since_epoch()
-        ).count();
+        result["{{ field.name_snake }}"] = timePointToSeconds(m_{{ field.name_camel }});
     }
         {% elif field.cpp_type.startswith('std::vector<') %}
     if (!m_{{ field.name_camel }}.empty())
@@ -62,6 +65,8 @@ nlohmann::json {{ dto.name }}::toJson() const
     {
         result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
     }
+        {% elif field.cpp_type in ['bool', 'int64_t', 'int32_t', 'float', 'double'] %}
+    result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
         {% else %}
     result["{{ field.name_snake }}"] = m_{{ field.name_camel }};
         {% endif %}
@@ -78,11 +83,7 @@ bool {{ dto.name }}::fromJson(const nlohmann::json& json)
     {% for field in dto.fields %}
     // {{ field.description or field.name }}
     {% if field.const_value %}
-    if (json.contains("{{ field.name_snake }}") && 
-        json["{{ field.name_snake }}"].get<std::string>() != "{{ field.const_value }}")
-    {
-        success = false;
-    }
+    // Constant field - ignore value from JSON
     {% else %}
     if (json.contains("{{ field.name_snake }}"))
     {
@@ -92,9 +93,7 @@ bool {{ dto.name }}::fromJson(const nlohmann::json& json)
             m_{{ field.name_camel }} = json["{{ field.name_snake }}"].get<std::string>();
             {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
             auto timestamp = json["{{ field.name_snake }}"].get<int64_t>();
-            m_{{ field.name_camel }} = std::chrono::system_clock::from_time_t(
-                static_cast<time_t>(timestamp)
-            );
+            m_{{ field.name_camel }} = secondsToTimePoint(timestamp);
             {% elif field.cpp_type.startswith('std::vector<') %}
             m_{{ field.name_camel }}.clear();
             for (const auto& item : json["{{ field.name_snake }}"])
@@ -150,6 +149,11 @@ bool {{ dto.name }}::isValid() const
     {
         valid = false;
     }
+        {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
+    if (m_{{ field.name_camel }}.time_since_epoch().count() == 0)
+    {
+        valid = false;
+    }
         {% endif %}
     {% endif %}
     {% endfor %}
@@ -170,6 +174,11 @@ std::string {{ dto.name }}::validationError() const
     if (m_{{ field.name_camel }}.empty())
     {
         return "Field '{{ field.name_snake }}' must have at least one element";
+        }
+        {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
+    if (m_{{ field.name_camel }}.time_since_epoch().count() == 0)
+    {
+        return "Field '{{ field.name_snake }}' is required";
     }
         {% endif %}
     {% endif %}

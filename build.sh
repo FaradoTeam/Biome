@@ -2,7 +2,9 @@
 
 mkdir -p build && cd build
 
-conan profile detect --force
+# Сделать один раз при необходимости:
+# conan profile detect --force
+
 conan install ../conanfile.py \
     --build=missing \
     -s compiler.libcxx=libstdc++11 \
@@ -15,4 +17,4 @@ cmake .. \
 
 make -j$(($(nproc) - 1))
 
-# ctest --output-on-failure
+ctest --output-on-failure

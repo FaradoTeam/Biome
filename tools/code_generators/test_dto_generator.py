@@ -14,19 +14,7 @@ import re
 
 
 class DTOTestGenerator:
-    """Generates C++ unit tests for DTO classes from OpenAPI specification using Boost.Test"""
-
-    # Test data generators for different types
-    TEST_DATA_GENERATORS = {
-        'int64_t': '42',
-        'int32_t': '42',
-        'double': '3.14',
-        'float': '3.14f',
-        'bool': 'true',
-        'std::string': '"test_value"',
-        'std::chrono::system_clock::time_point': 'std::chrono::system_clock::now()',
-        'nlohmann::json': 'nlohmann::json::object()',
-    }
+    """Generates C++ unit tests for DTO classes using Boost.Test"""
 
     def __init__(self, openapi_file: Path, output_dir: Path, templates_dir: Path):
         self.openapi_file = openapi_file
@@ -98,7 +86,7 @@ class DTOTestGenerator:
         if cpp_type == 'std::string':
             return '"test_value"'
         if cpp_type == 'std::chrono::system_clock::time_point':
-            return 'std::chrono::system_clock::now()'
+            return 'secondsToTimePoint(1640995200)'
 
         return '{}'
 
@@ -107,22 +95,26 @@ class DTOTestGenerator:
         field_name = field['name_snake']
         cpp_type = field['cpp_type']
 
+        # Skip const fields (they have default values)
+        if field.get('const_value'):
+            return f'    // "{field_name}" is constant, skipping in test JSON'
+
         if cpp_type == 'std::string':
-            return f'{{"{field_name}", "test_{field_name}"}}'
+            return f'    {{"{field_name}", "test_{field_name}"}}'
         elif cpp_type in ['int64_t', 'int32_t']:
-            return f'{{"{field_name}", 42}}'
+            return f'    {{"{field_name}", 42}}'
         elif cpp_type == 'bool':
-            return f'{{"{field_name}", true}}'
+            return f'    {{"{field_name}", true}}'
         elif cpp_type in ['double', 'float']:
-            return f'{{"{field_name}", 3.14}}'
+            return f'    {{"{field_name}", 3.14}}'
         elif cpp_type == 'std::chrono::system_clock::time_point':
-            return f'{{"{field_name}", 1640995200}}'  # 2022-01-01 00:00:00
+            return f'    {{"{field_name}", 1640995200}}'  # 2022-01-01 00:00:00
         elif cpp_type.startswith('std::vector<'):
-            return f'{{"{field_name}", nlohmann::json::array({{"item1", "item2"}})}}'
+            return f'    {{"{field_name}", nlohmann::json::array({{"item1", "item2"}})}}'
         elif cpp_type in self.dto_names:
-            return f'{{"{field_name}", {cpp_type}().toJson()}}'
+            return f'    {{"{field_name}", {cpp_type}().toJson()}}'
         else:
-            return f'{{"{field_name}", "test_value"}}'
+            return f'    {{"{field_name}", "test_value"}}'
 
     def to_snake_case(self, name: str) -> str:
         """Convert camelCase to snake_case"""
@@ -162,6 +154,11 @@ class DTOTestGenerator:
                 items = prop_schema.get('items', {})
                 array_item_type = self.get_cpp_type(items)
 
+            # Check if this is a constant value
+            const_value = None
+            if prop_name == 'tokenType' and prop_schema.get('default') == 'Bearer':
+                const_value = 'Bearer'
+
             field = {
                 'name': prop_name,
                 'name_snake': self.to_snake_case(prop_name),
@@ -171,6 +168,7 @@ class DTOTestGenerator:
                 'array_item_type': array_item_type,
                 'required': prop_name in required,
                 'description': prop_schema.get('description', ''),
+                'const_value': const_value,
             }
             fields.append(field)
 
@@ -183,54 +181,55 @@ class DTOTestGenerator:
 
     def collect_includes(self, dto: Dict[str, Any]) -> List[str]:
         """Collect includes for test file"""
-        includes = set()
-        # Don't define BOOST_TEST_MODULE here
-        includes.add('#include <boost/test/unit_test.hpp>')
-        includes.add('#include <nlohmann/json.hpp>')
-        includes.add('#include <chrono>')
-        includes.add('#include <sstream>')
-        includes.add('#include <iomanip>')
+        includes = list()
+        includes.append('#include <chrono>')
+        includes.append('#include <ctime>')
+        includes.append('#include <iomanip>')
+        includes.append('#include <sstream>')
+        includes.append('')
+        includes.append('#include <boost/test/unit_test.hpp>')
+        includes.append('#include <nlohmann/json.hpp>')
+        includes.append('')
 
         # Include the DTO header
-        includes.add(f'#include "common/dto/{dto["name_snake"]}.h"')
+        includes.append(f'#include "common/dto/{dto["name_snake"]}.h"')
+        includes.append('')
 
         # Include dependencies
         for field in dto['fields']:
             cpp_type = field['cpp_type']
             if cpp_type in self.dto_names:
-                includes.add(f'#include "common/dto/{self.to_snake_case(cpp_type)}.h"')
+                includes.append(f'#include "common/dto/{self.to_snake_case(cpp_type)}.h"')
             elif cpp_type.startswith('std::vector<'):
                 inner_type = cpp_type[12:-1]
                 if inner_type in self.dto_names:
-                    includes.add(f'#include "common/dto/{self.to_snake_case(inner_type)}.h"')
+                    includes.append(f'#include "common/dto/{self.to_snake_case(inner_type)}.h"')
 
-        return sorted(list(includes))
+        return includes
 
     def generate_test_file(self, dto: Dict[str, Any], template: Template) -> str:
         """Generate test file for a DTO"""
         includes = self.collect_includes(dto)
 
-        # Generate test data
-        test_data = {}
-        for field in dto['fields']:
-            if not field['required']:
-                test_data[field['name_camel']] = self.get_test_value(field['cpp_type'], field['name'])
-
         # Generate JSON for serialization test
         json_parts = []
         for field in dto['fields']:
-            json_parts.append(f'    {self.get_json_for_field(field)}')
+            json_part = self.get_json_for_field(field)
+            if not json_part.startswith('    //'):
+                json_parts.append(json_part)
 
         json_object = ",\n".join(json_parts)
 
         # Generate field validation checks
         field_checks = []
         for field in dto['fields']:
-            if field['required']:
+            if field['required'] and not field.get('const_value'):
                 if field['cpp_type'] == 'std::string':
                     field_checks.append(f'    BOOST_TEST(!dto.{field["name_camel"]}().empty());')
                 elif field['cpp_type'].startswith('std::vector<'):
                     field_checks.append(f'    BOOST_TEST(!dto.{field["name_camel"]}().empty());')
+                elif field['cpp_type'] == 'std::chrono::system_clock::time_point':
+                    field_checks.append(f'    BOOST_TEST(dto.{field["name_camel"]}().time_since_epoch().count() != 0);')
                 else:
                     field_checks.append(f'    BOOST_TEST(dto.{field["name_camel"]}() != {self.get_test_value(field["cpp_type"], field["name"])});')
 
