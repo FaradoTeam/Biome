@@ -7,3 +7,4 @@ class FaradoConanFile(ConanFile):
     def requirements(self):
         self.requires("boost/1.83.0")
         self.requires("nlohmann_json/3.11.3")
+        self.requires("openssl/3.1.4")

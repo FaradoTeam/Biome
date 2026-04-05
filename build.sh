@@ -11,7 +11,7 @@ conan install ../conanfile.py \
     -of=conan/
 
 cmake .. \
-    -DBUILD_TESTS=ON \
+    -DBUILD_TESTS=OFF \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE=conan/conan_toolchain.cmake
 
