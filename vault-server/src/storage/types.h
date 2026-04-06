@@ -17,9 +17,22 @@
 namespace db
 {
 
+/**
+ * @brief Тип для хранения бинарных данных (BLOB).
+ */
 using Blob = std::vector<uint8_t>;
+
+/**
+ * @brief Тип для хранения даты/времени (момент времени в UTC).
+ */
 using DateTime = std::chrono::system_clock::time_point;
 
+/**
+ * @brief Универсальное поле результата запроса.
+ *
+ * Может хранить NULL, целое число, вещественное число, строку,
+ * BLOB или дату/время. Поддерживает type-safe доступ.
+ */
 struct FieldValue final
 {
 public:
@@ -135,9 +148,14 @@ public:
     std::variant<std::monostate, int64_t, double, std::string, Blob, DateTime> value;
 };
 
+/**
+ * @brief Конфигурация базы данных (пары ключ-значение).
+ *
+ * Пример для SQLite: { {"database", "test.db"} }
+ */
 using DatabaseConfig = std::unordered_map<std::string, std::string>;
 
-// Вспомогательная функция для преобразования даты и времени в строку (ISO8601)
+/// Вспомогательная функция для преобразования даты и времени в строку (ISO8601).
 inline std::string dateTimeToString(const DateTime& dt)
 {
     auto tt = std::chrono::system_clock::to_time_t(dt);
@@ -146,7 +164,7 @@ inline std::string dateTimeToString(const DateTime& dt)
     return buf;
 }
 
-// Вспомогательная функция для преобразования строки в DateTime
+/// Вспомогательная функция для преобразования строки в DateTime.
 inline DateTime stringToDateTime(const std::string& str)
 {
     std::tm tm = {};

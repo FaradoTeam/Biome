@@ -44,7 +44,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     Boost::unit_test_framework
-    sqlite3
+    SQLite::SQLite3
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

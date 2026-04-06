@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(test_complete_workflow)
 
         BOOST_CHECK_EQUAL(name, expectedNames[idx]);
         BOOST_CHECK_CLOSE(price, expectedPrices[idx], 0.01);
-        idx++;
+        ++idx;
     }
     BOOST_CHECK_EQUAL(idx, 2);  // Должны получить 2 товара
 
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(test_concurrent_operations)
 
                             if (result > 0)
                             {
-                                successes++;
+                                ++successes;
                             }
                             break;  // Успех - выходим из цикла retry
                         }

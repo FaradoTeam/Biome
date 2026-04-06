@@ -11,9 +11,20 @@
 namespace db::sqlite
 {
 
+/**
+ * @brief Реализация IResultSet для SQLite.
+ *
+ * Итерируется по строкам результата SELECT, автоматически преобразует
+ * типы SQLite в типы C++ (включая парсинг DateTime из строк).
+ */
 class SqliteResultSet : public IResultSet
 {
 public:
+    /**
+     * @brief Конструктор.
+     * @param stmt Подготовленный запрос SQLite (уже выполненный через sqlite3_step)
+     * @param autoFinalize Если true — удалит stmt в деструкторе, иначе только сбросит
+     */
     SqliteResultSet(sqlite3_stmt* stmt, bool autoFinalize);
     ~SqliteResultSet() override;
 
@@ -27,10 +38,12 @@ public:
     FieldValue getValue(int index) const override;
 
 private:
-    sqlite3_stmt* m_stmt = nullptr;
-    bool m_autoFinalize;
-    bool m_hasRow;
-    bool m_isExecuted;
+    sqlite3_stmt* m_stmt = nullptr; ///< SQLite statement
+    bool m_autoFinalize; ///< Удалять ли statement в конце
+    bool m_hasRow; ///< Есть ли текущая строка
+    bool m_isExecuted; ///< Был ли выполнен sqlite3_step хотя бы раз
+
+    /// Кэш для ускорения поиска индекса по имени колонки
     mutable std::unordered_map<std::string, int> m_columnCache;
 };
 

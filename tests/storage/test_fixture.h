@@ -2,7 +2,9 @@
 
 #include <filesystem>
 #include <iostream>
+
 #include <boost/test/unit_test.hpp>
+
 #include "vault-server/src/storage/sqlite/sqlite_database.h"
 
 namespace db::test

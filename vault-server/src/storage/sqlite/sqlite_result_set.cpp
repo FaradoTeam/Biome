@@ -21,10 +21,13 @@ SqliteResultSet::~SqliteResultSet()
 {
     if (m_autoFinalize && m_stmt)
     {
+        // Режим владения: мы сами создали stmt и должны его удалить.
         sqlite3_finalize(m_stmt);
     }
     else if (m_stmt && !m_autoFinalize)
     {
+        // Режим невладения: просто сбрасываем запрос, чтобы его можно было
+        // использовать снова.
         sqlite3_reset(m_stmt);
     }
 }
@@ -36,21 +39,25 @@ bool SqliteResultSet::next()
         return false;
     }
 
-    int rc = sqlite3_step(m_stmt);
+    // Перемещаем курсор на следующую строку результата.
+    const int rc = sqlite3_step(m_stmt);
     m_isExecuted = true;
 
     if (rc == SQLITE_ROW)
     {
+        // Есть ещё строки.
         m_hasRow = true;
         return true;
     }
     else if (rc == SQLITE_DONE)
     {
+        // Больше нет строк.
         m_hasRow = false;
         return false;
     }
     else
     {
+        // Ошибка (SQLITE_BUSY, SQLITE_ERROR и т.д.).
         throw std::runtime_error(
             "ResultSet next failed: "
             + std::string(sqlite3_errmsg(sqlite3_db_handle(m_stmt)))
@@ -74,7 +81,7 @@ std::string SqliteResultSet::getColumnName(int index) const
         throw std::runtime_error("ResultSet is not valid");
     }
 
-    int count = sqlite3_column_count(m_stmt);
+    const int count = sqlite3_column_count(m_stmt);
     if (index < 0 || index >= count)
     {
         throw std::runtime_error(
@@ -95,13 +102,15 @@ std::string SqliteResultSet::getColumnName(int index) const
 
 int SqliteResultSet::getColumnIndex(const std::string& name) const
 {
+    // Проверяем кэш для быстрого доступа.
     auto it = m_columnCache.find(name);
     if (it != m_columnCache.end())
     {
         return it->second;
     }
 
-    int count = getColumnCount();
+    // Линейный поиск по именам колонок.
+    const int count = getColumnCount();
     for (int i = 0; i < count; ++i)
     {
         if (getColumnName(i) == name)
@@ -138,10 +147,13 @@ FieldValue SqliteResultSet::getValue(int index) const
     int count = sqlite3_column_count(m_stmt);
     if (index < 0 || index >= count)
     {
-        throw std::runtime_error("Invalid column index: " + std::to_string(index) + ", max: " + std::to_string(count - 1));
+        throw std::runtime_error(
+            "Invalid column index: "
+            + std::to_string(index) + ", max: " + std::to_string(count - 1)
+        );
     }
 
-    int type = sqlite3_column_type(m_stmt, index);
+    const int type = sqlite3_column_type(m_stmt, index);
 
     switch (type)
     {
@@ -149,16 +161,19 @@ FieldValue SqliteResultSet::getValue(int index) const
     {
         return FieldValue(nullptr);
     }
+
     case SQLITE_INTEGER:
     {
         sqlite3_int64 val = sqlite3_column_int64(m_stmt, index);
         return FieldValue(static_cast<int64_t>(val));
     }
+
     case SQLITE_FLOAT:
     {
         double val = sqlite3_column_double(m_stmt, index);
         return FieldValue(val);
     }
+
     case SQLITE_TEXT:
     {
         const char* text = reinterpret_cast<const char*>(
@@ -167,8 +182,9 @@ FieldValue SqliteResultSet::getValue(int index) const
         if (text)
         {
             std::string strValue(text);
-            // Пытаемся распарсить как DateTime
-            // Формат: "YYYY-MM-DD HH:MM:SS"
+
+            // Если строка похожа на дату/время — парсим её.
+            // Формат ожидается: "YYYY-MM-DD HH:MM:SS" (ровно 19 символов).
             if (strValue.length() == 19
                 && strValue[4] == '-'
                 && strValue[7] == '-'
@@ -182,14 +198,17 @@ FieldValue SqliteResultSet::getValue(int index) const
                 }
                 catch (...)
                 {
-                    // Если не получилось распарсить, возвращаем как строку
+                    // Если парсинг не удался (например, невалидная дата),
+                    // возвращаем как обычную строку — это безопаснее,
+                    // чем бросать исключение.
                     return FieldValue(strValue);
                 }
             }
             return FieldValue(strValue);
         }
-        return FieldValue(std::string());
+        return FieldValue(std::string()); // Пустая строка, не NULL.
     }
+
     case SQLITE_BLOB:
     {
         const void* blob = sqlite3_column_blob(m_stmt, index);
@@ -199,8 +218,9 @@ FieldValue SqliteResultSet::getValue(int index) const
             const uint8_t* bytes = static_cast<const uint8_t*>(blob);
             return FieldValue(Blob(bytes, bytes + size));
         }
-        return FieldValue(Blob());
+        return FieldValue(Blob()); // Пустой BLOB.
     }
+
     default:
         throw std::runtime_error("Unknown SQLite type");
     }

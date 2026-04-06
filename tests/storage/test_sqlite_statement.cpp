@@ -206,7 +206,7 @@ BOOST_FIXTURE_TEST_CASE(test_execute_query_with_statement, StatementTestFixture)
     int count = 0;
     while (rs->next())
     {
-        count++;
+        ++count;
     }
     BOOST_CHECK_EQUAL(count, 3);
 
@@ -217,7 +217,7 @@ BOOST_FIXTURE_TEST_CASE(test_execute_query_with_statement, StatementTestFixture)
     count = 0;
     while (rs->next())
     {
-        count++;
+        ++count;
     }
     BOOST_CHECK_EQUAL(count, 5);
 }
