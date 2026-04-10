@@ -29,7 +29,6 @@ public:
      * @param authMiddleware Указатель на middleware для работы с JWT-токенами
      */
     explicit AuthHandler(std::shared_ptr<AuthMiddleware> authMiddleware);
-    ~AuthHandler() = default;
 
     /**
      * @brief Обрабатывает запрос на вход пользователя.

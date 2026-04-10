@@ -44,6 +44,11 @@ public:
     explicit AuthMiddleware(const std::string& secretKey);
     ~AuthMiddleware() = default;
 
+    AuthMiddleware(const AuthMiddleware&) = delete;
+    AuthMiddleware& operator=(const AuthMiddleware&) = delete;
+    AuthMiddleware(AuthMiddleware&&) = delete;
+    AuthMiddleware& operator=(AuthMiddleware&&) = delete;
+
     /**
      * @brief Проверяет заголовок Authorization на наличие валидного Bearer-токена.
      *

@@ -40,6 +40,11 @@ public:
     );
     ~RestServer();
 
+    RestServer(const RestServer&) = delete;
+    RestServer& operator=(const RestServer&) = delete;
+    RestServer(RestServer&&) = delete;
+    RestServer& operator=(RestServer&&) = delete;
+
     /**
      * @brief Инициализирует сервер: регистрирует маршруты и настраивает
      *        слушатель.

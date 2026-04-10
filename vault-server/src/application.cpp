@@ -34,7 +34,7 @@ bool Application::initialize()
     );
 
     // TODO: Вынести в конфиг хост и порт
-    m_restServer = std::make_shared<RestServer>("0.0.0.0", 8080);
+    m_restServer = std::make_unique<RestServer>("0.0.0.0", 8080);
     m_restServer->setAuthMiddleware(authMiddleware);
 
     if (!m_restServer->initialize())

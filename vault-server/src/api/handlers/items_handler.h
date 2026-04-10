@@ -24,7 +24,6 @@ class ItemsHandler final
 {
 public:
     ItemsHandler();
-    ~ItemsHandler() = default;
 
     /**
      * @brief Получает список элементов с пагинацией.

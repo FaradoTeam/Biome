@@ -16,6 +16,11 @@ public:
     explicit Application();
     ~Application();
 
+    Application(const Application&) = delete;
+    Application& operator=(const Application&) = delete;
+    Application(Application&&) = delete;
+    Application& operator=(Application&&) = delete;
+
     int run();
     void stop();
 
@@ -24,9 +29,9 @@ private:
     void cleanup();
 
 private:
-    std::shared_ptr<RestServer> m_restServer;
+    std::unique_ptr<RestServer> m_restServer;
 
-    bool m_isRunning; 
+    bool m_isRunning { false };
 };
 
 } // namespace server
