@@ -10,9 +10,18 @@
  *
  * Выполняется один раз до начала всех тестов и после их завершения.
  * Создаёт директорию для тестовых БД и удаляет все временные файлы.
+ *
+ * Эта фикстура автоматически регистрируется в Boost.Test и не требует
+ * явного вызова в тестах.
  */
 struct GlobalTestFixture
 {
+    /**
+     * @brief Конструктор: настройка окружения перед запуском тестов
+     *
+     * Создаёт директорию ./test_data (если её нет) и выводит информацию
+     * о расположении тестовых файлов для отладки.
+     */
     GlobalTestFixture()
     {
         std::cout << "=== Starting Database Tests ===" << std::endl;
@@ -33,16 +42,17 @@ struct GlobalTestFixture
                 << std::filesystem::absolute("./test_data") << std::endl;
         }
 
-        // Дополнительная проверка с абсолютным путём
+        // Дополнительная проверка с абсолютным путём для надёжности
         auto abs_path = std::filesystem::absolute("./test_data");
         std::filesystem::create_directories(abs_path, ec);
     }
 
     /**
-     * @brief Очистка тестовых файлов после завершения всех тестов
+     * @brief Деструктор: очистка тестовых файлов после завершения всех тестов
      *
      * Удаляет все созданные в процессе тестирования файлы БД
      * и, если возможно, саму директорию test_data.
+     * Ошибки игнорируются, так как это тестовая среда.
      */
     ~GlobalTestFixture()
     {
@@ -51,6 +61,7 @@ struct GlobalTestFixture
         {
             std::error_code ec;
             // Список всех тестовых файлов БД для удаления
+            // (поддерживается вручную при добавлении новых тестов)
             std::filesystem::remove("./test_data/test.db", ec);
             std::filesystem::remove("./test_data/test2.db", ec);
             std::filesystem::remove("./test_data/transaction_test.db", ec);
@@ -73,7 +84,7 @@ struct GlobalTestFixture
             std::filesystem::remove("./test_data/test_factory.db", ec);
             std::filesystem::remove("./test_data/test_conn_string.db", ec);
 
-            // Удаляем директорию, если она пуста
+            // Удаляем директорию, если она пуста (игнорируем ошибку, если не пуста)
             std::filesystem::remove_all("./test_data", ec);
         }
         catch (...)
@@ -83,5 +94,5 @@ struct GlobalTestFixture
     }
 };
 
-// Регистрируем глобальную фикстуру
+// Регистрируем глобальную фикстуру в Boost.Test
 BOOST_GLOBAL_FIXTURE(GlobalTestFixture);

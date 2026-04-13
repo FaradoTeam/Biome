@@ -12,11 +12,14 @@ namespace db::test
 
 BOOST_AUTO_TEST_SUITE(SqliteConnectionTests)
 
+/**
+ * @brief Проверка создания соединения и выполнения базовых запросов
+ */
 BOOST_AUTO_TEST_CASE(test_connection_create_and_use)
 {
     std::string dbPath = getTestDbPath("conn_test.db");
 
-    // Удаляем старый файл
+    // Удаляем старый файл, если остался
     std::error_code ec;
     std::filesystem::remove(dbPath, ec);
 
@@ -32,6 +35,9 @@ BOOST_AUTO_TEST_CASE(test_connection_create_and_use)
     BOOST_CHECK_EQUAL(rs->valueInt64(0), 1);
 }
 
+/**
+ * @brief Проверка создания и использования подготовленного запроса
+ */
 BOOST_AUTO_TEST_CASE(test_prepare_statement)
 {
     std::string dbPath = getTestDbPath("prep_test.db");
@@ -52,7 +58,7 @@ BOOST_AUTO_TEST_CASE(test_prepare_statement)
     int64_t rows = stmt->execute();
     BOOST_CHECK_EQUAL(rows, 1);
 
-    // Проверяем результат
+    // Проверяем результат вставки
     auto queryStmt = conn.prepareStatement("SELECT name FROM prep_test WHERE id = :id");
     queryStmt->bindInt64("id", 100);
     auto rs = queryStmt->executeQuery();
@@ -60,6 +66,9 @@ BOOST_AUTO_TEST_CASE(test_prepare_statement)
     BOOST_CHECK_EQUAL(rs->valueString(0), "Prepared");
 }
 
+/**
+ * @brief Проверка получения ID последней вставленной записи (AUTOINCREMENT)
+ */
 BOOST_AUTO_TEST_CASE(test_last_insert_id)
 {
     std::string dbPath = getTestDbPath("last_id_test.db");
@@ -78,6 +87,11 @@ BOOST_AUTO_TEST_CASE(test_last_insert_id)
     BOOST_CHECK_EQUAL(lastId, 2);
 }
 
+/**
+ * @brief Проверка экранирования строк для безопасной вставки
+ *
+ * Убеждаемся, что специальные символы (например, апострофы) корректно экранируются.
+ */
 BOOST_AUTO_TEST_CASE(test_escape_string)
 {
     std::string dbPath = getTestDbPath("escape_test.db");
@@ -86,7 +100,7 @@ BOOST_AUTO_TEST_CASE(test_escape_string)
 
     SqliteConnection conn(dbPath);
 
-    std::string unsafe = "It's a 'quoted' string";
+    std::string unsafe = "It's a 'quoted' string"; // Строка с апострофами
     std::string escaped = conn.escapeString(unsafe);
 
     conn.execute("CREATE TABLE escape_test (text TEXT)");
@@ -96,9 +110,12 @@ BOOST_AUTO_TEST_CASE(test_escape_string)
     auto stmt = conn.prepareStatement("SELECT text FROM escape_test");
     auto rs = stmt->executeQuery();
     rs->next();
-    BOOST_CHECK_EQUAL(rs->valueString(0), unsafe);
+    BOOST_CHECK_EQUAL(rs->valueString(0), unsafe); // Должна восстановиться исходная строка
 }
 
+/**
+ * @brief Проверка, что метод execute() возвращает количество затронутых строк
+ */
 BOOST_AUTO_TEST_CASE(test_execute_returns_affected_rows)
 {
     std::string dbPath = getTestDbPath("affected_test.db");
@@ -111,12 +128,15 @@ BOOST_AUTO_TEST_CASE(test_execute_returns_affected_rows)
     conn.execute("INSERT INTO test VALUES (2, 200)");
 
     int64_t affected = conn.execute("UPDATE test SET value = 50 WHERE id = 1");
-    BOOST_CHECK_EQUAL(affected, 1);
+    BOOST_CHECK_EQUAL(affected, 1); // Обновлена 1 строка
 
     affected = conn.execute("DELETE FROM test WHERE value > 150");
-    BOOST_CHECK_EQUAL(affected, 1);
+    BOOST_CHECK_EQUAL(affected, 1); // Удалена 1 строка (со значением 200)
 }
 
+/**
+ * @brief Проверка, что неверный SQL вызывает исключение
+ */
 BOOST_AUTO_TEST_CASE(test_execute_invalid_sql_throws)
 {
     std::string dbPath = getTestDbPath("invalid_test.db");
