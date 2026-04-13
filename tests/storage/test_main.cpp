@@ -1,13 +1,13 @@
-// Определяем название тестового модуля для Boost
 #define BOOST_TEST_MODULE "Vault Server Database Tests"
 
 #include <filesystem>
 #include <iostream>
+
 #include <boost/test/unit_test.hpp>
 
 /**
  * @brief Глобальная фикстура для настройки и очистки тестового окружения
- * 
+ *
  * Выполняется один раз до начала всех тестов и после их завершения.
  * Создаёт директорию для тестовых БД и удаляет все временные файлы.
  */
@@ -22,12 +22,15 @@ struct GlobalTestFixture
         std::filesystem::create_directories("./test_data", ec);
         if (ec)
         {
-            std::cerr << "Warning: Could not create test_data directory: " << ec.message() << std::endl;
+            std::cerr
+                << "Warning: Could not create test_data directory: "
+                << ec.message() << std::endl;
         }
         else
         {
-            std::cout << "Test directory created/verified: "
-                      << std::filesystem::absolute("./test_data") << std::endl;
+            std::cout
+                << "Test directory created/verified: "
+                << std::filesystem::absolute("./test_data") << std::endl;
         }
 
         // Дополнительная проверка с абсолютным путём
@@ -37,7 +40,7 @@ struct GlobalTestFixture
 
     /**
      * @brief Очистка тестовых файлов после завершения всех тестов
-     * 
+     *
      * Удаляет все созданные в процессе тестирования файлы БД
      * и, если возможно, саму директорию test_data.
      */

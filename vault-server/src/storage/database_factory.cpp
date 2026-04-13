@@ -12,7 +12,7 @@ std::unique_ptr<IDatabase> DatabaseFactory::create(DatabaseType type)
     case DatabaseType::Sqlite:
         // Создаём экземпляр SQLite-базы данных.
         // Важно: объект ещё не инициализирован, initialize() будет вызван позже.
-        return std::make_unique<sqlite::SqliteDatabase>();
+        return std::make_unique<SqliteDatabase>();
 
     case DatabaseType::PostgreSQL:
         // PostgreSQL пока не поддерживается, но заглушка оставлена
@@ -33,12 +33,11 @@ std::unique_ptr<IDatabase> DatabaseFactory::createFromConnectionString(
     // Проверяем префикс для определения типа БД.
     if (connectionString.find("sqlite://") == 0)
     {
-        auto db = std::make_unique<sqlite::SqliteDatabase>();
+        auto db = std::make_unique<SqliteDatabase>();
         DatabaseConfig config;
 
         // Извлекаем путь к файлу, отрезая префикс "sqlite://".
-        // substr(8) потому что "sqlite://" занимает 8 символов.
-        config["database"] = connectionString.substr(8);
+        config["database"] = connectionString.substr(9);
 
         // Сразу инициализируем базу данных, чтобы пользователь получил готовый объект.
         db->initialize(config);

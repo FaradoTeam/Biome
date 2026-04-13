@@ -1,4 +1,5 @@
 #pragma once
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -39,28 +40,7 @@ public:
      * @brief Возвращает новое соединение с базой данных.
      * @return unique_ptr к объекту IConnection
      */
-    virtual std::unique_ptr<IConnection> getConnection() = 0;
-
-    /**
-     * @brief Выполняет SQL-запрос и возвращает набор результатов.
-     * @param sql SQL-запрос (обычно SELECT)
-     * @return Результат запроса в виде IResultSet
-     */
-    virtual std::unique_ptr<IResultSet> query(const std::string& sql) = 0;
-
-    /**
-     * @brief Выполняет SQL-команду (INSERT, UPDATE, DELETE и т.д.).
-     * @param sql SQL-команда
-     * @return Количество затронутых строк
-     */
-    virtual int64_t execute(const std::string& sql) = 0;
-
-    /**
-     * @brief Выполняет callback в рамках транзакции.
-     * @param callback Функция, выполняемая внутри транзакции
-     * @note При возникновении исключения выполняется ROLLBACK
-     */
-    virtual void transaction(std::function<void()> callback) = 0;
+    virtual std::shared_ptr<IConnection> connection() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -76,19 +56,14 @@ class IConnection
 public:
     virtual ~IConnection() = default;
 
-    /// Открывает соединение (повторно использует строку подключения)
-    virtual void open(const std::string& connectionString) = 0;
-    /// Закрывает соединение
-    virtual void close() = 0;
-    /// Проверяет, активно ли соединение
-    virtual bool isOpen() const = 0;
-
     /**
      * @brief Подготавливает параметризованный SQL-запрос.
      * @param sql SQL с именованными параметрами (например, :name)
      * @return Подготовленный запрос
      */
-    virtual std::unique_ptr<IStatement> prepareStatement(const std::string& sql) = 0;
+    virtual std::unique_ptr<IStatement> prepareStatement(
+        const std::string& sql
+    ) = 0;
 
     /**
      * @brief Выполняет SQL-команду напрямую.
@@ -104,7 +79,7 @@ public:
     virtual std::unique_ptr<ITransaction> beginTransaction() = 0;
 
     /// Возвращает ID последней вставленной записи
-    virtual int64_t getLastInsertId() = 0;
+    virtual int64_t lastInsertId() = 0;
 
     /// Экранирует спецсимволы в строке для безопасного встраивания в SQL
     virtual std::string escapeString(const std::string& value) = 0;
@@ -166,68 +141,70 @@ public:
     virtual bool next() = 0;
 
     /// Возвращает количество колонок в результате
-    virtual int getColumnCount() const = 0;
+    virtual int columnCount() const = 0;
+
     /// Возвращает имя колонки по индексу
-    virtual std::string getColumnName(int index) const = 0;
+    virtual std::string columnName(int index) const = 0;
+
     /// Возвращает индекс колонки по имени
-    virtual int getColumnIndex(const std::string& name) const = 0;
+    virtual int columnIndex(const std::string& name) const = 0;
 
     /// Проверяет, является ли значение в колонке NULL
     virtual bool isNull(int index) const = 0;
     virtual bool isNull(const std::string& name) const
     {
-        return isNull(getColumnIndex(name));
+        return isNull(columnIndex(name));
     }
 
     /// Возвращает значение как универсальный FieldValue
-    virtual FieldValue getValue(int index) const = 0;
-    virtual FieldValue getValue(const std::string& name) const
+    virtual FieldValue value(int index) const = 0;
+    virtual FieldValue value(const std::string& name) const
     {
-        return getValue(getColumnIndex(name));
+        return value(columnIndex(name));
     }
 
     // --- Типизированные геттеры (по индексу) ---
-    virtual int64_t getInt64(int index) const
+    virtual int64_t valueInt64(int index) const
     {
-        return getValue(index).asInt64();
+        return value(index).asInt64();
     }
-    virtual double getDouble(int index) const
+    virtual double valueDouble(int index) const
     {
-        return getValue(index).asDouble();
+        return value(index).asDouble();
     }
-    virtual std::string getString(int index) const
+    virtual std::string valueString(int index) const
     {
-        return getValue(index).asString();
+        return value(index).asString();
     }
-    virtual Blob getBlob(int index) const
+    virtual Blob valueBlob(int index) const
     {
-        return getValue(index).asBlob();
+        return value(index).asBlob();
     }
-    virtual DateTime getDateTime(int index) const
+    virtual DateTime valueDateTime(int index) const
     {
-        return getValue(index).asDateTime();
+        return value(index).asDateTime();
     }
 
     // --- Типизированные геттеры (по имени) ---
-    virtual int64_t getInt64(const std::string& name) const
+    virtual int64_t valueInt64(const std::string& name) const
     {
-        return getInt64(getColumnIndex(name));
+        return valueInt64(columnIndex(name));
     }
-    virtual double getDouble(const std::string& name) const
+    virtual double valueDouble(const std::string& name) const
     {
-        return getDouble(getColumnIndex(name));
+        return valueDouble(columnIndex(name));
     }
-    virtual std::string getString(const std::string& name) const
+    virtual std::string valueString(const std::string& name) const
     {
-        return getString(getColumnIndex(name));
+        return valueString(columnIndex(name));
     }
-    virtual Blob getBlob(const std::string& name) const
+    virtual Blob valueBlob(const std::string& name) const
     {
-        return getBlob(getColumnIndex(name));
+        return valueBlob(columnIndex(name));
     }
-    virtual DateTime getDateTime(const std::string& name) const
+    virtual DateTime valueDateTime(const std::string& name) const
     {
-        return getDateTime(getColumnIndex(name));
+        return valueDateTime(columnIndex(name));
     }
 };
 
@@ -246,8 +223,10 @@ public:
 
     /// Фиксирует все изменения в транзакции
     virtual void commit() = 0;
+
     /// Отменяет все изменения в транзакции
     virtual void rollback() = 0;
+
     /// Активна ли транзакция (не была завершена)
     virtual bool isActive() const = 0;
 };

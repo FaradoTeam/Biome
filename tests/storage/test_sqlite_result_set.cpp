@@ -1,255 +1,249 @@
-#include <boost/test/unit_test.hpp>
-#include "test_fixture.h"
-#include "vault-server/src/storage/sqlite/sqlite_database.h"
+#include <filesystem>
 
-using namespace db::sqlite;
+#include <boost/test/unit_test.hpp>
+
+#include "vault-server/src/storage/sqlite/sqlite_database.h"
 
 namespace db::test
 {
 
-// Тестовый набор для SqliteResultSet
 BOOST_AUTO_TEST_SUITE(SqliteResultSetTests)
 
-/**
- * @brief Тест: навигация по строкам результата
- * 
- * Проверяет работу next() для последовательного перебора строк.
- */
+struct ResultSetTestFixture
+{
+    ResultSetTestFixture()
+    {
+        std::error_code ec;
+        std::filesystem::remove("./test_data/resultset_test.db", ec);
+
+        SqliteDatabase db;
+        DatabaseConfig config;
+        config["database"] = "./test_data/resultset_test.db";
+        db.initialize(config);
+        conn = db.connection();
+
+        conn->execute(
+            "CREATE TABLE resultset_test ("
+            "id INTEGER PRIMARY KEY, "
+            "int_col INTEGER, "
+            "float_col REAL, "
+            "text_col TEXT, "
+            "null_col INTEGER, "
+            "blob_col BLOB)"
+        );
+
+        conn->execute(
+            "INSERT INTO resultset_test (id, int_col, float_col, text_col, null_col, blob_col) "
+            "VALUES (1, 42, 3.14159, 'Hello World', NULL, X'010203FF')"
+        );
+
+        conn->execute(
+            "INSERT INTO resultset_test (id, int_col, float_col, text_col, null_col, blob_col) "
+            "VALUES (2, 100, 2.71828, 'Second Row', NULL, NULL)"
+        );
+
+        db.shutdown();
+
+        // Переоткрываем для тестов
+        db.initialize(config);
+        conn = db.connection();
+    }
+
+    ~ResultSetTestFixture()
+    {
+        conn.reset();
+        std::error_code ec;
+        std::filesystem::remove("./test_data/resultset_test.db", ec);
+    }
+
+    std::shared_ptr<IConnection> conn;
+};
+
 BOOST_FIXTURE_TEST_CASE(test_next_and_row_iteration, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT id FROM resultset_test ORDER BY id");
+    auto stmt = conn->prepareStatement("SELECT id FROM resultset_test ORDER BY id");
+    auto rs = stmt->executeQuery();
 
-    // Первая строка (id=1)
     BOOST_CHECK(rs->next());
-    BOOST_CHECK_EQUAL(rs->getInt64(0), 1);
+    BOOST_CHECK_EQUAL(rs->valueInt64(0), 1);
 
-    // Вторая строка (id=2)
     BOOST_CHECK(rs->next());
-    BOOST_CHECK_EQUAL(rs->getInt64(0), 2);
+    BOOST_CHECK_EQUAL(rs->valueInt64(0), 2);
 
-    // Больше строк нет
     BOOST_CHECK(!rs->next());
 }
 
-/**
- * @brief Тест: получение количества колонок
- * 
- * Проверяет, что getColumnCount() возвращает правильное число.
- */
-BOOST_FIXTURE_TEST_CASE(test_get_column_count, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_column_count, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT * FROM resultset_test");
-    BOOST_CHECK_EQUAL(rs->getColumnCount(), 6);  // В таблице 6 колонок
+    auto stmt = conn->prepareStatement("SELECT * FROM resultset_test");
+    auto rs = stmt->executeQuery();
+    BOOST_CHECK_EQUAL(rs->columnCount(), 6);
 }
 
-/**
- * @brief Тест: получение имени и индекса колонки
- * 
- * Проверяет преобразование между именем колонки и её индексом.
- */
-BOOST_FIXTURE_TEST_CASE(test_get_column_name_and_index, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_column_name_and_index, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT id, int_col, text_col FROM resultset_test");
+    auto stmt = conn->prepareStatement("SELECT id, int_col, text_col FROM resultset_test");
+    auto rs = stmt->executeQuery();
 
-    // Проверяем имена колонок по индексу
-    BOOST_CHECK_EQUAL(rs->getColumnName(0), "id");
-    BOOST_CHECK_EQUAL(rs->getColumnName(1), "int_col");
-    BOOST_CHECK_EQUAL(rs->getColumnName(2), "text_col");
+    BOOST_CHECK_EQUAL(rs->columnName(0), "id");
+    BOOST_CHECK_EQUAL(rs->columnName(1), "int_col");
+    BOOST_CHECK_EQUAL(rs->columnName(2), "text_col");
 
-    // Проверяем индексы по имени
-    BOOST_CHECK_EQUAL(rs->getColumnIndex("id"), 0);
-    BOOST_CHECK_EQUAL(rs->getColumnIndex("int_col"), 1);
-    BOOST_CHECK_EQUAL(rs->getColumnIndex("text_col"), 2);
+    BOOST_CHECK_EQUAL(rs->columnIndex("id"), 0);
+    BOOST_CHECK_EQUAL(rs->columnIndex("int_col"), 1);
+    BOOST_CHECK_EQUAL(rs->columnIndex("text_col"), 2);
 }
 
-/**
- * @brief Тест: получение значения по индексу
- * 
- * Проверяет универсальный метод getValue() с указанием индекса.
- */
-BOOST_FIXTURE_TEST_CASE(test_get_value_by_index, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_value_by_index, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT int_col, float_col, text_col FROM resultset_test WHERE id = 1");
+    auto stmt = conn->prepareStatement(
+        "SELECT int_col, float_col, text_col FROM resultset_test WHERE id = 1"
+    );
+    auto rs = stmt->executeQuery();
     rs->next();
 
-    // Целочисленное значение
-    FieldValue intVal = rs->getValue(0);
+    FieldValue intVal = rs->value(0);
     BOOST_CHECK_EQUAL(intVal.asInt64(), 42);
 
-    // Вещественное значение
-    FieldValue floatVal = rs->getValue(1);
+    FieldValue floatVal = rs->value(1);
     BOOST_CHECK_CLOSE(floatVal.asDouble(), 3.14159, 0.00001);
 
-    // Текстовое значение
-    FieldValue textVal = rs->getValue(2);
+    FieldValue textVal = rs->value(2);
     BOOST_CHECK_EQUAL(textVal.asString(), "Hello World");
 }
 
-/**
- * @brief Тест: получение значения по имени колонки
- * 
- * Проверяет универсальный метод getValue() с указанием имени.
- */
-BOOST_FIXTURE_TEST_CASE(test_get_value_by_name, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_value_by_name, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT int_col, float_col, text_col FROM resultset_test WHERE id = 1");
+    auto stmt = conn->prepareStatement(
+        "SELECT int_col, float_col, text_col FROM resultset_test WHERE id = 1"
+    );
+    auto rs = stmt->executeQuery();
     rs->next();
 
-    FieldValue intVal = rs->getValue("int_col");
+    FieldValue intVal = rs->value("int_col");
     BOOST_CHECK_EQUAL(intVal.asInt64(), 42);
 
-    FieldValue floatVal = rs->getValue("float_col");
+    FieldValue floatVal = rs->value("float_col");
     BOOST_CHECK_CLOSE(floatVal.asDouble(), 3.14159, 0.00001);
 
-    FieldValue textVal = rs->getValue("text_col");
+    FieldValue textVal = rs->value("text_col");
     BOOST_CHECK_EQUAL(textVal.asString(), "Hello World");
 }
 
-/**
- * @brief Тест: типобезопасные геттеры
- * 
- * Проверяет методы getInt64(), getDouble(), getString()
- * как по индексу, так и по имени колонки.
- */
-BOOST_FIXTURE_TEST_CASE(test_type_safe_getters, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_typed_getters, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT int_col, float_col, text_col FROM resultset_test WHERE id = 1");
+    auto stmt = conn->prepareStatement(
+        "SELECT int_col, float_col, text_col FROM resultset_test WHERE id = 1"
+    );
+    auto rs = stmt->executeQuery();
     rs->next();
 
-    // Целые числа
-    BOOST_CHECK_EQUAL(rs->getInt64(0), 42);
-    BOOST_CHECK_EQUAL(rs->getInt64("int_col"), 42);
+    BOOST_CHECK_EQUAL(rs->valueInt64(0), 42);
+    BOOST_CHECK_EQUAL(rs->valueInt64("int_col"), 42);
 
-    // Числа с плавающей точкой
-    BOOST_CHECK_CLOSE(rs->getDouble(1), 3.14159, 0.00001);
-    BOOST_CHECK_CLOSE(rs->getDouble("float_col"), 3.14159, 0.00001);
+    BOOST_CHECK_CLOSE(rs->valueDouble(1), 3.14159, 0.00001);
+    BOOST_CHECK_CLOSE(rs->valueDouble("float_col"), 3.14159, 0.00001);
 
-    // Строки
-    BOOST_CHECK_EQUAL(rs->getString(2), "Hello World");
-    BOOST_CHECK_EQUAL(rs->getString("text_col"), "Hello World");
+    BOOST_CHECK_EQUAL(rs->valueString(2), "Hello World");
+    BOOST_CHECK_EQUAL(rs->valueString("text_col"), "Hello World");
 }
 
-/**
- * @brief Тест: проверка на NULL
- * 
- * Проверяет, что isNull() корректно определяет NULL значения.
- */
 BOOST_FIXTURE_TEST_CASE(test_is_null, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT null_col FROM resultset_test WHERE id = 1");
+    auto stmt = conn->prepareStatement(
+        "SELECT null_col FROM resultset_test WHERE id = 1"
+    );
+    auto rs = stmt->executeQuery();
     rs->next();
 
     BOOST_CHECK(rs->isNull(0));
     BOOST_CHECK(rs->isNull("null_col"));
 }
 
-/**
- * @brief Тест: получение BLOB данных
- * 
- * Проверяет чтение бинарных данных из БД.
- */
-BOOST_FIXTURE_TEST_CASE(test_get_blob, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_blob_value, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT blob_col FROM resultset_test WHERE id = 1");
+    auto stmt = conn->prepareStatement(
+        "SELECT blob_col FROM resultset_test WHERE id = 1"
+    );
+    auto rs = stmt->executeQuery();
     rs->next();
 
-    // Ожидаемые данные: 0x01, 0x02, 0x03, 0xFF
     Blob expected = { 0x01, 0x02, 0x03, 0xFF };
-    
-    // Чтение по индексу
-    Blob actual = rs->getBlob(0);
-    BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(), actual.begin(), actual.end());
 
-    // Чтение по имени
-    Blob actualByName = rs->getBlob("blob_col");
-    BOOST_CHECK_EQUAL_COLLECTIONS(expected.begin(), expected.end(), actualByName.begin(), actualByName.end());
+    Blob actual = rs->valueBlob(0);
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        expected.begin(), expected.end(),
+        actual.begin(), actual.end()
+    );
+
+    Blob actualByName = rs->valueBlob("blob_col");
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        expected.begin(), expected.end(),
+        actualByName.begin(), actualByName.end()
+    );
 }
 
-/**
- * @brief Тест: NULL BLOB
- * 
- * Проверяет, что попытка получить NULL как BLOB вызывает исключение.
- */
-BOOST_FIXTURE_TEST_CASE(test_null_blob, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_null_blob_throws, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT blob_col FROM resultset_test WHERE id = 2");
+    auto stmt = conn->prepareStatement(
+        "SELECT blob_col FROM resultset_test WHERE id = 2"
+    );
+    auto rs = stmt->executeQuery();
     rs->next();
 
-    BOOST_CHECK(rs->isNull(0));  // Значение NULL
-    BOOST_CHECK_THROW(rs->getBlob(0), std::runtime_error);  // Исключение при попытке чтения
+    BOOST_CHECK(rs->isNull(0));
+    BOOST_CHECK_THROW(rs->valueBlob(0), std::runtime_error);
 }
 
-/**
- * @brief Тест: невалидный индекс колонки
- * 
- * Проверяет обработку ошибок при доступе по несуществующему индексу.
- */
-BOOST_FIXTURE_TEST_CASE(test_invalid_column_index, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_invalid_column_index_throws, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT id FROM resultset_test");
+    auto stmt = conn->prepareStatement("SELECT id FROM resultset_test");
+    auto rs = stmt->executeQuery();
     rs->next();
 
-    BOOST_CHECK_THROW(rs->getColumnName(100), std::runtime_error);
-    BOOST_CHECK_THROW(rs->getValue(100), std::runtime_error);
+    BOOST_CHECK_THROW(rs->columnName(100), std::out_of_range);
+    BOOST_CHECK_THROW(rs->value(100), std::runtime_error);
 }
 
-/**
- * @brief Тест: невалидное имя колонки
- * 
- * Проверяет обработку ошибок при доступе по несуществующему имени.
- */
-BOOST_FIXTURE_TEST_CASE(test_invalid_column_name, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_invalid_column_name_throws, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT id FROM resultset_test");
-    rs->next();
+    auto stmt = conn->prepareStatement("SELECT id FROM resultset_test");
+    auto rs = stmt->executeQuery();
 
-    BOOST_CHECK_THROW(rs->getColumnIndex("non_existent"), std::runtime_error);
-    BOOST_CHECK_THROW(rs->getValue("non_existent"), std::runtime_error);
+    BOOST_CHECK_THROW(rs->columnIndex("non_existent"), std::runtime_error);
+    BOOST_CHECK_THROW(rs->value("non_existent"), std::runtime_error);
 }
 
-/**
- * @brief Тест: кэширование индексов колонок
- * 
- * Проверяет, что повторное получение индекса по имени
- * использует кэш для оптимизации.
- */
-BOOST_FIXTURE_TEST_CASE(test_column_index_caching, ResultSetTestFixture)
+BOOST_FIXTURE_TEST_CASE(test_value_before_next_throws, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT id, int_col, text_col FROM resultset_test");
-
-    int idx1 = rs->getColumnIndex("text_col");
-    int idx2 = rs->getColumnIndex("text_col");
-
-    BOOST_CHECK_EQUAL(idx1, idx2);  // Оба раза вернулся одинаковый индекс
-    BOOST_CHECK_EQUAL(idx1, 2);     // Индекс колонки text_col
+    auto stmt = conn->prepareStatement("SELECT id FROM resultset_test");
+    auto rs = stmt->executeQuery();
+    // Не вызывали rs->next()
+    BOOST_CHECK_THROW(rs->value(0), std::runtime_error);
 }
 
-/**
- * @brief Тест: вызов getValue() до next() вызывает исключение
- * 
- * Проверяет, что нельзя читать данные до первого вызова next().
- */
-BOOST_FIXTURE_TEST_CASE(test_get_value_before_next_throws, ResultSetTestFixture)
-{
-    auto rs = db.query("SELECT id FROM resultset_test");
-    // rs->next() не вызывался
-    BOOST_CHECK_THROW(rs->getValue(0), std::runtime_error);
-}
-
-/**
- * @brief Тест: несоответствие типов вызывает исключение
- * 
- * Проверяет, что попытка прочитать число как строку (и наоборот)
- * приводит к исключению.
- */
 BOOST_FIXTURE_TEST_CASE(test_type_mismatch_throws, ResultSetTestFixture)
 {
-    auto rs = db.query("SELECT text_col FROM resultset_test WHERE id = 1");
+    auto stmt = conn->prepareStatement(
+        "SELECT text_col FROM resultset_test WHERE id = 1"
+    );
+    auto rs = stmt->executeQuery();
     rs->next();
 
-    // Пытаемся прочитать текст как число
-    BOOST_CHECK_THROW(rs->getInt64(0), std::runtime_error);
-    BOOST_CHECK_THROW(rs->getDouble(0), std::runtime_error);
+    BOOST_CHECK_THROW(rs->valueInt64(0), std::runtime_error);
+    BOOST_CHECK_THROW(rs->valueDouble(0), std::runtime_error);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_column_index_caching, ResultSetTestFixture)
+{
+    auto stmt = conn->prepareStatement("SELECT id, int_col, text_col FROM resultset_test");
+    auto rs = stmt->executeQuery();
+
+    int idx1 = rs->columnIndex("text_col");
+    int idx2 = rs->columnIndex("text_col");
+
+    BOOST_CHECK_EQUAL(idx1, idx2);
+    BOOST_CHECK_EQUAL(idx1, 2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

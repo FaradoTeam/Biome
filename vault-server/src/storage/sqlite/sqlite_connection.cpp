@@ -1,150 +1,143 @@
+#include <filesystem>
 #include <stdexcept>
 
+#include <sqlite3.h>
+
 #include "sqlite_connection.h"
-#include "sqlite_database.h"
 #include "sqlite_statement.h"
 #include "sqlite_transaction.h"
 
-namespace db::sqlite
+namespace
+{
+std::string normalizePath(const std::string& dbPath)
+{
+    // Нормализуем путь к файлу
+    std::string result = dbPath;
+
+    // Удаляем лишние слеши
+    size_t pos;
+    while ((pos = result.find("//")) != std::string::npos)
+    {
+        result.replace(pos, 2, "/");
+    }
+
+    // Удаляем префикс "./" если он есть
+    if (result.find("./") == 0)
+    {
+        result = result.substr(2);
+    }
+
+    // Создаём директорию если нужно
+    std::filesystem::path path(result);
+    auto parent = path.parent_path();
+    if (!parent.empty())
+    {
+        std::error_code ec;
+        std::filesystem::create_directories(parent, ec);
+    }
+
+    return result;
+}
+} // namespace
+
+namespace db
 {
 
-SqliteConnection::SqliteConnection(SqliteDatabase* db)
-    : m_db(db)
+SqliteConnection::SqliteConnection(const std::string& dbPath)
 {
-    if (!m_db)
+    // Нормализуем путь к файлу
+    const std::string normalizedPath = normalizePath(dbPath);
+
+    const int rc = sqlite3_open(normalizedPath.c_str(), &m_db);
+    if (rc != SQLITE_OK)
     {
-        throw std::runtime_error("Invalid database pointer");
+        const std::string error = sqlite3_errmsg(m_db);
+        sqlite3_close(m_db);
+        m_db = nullptr;
+        throw std::runtime_error("Failed to open database '" + normalizedPath + "': " + error);
     }
-    // Соединение считается открытым сразу после создания.
-    // В SQLite нет явного понятия "открыть соединение" — есть только
-    // открытие БД.
-    m_isOpen = true;
 }
 
 SqliteConnection::~SqliteConnection()
 {
-    try
+    if (m_db)
     {
-        close();
-    }
-    catch (...)
-    {
-        // Игнорируем исключения в деструкторе.
-        // TODO: Добавить лог.
+        sqlite3_close(m_db);
     }
 }
 
-void SqliteConnection::open(const std::string& /*connectionString*/)
+void SqliteConnection::checkError(int rc, const std::string& operation) const
 {
-    // Для SQLite этот метод является заглушкой, потому что:
-    // 1) База данных уже открыта в SqliteDatabase::initialize().
-    // 2) Строка подключения уже была использована там же.
-    // Метод оставлен для соблюдения интерфейса IConnection.
-
-    m_isOpen = true;
-}
-
-void SqliteConnection::close()
-{
-    // "Закрытие соединения" для SQLite означает лишь сброс флага.
-    // Реальное закрытие БД происходит в SqliteDatabase::shutdown().
-    m_isOpen = false;
-}
-
-bool SqliteConnection::isOpen() const
-{
-    return m_isOpen;
+    if (rc != SQLITE_OK
+        && rc != SQLITE_ROW
+        && rc != SQLITE_DONE)
+    {
+        throw std::runtime_error(
+            operation + " failed: " + sqlite3_errmsg(m_db)
+        );
+    }
 }
 
 std::unique_ptr<IStatement> SqliteConnection::prepareStatement(
     const std::string& sql
 )
 {
-    if (!m_isOpen)
-    {
-        throw std::runtime_error("Connection is not open");
-    }
-
-    sqlite3* handle = m_db->getHandle();
-    sqlite3_stmt* stmt = nullptr;
-    const char* tail = nullptr;
-
-    // Подготавливаем параметризованный запрос.
-    // SQLite сам разберёт SQL и выделит места под параметры (:name, ? и т.д.).
-    const int rc = sqlite3_prepare_v2(
-        handle,
-        sql.c_str(),
-        static_cast<int>(sql.size()),
-        &stmt,
-        &tail
-    );
-
-    if (rc != SQLITE_OK)
-    {
-        throw std::runtime_error(
-            "Failed to prepare statement: " + std::string(sqlite3_errmsg(handle))
-        );
-    }
-
-    // SqliteStatement будет владеть stmt и удалит его в деструкторе.
-    return std::make_unique<SqliteStatement>(handle, stmt);
+    return std::make_unique<SqliteStatement>(*this, sql);
 }
 
 int64_t SqliteConnection::execute(const std::string& sql)
 {
-    if (!m_isOpen)
-    {
-        throw std::runtime_error("Connection is not open");
-    }
-    // Делегируем выполнение базовому объекту БД.
-    return m_db->execute(sql);
-}
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
 
-std::unique_ptr<IResultSet> SqliteConnection::executeQuery(
-    const std::string& sql
-)
-{
-    // Вспомогательный метод для удобства: сразу выполняем SELECT.
-    return m_db->query(sql);
+    char* errMsg = nullptr;
+    const int rc = sqlite3_exec(m_db, sql.c_str(), nullptr, nullptr, &errMsg);
+
+    if (rc != SQLITE_OK)
+    {
+        const std::string error(errMsg ? errMsg : "Unknown error");
+        sqlite3_free(errMsg);
+        throw std::runtime_error("Execute failed: " + error);
+    }
+
+    return sqlite3_changes(m_db);
 }
 
 std::unique_ptr<ITransaction> SqliteConnection::beginTransaction()
 {
-    if (!m_isOpen)
-    {
-        throw std::runtime_error("Connection is not open");
-    }
-
-    // Начинаем транзакцию через SQL-команду.
-    execute("BEGIN TRANSACTION");
-    // Возвращаем объект-обёртку, который будет управлять транзакцией.
-    return std::make_unique<SqliteTransaction>(this);
+    return std::make_unique<SqliteTransaction>(*this);
 }
 
-int64_t SqliteConnection::getLastInsertId()
+int64_t SqliteConnection::lastInsertId()
 {
-    if (!m_isOpen)
-    {
-        throw std::runtime_error("Connection is not open");
-    }
-    // sqlite3_last_insert_rowid — потокобезопасная функция,
-    // возвращает ROWID последней вставки в рамках текущего соединения.
-    return sqlite3_last_insert_rowid(m_db->getHandle());
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return sqlite3_last_insert_rowid(m_db);
 }
 
 std::string SqliteConnection::escapeString(const std::string& value)
 {
-    if (!m_isOpen)
+    struct EscapedString
     {
-        throw std::runtime_error("Connection is not open");
-    }
+        char* ptr;
+        EscapedString(char* p)
+            : ptr(p)
+        {
+        }
+        ~EscapedString()
+        {
+            if (ptr)
+                sqlite3_free(ptr);
+        }
+        EscapedString(const EscapedString&) = delete;
+        EscapedString& operator=(const EscapedString&) = delete;
+        EscapedString(EscapedString&&) = delete;
+        EscapedString& operator=(EscapedString&&) = delete;
+    };
 
-    // sqlite3_mprintf("%q") — экранирует строку для безопасного встраивания в SQL.
-    // Это лучше, чем ручное экранирование, так как учитывает особенности SQLite.
-    char* escaped = sqlite3_mprintf("%q", value.c_str());
-    const std::string result(escaped);
-    sqlite3_free(escaped); // Важно: sqlite3_mprintf использует свою кучу.
-    return result;
+    EscapedString escaped(sqlite3_mprintf("%q", value.c_str()));
+    if (!escaped.ptr)
+        throw std::runtime_error("Failed to escape string");
+
+    return std::string(escaped.ptr);
 }
 
-} // namespace db::sqlite
+} // namespace db

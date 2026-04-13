@@ -1,49 +1,53 @@
 #pragma once
-#include <cstddef>
+
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
+#include <string>
 
-#include <sqlite3.h>
+#include "idatabase.h"
+#include "sqlite_result_set.h"
 
-#include "../idatabase.h"
+struct sqlite3;
 
-namespace db::sqlite
+namespace db
 {
 
-class SqliteDatabase;
+class SqliteStatement;
 
-/**
- * @brief Реализация IConnection для SQLite.
- *
- * Предоставляет методы для работы с соединением, подготовки запросов
- * и транзакций. Каждый экземпляр использует общий SqliteDatabase.
- */
 class SqliteConnection : public IConnection
 {
 public:
-    /**
-     * @brief Конструктор.
-     * @param db Указатель на родительский объект базы данных (не владеет)
-     */
-    explicit SqliteConnection(SqliteDatabase* db);
+    explicit SqliteConnection(const std::string& dbPath);
     ~SqliteConnection() override;
 
-    void open(const std::string& connectionString) override; // Для SQLite — no-op
-    void close() override;
-    bool isOpen() const override;
+    SqliteConnection(const SqliteConnection&) = delete;
+    SqliteConnection& operator=(const SqliteConnection&) = delete;
+    SqliteConnection(SqliteConnection&&) = delete;
+    SqliteConnection& operator=(SqliteConnection&&) = delete;
 
     std::unique_ptr<IStatement> prepareStatement(const std::string& sql) override;
     int64_t execute(const std::string& sql) override;
 
-    /// Вспомогательный метод для выполнения SELECT (используется внутри)
-    std::unique_ptr<IResultSet> executeQuery(const std::string& sql);
     std::unique_ptr<ITransaction> beginTransaction() override;
 
-    int64_t getLastInsertId() override;
+    int64_t lastInsertId() override;
+
     std::string escapeString(const std::string& value) override;
 
 private:
-    SqliteDatabase* m_db = nullptr; ///< Родительская БД (не владеет)
-    bool m_isOpen = false; ///< Флаг открытого соединения
+    friend class SqliteStatement;
+    friend class SqliteTransaction;
+    friend class SqliteResultSet;
+
+private:
+    void checkError(int rc, const std::string& operation) const;
+    sqlite3* handle() const { return m_db; }
+    std::shared_mutex& mutex() { return m_mutex; }
+
+private:
+    sqlite3* m_db = { nullptr };
+    mutable std::shared_mutex m_mutex;
 };
 
-} // namespace db::sqlite
+} // namespace db

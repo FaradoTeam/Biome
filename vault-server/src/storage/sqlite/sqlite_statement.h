@@ -1,32 +1,34 @@
 #pragma once
+
+#include <memory>
 #include <string>
 #include <unordered_map>
 
-#include <sqlite3.h>
+#include "idatabase.h"
 
-#include "../idatabase.h"
+struct sqlite3_stmt;
 
-namespace db::sqlite
+namespace db
 {
 
-/**
- * @brief Реализация IStatement для SQLite.
- *
- * Поддерживает именованные параметры (например, :id, :name)
- * и автоматическое кэширование индексов параметров.
- */
+class SqliteConnection;
+
 class SqliteStatement : public IStatement
 {
 public:
-    SqliteStatement(sqlite3* db, sqlite3_stmt* stmt);
+    SqliteStatement(SqliteConnection& conn, const std::string& sql);
     ~SqliteStatement() override;
+
+    SqliteStatement(const SqliteStatement&) = delete;
+    SqliteStatement& operator=(const SqliteStatement&) = delete;
+    SqliteStatement(SqliteStatement&&) = delete;
+    SqliteStatement& operator=(SqliteStatement&&) = delete;
 
     int64_t execute() override;
     std::unique_ptr<IResultSet> executeQuery() override;
 
     void reset() override;
 
-    // --- Привязка значений ---
     void bindNull(const std::string& name) override;
     void bindInt64(const std::string& name, int64_t value) override;
     void bindDouble(const std::string& name, double value) override;
@@ -35,19 +37,13 @@ public:
     void bindDateTime(const std::string& name, const DateTime& value) override;
 
 private:
-    /**
-     * @brief Возвращает индекс параметра по имени (с кэшированием).
-     * @param name Имя параметра (например, ":id")
-     * @return Индекс (начиная с 1)
-     * @throws Если параметр не найден
-     */
     int getParamIndex(const std::string& name);
+    void checkError(int rc, const std::string& operation) const;
 
 private:
-    sqlite3* m_db = nullptr; ///< Дескриптор БД
-    sqlite3_stmt* m_stmt = nullptr; ///< Подготовленный запрос SQLite
-    std::unordered_map<std::string, int> m_paramCache; ///< Кэш "имя → индекс"
-    bool m_executed = false; ///< Был ли уже выполнен запрос
+    SqliteConnection& m_connection;
+    sqlite3_stmt* m_stmt = { nullptr };
+    std::unordered_map<std::string, int> m_paramIndexCache;
 };
 
-} // namespace db::sqlite
+} // namespace db

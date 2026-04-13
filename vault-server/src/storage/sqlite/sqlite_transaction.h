@@ -1,37 +1,30 @@
 #pragma once
-#include <memory>
 
-#include "../idatabase.h"
+#include "idatabase.h"
 
-namespace db::sqlite
+namespace db
 {
 
 class SqliteConnection;
 
-/**
- * @brief Реализация ITransaction для SQLite.
- *
- * При создании автоматически выполняется BEGIN TRANSACTION.
- * Деструктор не вызывает rollback автоматически — это ответственность пользователя.
- */
 class SqliteTransaction : public ITransaction
 {
 public:
-    /**
-     * @brief Конструктор.
-     * @param conn Активное соединение (не владеет)
-     * @note Сразу выполняет BEGIN TRANSACTION через conn->execute()
-     */
-    explicit SqliteTransaction(SqliteConnection* conn);
+    explicit SqliteTransaction(SqliteConnection& conn);
     ~SqliteTransaction() override;
 
-    void commit() override; ///< Выполняет COMMIT
-    void rollback() override; ///< Выполняет ROLLBACK
-    bool isActive() const override { return m_active; }
+    SqliteTransaction(const SqliteTransaction&) = delete;
+    SqliteTransaction& operator=(const SqliteTransaction&) = delete;
+    SqliteTransaction(SqliteTransaction&&) = delete;
+    SqliteTransaction& operator=(SqliteTransaction&&) = delete;
+
+    void commit() override;
+    void rollback() override;
+    bool isActive() const override;
 
 private:
-    SqliteConnection* m_conn; ///< Соединение (не владеет)
-    bool m_active = true; ///< Активна ли транзакция
+    SqliteConnection& m_connection;
+    bool m_active = true;
 };
 
-} // namespace db::sqlite
+} // namespace db

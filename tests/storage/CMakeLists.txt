@@ -37,7 +37,8 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/storage/
     ${Boost_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
 )

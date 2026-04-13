@@ -1,19 +1,15 @@
+#include <stdexcept>
+
 #include "sqlite_transaction.h"
 #include "sqlite_connection.h"
 
-namespace db::sqlite
+namespace db
 {
 
-SqliteTransaction::SqliteTransaction(SqliteConnection* conn)
-    : m_conn(conn)
+SqliteTransaction::SqliteTransaction(SqliteConnection& conn)
+    : m_connection(conn)
 {
-    if (!m_conn)
-    {
-        throw std::runtime_error("Invalid connection");
-    }
-    // Важно: транзакция считается активной сразу после создания.
-    // BEGIN TRANSACTION уже был выполнен в SqliteConnection::beginTransaction().
-    m_active = true;
+    m_connection.execute("BEGIN TRANSACTION");
 }
 
 SqliteTransaction::~SqliteTransaction()
@@ -22,16 +18,11 @@ SqliteTransaction::~SqliteTransaction()
     {
         try
         {
-            // Если пользователь не вызвал commit() или rollback() явно,
-            // автоматически откатываем транзакцию при разрушении объекта.
-            // Это безопаснее, чем автоматический commit (может нарушить
-            // целостность).
             rollback();
         }
         catch (...)
         {
-            // Игнорируем исключения в деструкторе.
-            // TODO: здесь хорошо бы залогировать ошибку.
+            // Деструктор не должен бросать исключений
         }
     }
 }
@@ -40,13 +31,11 @@ void SqliteTransaction::commit()
 {
     if (!m_active)
     {
-        // Повторный commit или rollback запрещены.
         throw std::runtime_error("Transaction is not active");
     }
 
-    // Фиксируем все изменения в БД.
-    m_conn->execute("COMMIT");
-    m_active = false; // Транзакция больше не активна.
+    m_connection.execute("COMMIT");
+    m_active = false;
 }
 
 void SqliteTransaction::rollback()
@@ -56,9 +45,13 @@ void SqliteTransaction::rollback()
         throw std::runtime_error("Transaction is not active");
     }
 
-    // Отменяем все изменения, сделанные в рамках этой транзакции.
-    m_conn->execute("ROLLBACK");
+    m_connection.execute("ROLLBACK");
     m_active = false;
 }
 
-} // namespace db::sqlite
+bool SqliteTransaction::isActive() const
+{
+    return m_active;
+}
+
+} // namespace db
