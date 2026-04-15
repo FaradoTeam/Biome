@@ -22,7 +22,7 @@ void registerMigrations(db::MigrationManager& manager)
     // Регистрируем миграцию v1
     manager.registerMigration(std::make_unique<db::migrations::V1_InitialSchema>());
 
-    // Здесь будут регистрироваться последующие миграции
+    // TODO: Здесь будут регистрироваться последующие миграции
     // manager.registerMigration(std::make_unique<db::migrations::V2_SomeChanges>());
 }
 
@@ -148,12 +148,12 @@ int main(int argc, char* argv[])
         // Инициализация базы данных
         db::DatabaseConfig config;
         config["database"] = variables["database"].as<std::string>();
-        
+
         auto database = db::DatabaseFactory::create(db::DatabaseType::Sqlite);
         database->initialize(config);
-        
+
         auto connection = database->connection();
-        
+
         // Создание менеджера миграций
         db::MigrationManager manager(connection);
         manager.initializeSchemaTable();
@@ -163,26 +163,20 @@ int main(int argc, char* argv[])
         if (variables.count("current"))
         {
             showCurrentVersion(manager);
-            return EXIT_SUCCESS;
         }
-
-        if (variables.count("list"))
+        else if (variables.count("list"))
         {
             listMigrations(manager);
-            return EXIT_SUCCESS;
         }
-
-        if (variables.count("upgrade-all"))
+        else if (variables.count("upgrade-all"))
         {
             LOG_INFO << "Обновление базы данных до последней версии...";
             manager.upgradeAll();
             LOG_INFO
                 << "База данных успешно обновлена до версии "
                 << manager.getCurrentVersion();
-            return EXIT_SUCCESS;
         }
-
-        if (variables.count("upgrade"))
+        else if (variables.count("upgrade"))
         {
             const unsigned int oldVersion = manager.getCurrentVersion();
             const unsigned int maxVersion = manager.getMaxVersion();
@@ -201,8 +195,7 @@ int main(int argc, char* argv[])
                 << "База данных успешно обновлена до версии "
                 << manager.getCurrentVersion();
         }
-
-        if (variables.count("downgrade"))
+        else if (variables.count("downgrade"))
         {
             const unsigned int oldVersion = manager.getCurrentVersion();
 
