@@ -1,22 +1,14 @@
-// Автоматически сгенерированный общий заголовок DTO
-// Сгенерированный: {{ generated_at }}
-// НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
-
 #pragma once
 
 {% for include in includes %}
 {{ include }}
 {% endfor %}
 
-namespace farado
-{
 namespace dto
 {
 
-// Forward declarations
 {% for name in dto_names %}
 class {{ name }};
 {% endfor %}
 
 } // namespace dto
-} // namespace farado

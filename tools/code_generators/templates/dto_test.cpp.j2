@@ -1,13 +1,9 @@
-// Автоматически сгенерированный тест для {{ dto.name }}
-// Сгенерированный: {{ generated_at }}
-// НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
-
 {% for include in includes %}
 {{ include }}
 {% endfor %}
 #include "common/helpers/time_helpers.h"
 
-using namespace farado::dto;
+using namespace dto;
 
 BOOST_AUTO_TEST_SUITE({{ dto.name }}Tests)
 

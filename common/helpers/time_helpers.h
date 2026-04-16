@@ -6,8 +6,6 @@
 #include <ostream>
 #include <sstream>
 
-namespace farado
-{
 namespace dto
 {
 
@@ -30,4 +28,3 @@ inline std::chrono::system_clock::time_point secondsToTimePoint(int64_t seconds)
 }
 
 } // namespace dto
-} // namespace farado

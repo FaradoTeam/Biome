@@ -6,8 +6,6 @@
 #include <ostream>
 #include <sstream>
 
-namespace farado
-{
 namespace dto
 {
 
@@ -20,7 +18,6 @@ inline std::string timePointToString(const std::chrono::system_clock::time_point
 }
 
 } // namespace dto
-} // namespace farado
 
 namespace std
 {
@@ -29,7 +26,7 @@ namespace chrono
 
 inline ostream& operator<<(ostream& stream, const system_clock::time_point& timePoint)
 {
-    stream << farado::dto::timePointToString(timePoint);
+    stream << dto::timePointToString(timePoint);
     return stream;
 }
 

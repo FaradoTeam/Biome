@@ -1,7 +1,3 @@
-// Автоматически сгенерированный DTO: {{ dto.name }}
-// Сгенерирован: {{ generated_at }}
-// НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
-
 #pragma once
 
 {% for include in includes %}
@@ -15,8 +11,6 @@ class {{ dep }};
 {% endfor %}
 {% endif %}
 
-namespace farado
-{
 namespace dto
 {
 
@@ -90,4 +84,3 @@ inline std::ostream& operator<<(std::ostream& os, const {{ dto.name }}& dto)
 }
 
 } // namespace dto
-} // namespace farado
