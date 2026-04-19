@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.15.7)
 # Опции сборки проекта
 # ---------------------------------------------------------------------------- #
 option(BUILD_VAULT_SERVER "Build Farado Vault Server" ON)
+option(BUILD_VAULT_Client "Build Client" ON)
 option(BUILD_TOOLS "Build tools" ON)
 option(BUILD_ALL "Build all" OFF)
 # ---------------------------------------------------------------------------- #
@@ -35,6 +36,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(BUILD_VAULT_SERVER OR BUILD_ALL)
     add_subdirectory(vault-server)
+endif()
+
+if(BUILD_CLIENT OR BUILD_ALL)
+    add_subdirectory(client)
 endif()
 
 if(BUILD_TOOLS OR BUILD_ALL)

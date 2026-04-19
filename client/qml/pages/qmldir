@@ -1,0 +1,4 @@
+module kaban
+Button 1.0 ../components/GearButton.qml
+main 1.0 qml/pages/main.qml
+Theme 1.0 ../theme/Theme.qml
