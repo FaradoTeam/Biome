@@ -57,19 +57,18 @@ std::shared_ptr<IConnection> SqliteDatabase::connection()
         throw std::runtime_error("Database not initialized");
     }
 
+    std::lock_guard<std::mutex> lock(m_connectionMutex);
+
     // Проверяем, существует ли уже активное соединение
-    if (m_activeConnection.lock())
+    if (auto connection = m_activeConnection.lock())
     {
-        // SQLite не очень хорошо подходит для доступа с несколькими
-        // соединениями, поэтому ограничиваемся одним
-        throw std::runtime_error(
-            "SQLite does not support multiple connections. "
-            "Only one connection can be active at a time."
-        );
+        return connection;
     }
 
     // Создаём новое соединение
     auto result = std::make_shared<SqliteConnection>(m_dbPath);
+    result->execute("PRAGMA journal_mode=WAL");
+    result->execute("PRAGMA busy_timeout=5000");
     m_activeConnection = result;
     return result;
 }
