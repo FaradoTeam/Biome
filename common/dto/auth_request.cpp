@@ -20,14 +20,14 @@ nlohmann::json AuthRequest::toJson() const
     nlohmann::json result;
 
     // login
-    if (m_login.has_value())
+    if (login.has_value())
     {
-        result["login"] = m_login.value();
+        result["login"] = login.value();
     }
     // password
-    if (m_password.has_value())
+    if (password.has_value())
     {
-        result["password"] = m_password.value();
+        result["password"] = password.value();
     }
 
     return result;
@@ -42,7 +42,7 @@ bool AuthRequest::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_login = json["login"].get<std::string>();
+            login = json["login"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -51,14 +51,14 @@ bool AuthRequest::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_login = std::nullopt;
+        login = std::nullopt;
     }
     // password
     if (json.contains("password") && !json["password"].is_null())
     {
         try
         {
-            m_password = json["password"].get<std::string>();
+            password = json["password"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -67,7 +67,7 @@ bool AuthRequest::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_password = std::nullopt;
+        password = std::nullopt;
     }
 
     return success;
@@ -75,21 +75,21 @@ bool AuthRequest::fromJson(const nlohmann::json& json)
 
 bool AuthRequest::isValid() const
 {
-    if (!m_login.has_value())
+    if (!login.has_value())
     {
         return false;
     }
-    if (!m_password.has_value())
+    if (!password.has_value())
     {
         return false;
     }
 
     // Дополнительные проверки для непустых значений
-    if (m_login.value().empty())
+    if (login.value().empty())
     {
         return false;
     }
-    if (m_password.value().empty())
+    if (password.value().empty())
     {
         return false;
     }
@@ -99,20 +99,20 @@ bool AuthRequest::isValid() const
 
 std::string AuthRequest::validationError() const
 {
-    if (!m_login.has_value())
+    if (!login.has_value())
     {
         return "Поле «login» является обязательным для заполнения";
     }
-    if (!m_password.has_value())
+    if (!password.has_value())
     {
         return "Поле «password» является обязательным для заполнения";
     }
 
-    if (m_login.value().empty())
+    if (login.value().empty())
     {
         return "Поле «login» не может быть пустой строкой";
     }
-    if (m_password.value().empty())
+    if (password.value().empty())
     {
         return "Поле «password» не может быть пустой строкой";
     }
@@ -123,8 +123,8 @@ std::string AuthRequest::validationError() const
 bool AuthRequest::operator==(const AuthRequest& other) const
 {
     return
-        m_login == other.m_login
-        && m_password == other.m_password
+        login == other.login
+        && password == other.password
 ;
 }
 

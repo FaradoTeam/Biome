@@ -20,19 +20,19 @@ nlohmann::json Edge::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Начальное состояние
-    if (m_beginStateId.has_value())
+    if (beginStateId.has_value())
     {
-        result["begin_state_id"] = m_beginStateId.value();
+        result["begin_state_id"] = beginStateId.value();
     }
     // Конечное состояние
-    if (m_endStateId.has_value())
+    if (endStateId.has_value())
     {
-        result["end_state_id"] = m_endStateId.value();
+        result["end_state_id"] = endStateId.value();
     }
 
     return result;
@@ -47,7 +47,7 @@ bool Edge::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -56,14 +56,14 @@ bool Edge::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Начальное состояние
     if (json.contains("begin_state_id") && !json["begin_state_id"].is_null())
     {
         try
         {
-            m_beginStateId = json["begin_state_id"].get<int64_t>();
+            beginStateId = json["begin_state_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -72,14 +72,14 @@ bool Edge::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_beginStateId = std::nullopt;
+        beginStateId = std::nullopt;
     }
     // Конечное состояние
     if (json.contains("end_state_id") && !json["end_state_id"].is_null())
     {
         try
         {
-            m_endStateId = json["end_state_id"].get<int64_t>();
+            endStateId = json["end_state_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -88,7 +88,7 @@ bool Edge::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_endStateId = std::nullopt;
+        endStateId = std::nullopt;
     }
 
     return success;
@@ -96,11 +96,11 @@ bool Edge::fromJson(const nlohmann::json& json)
 
 bool Edge::isValid() const
 {
-    if (!m_beginStateId.has_value())
+    if (!beginStateId.has_value())
     {
         return false;
     }
-    if (!m_endStateId.has_value())
+    if (!endStateId.has_value())
     {
         return false;
     }
@@ -112,11 +112,11 @@ bool Edge::isValid() const
 
 std::string Edge::validationError() const
 {
-    if (!m_beginStateId.has_value())
+    if (!beginStateId.has_value())
     {
         return "Поле «begin_state_id» является обязательным для заполнения";
     }
-    if (!m_endStateId.has_value())
+    if (!endStateId.has_value())
     {
         return "Поле «end_state_id» является обязательным для заполнения";
     }
@@ -128,9 +128,9 @@ std::string Edge::validationError() const
 bool Edge::operator==(const Edge& other) const
 {
     return
-        m_id == other.m_id
-        && m_beginStateId == other.m_beginStateId
-        && m_endStateId == other.m_endStateId
+        id == other.id
+        && beginStateId == other.beginStateId
+        && endStateId == other.endStateId
 ;
 }
 

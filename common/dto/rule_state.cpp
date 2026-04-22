@@ -20,24 +20,24 @@ nlohmann::json RuleState::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор правила
-    if (m_ruleId.has_value())
+    if (ruleId.has_value())
     {
-        result["rule_id"] = m_ruleId.value();
+        result["rule_id"] = ruleId.value();
     }
     // Идентификатор целевого состояния
-    if (m_stateId.has_value())
+    if (stateId.has_value())
     {
-        result["state_id"] = m_stateId.value();
+        result["state_id"] = stateId.value();
     }
     // Разрешение на перевод элемента в это состояние
-    if (m_isStateAllowed.has_value())
+    if (isStateAllowed.has_value())
     {
-        result["is_state_allowed"] = m_isStateAllowed.value();
+        result["is_state_allowed"] = isStateAllowed.value();
     }
 
     return result;
@@ -52,7 +52,7 @@ bool RuleState::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -61,14 +61,14 @@ bool RuleState::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор правила
     if (json.contains("rule_id") && !json["rule_id"].is_null())
     {
         try
         {
-            m_ruleId = json["rule_id"].get<int64_t>();
+            ruleId = json["rule_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -77,14 +77,14 @@ bool RuleState::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_ruleId = std::nullopt;
+        ruleId = std::nullopt;
     }
     // Идентификатор целевого состояния
     if (json.contains("state_id") && !json["state_id"].is_null())
     {
         try
         {
-            m_stateId = json["state_id"].get<int64_t>();
+            stateId = json["state_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -93,14 +93,14 @@ bool RuleState::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_stateId = std::nullopt;
+        stateId = std::nullopt;
     }
     // Разрешение на перевод элемента в это состояние
     if (json.contains("is_state_allowed") && !json["is_state_allowed"].is_null())
     {
         try
         {
-            m_isStateAllowed = json["is_state_allowed"].get<bool>();
+            isStateAllowed = json["is_state_allowed"].get<bool>();
         }
         catch (const std::exception& e)
         {
@@ -109,7 +109,7 @@ bool RuleState::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_isStateAllowed = std::nullopt;
+        isStateAllowed = std::nullopt;
     }
 
     return success;
@@ -117,11 +117,11 @@ bool RuleState::fromJson(const nlohmann::json& json)
 
 bool RuleState::isValid() const
 {
-    if (!m_ruleId.has_value())
+    if (!ruleId.has_value())
     {
         return false;
     }
-    if (!m_stateId.has_value())
+    if (!stateId.has_value())
     {
         return false;
     }
@@ -133,11 +133,11 @@ bool RuleState::isValid() const
 
 std::string RuleState::validationError() const
 {
-    if (!m_ruleId.has_value())
+    if (!ruleId.has_value())
     {
         return "Поле «rule_id» является обязательным для заполнения";
     }
-    if (!m_stateId.has_value())
+    if (!stateId.has_value())
     {
         return "Поле «state_id» является обязательным для заполнения";
     }
@@ -149,10 +149,10 @@ std::string RuleState::validationError() const
 bool RuleState::operator==(const RuleState& other) const
 {
     return
-        m_id == other.m_id
-        && m_ruleId == other.m_ruleId
-        && m_stateId == other.m_stateId
-        && m_isStateAllowed == other.m_isStateAllowed
+        id == other.id
+        && ruleId == other.ruleId
+        && stateId == other.stateId
+        && isStateAllowed == other.isStateAllowed
 ;
 }
 

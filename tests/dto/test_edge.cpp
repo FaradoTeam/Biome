@@ -21,60 +21,60 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     Edge dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasBeginStateId());
-    BOOST_TEST(!dto.hasEndStateId());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.beginStateId.has_value());
+    BOOST_TEST(!dto.endStateId.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     Edge dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: beginStateId
     {
-        BOOST_TEST(!dto.hasBeginStateId());
+        BOOST_TEST(!dto.beginStateId.has_value());
 
         int64_t testValue =42;
-        dto.setBeginStateId(testValue);
+        dto.beginStateId = testValue;
 
-        BOOST_TEST(dto.hasBeginStateId());
+        BOOST_TEST(dto.beginStateId.has_value());
 
-        BOOST_TEST(dto.beginStateId().value() == testValue);
+        BOOST_TEST(dto.beginStateId.value() == testValue);
 
-        // Проверка clear
-        dto.clearBeginStateId();
-        BOOST_TEST(!dto.hasBeginStateId());
+        // Проверка сброса значения
+        dto.beginStateId = std::nullopt;
+        BOOST_TEST(!dto.beginStateId.has_value());
     }
     // Проверка поля: endStateId
     {
-        BOOST_TEST(!dto.hasEndStateId());
+        BOOST_TEST(!dto.endStateId.has_value());
 
         int64_t testValue =42;
-        dto.setEndStateId(testValue);
+        dto.endStateId = testValue;
 
-        BOOST_TEST(dto.hasEndStateId());
+        BOOST_TEST(dto.endStateId.has_value());
 
-        BOOST_TEST(dto.endStateId().value() == testValue);
+        BOOST_TEST(dto.endStateId.value() == testValue);
 
-        // Проверка clear
-        dto.clearEndStateId();
-        BOOST_TEST(!dto.hasEndStateId());
+        // Проверка сброса значения
+        dto.endStateId = std::nullopt;
+        BOOST_TEST(!dto.endStateId.has_value());
     }
 }
 
@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     Edge dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: beginStateId
-    dto.setBeginStateId(42);
+    dto.beginStateId = 42;
     // Поле: endStateId
-    dto.setEndStateId(42);
+    dto.endStateId = 42;
 
     nlohmann::json json = dto.toJson();
 
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     Edge dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasBeginStateId());
-    BOOST_TEST(dto.beginStateId().value() == 42);
-    BOOST_TEST(dto.hasEndStateId());
-    BOOST_TEST(dto.endStateId().value() == 42);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.beginStateId.has_value());
+    BOOST_TEST(dto.beginStateId.value() == 42);
+    BOOST_TEST(dto.endStateId.has_value());
+    BOOST_TEST(dto.endStateId.value() == 42);
 }
 
 // Тест: Сериализация в оба конца
@@ -126,11 +126,11 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     Edge original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: beginStateId
-    original.setBeginStateId(42);
+    original.beginStateId = 42;
     // Поле: endStateId
-    original.setEndStateId(42);
+    original.endStateId = 42;
 
     nlohmann::json json = original.toJson();
     Edge deserialized(json);
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setBeginStateId(42);
-    dto.setEndStateId(42);
+    dto.beginStateId = 42;
+    dto.endStateId = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле beginStateId, чтобы сделать их разными
-    dto1.setBeginStateId(999);
+    dto1.beginStateId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -182,8 +182,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     Edge dto;
 
-    dto.setBeginStateId(42);
-    dto.setEndStateId(42);
+    dto.beginStateId = 42;
+    dto.endStateId = 42;
 
     std::stringstream ss;
     ss << dto;

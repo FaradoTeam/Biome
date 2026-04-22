@@ -21,60 +21,60 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     ErrorResponse dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasCode());
-    BOOST_TEST(!dto.hasMessage());
-    BOOST_TEST(!dto.hasDetails());
+    BOOST_TEST(!dto.code.has_value());
+    BOOST_TEST(!dto.message.has_value());
+    BOOST_TEST(!dto.details.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     ErrorResponse dto;
 
     // Проверка поля: code
     {
-        BOOST_TEST(!dto.hasCode());
+        BOOST_TEST(!dto.code.has_value());
 
         int64_t testValue =42;
-        dto.setCode(testValue);
+        dto.code = testValue;
 
-        BOOST_TEST(dto.hasCode());
+        BOOST_TEST(dto.code.has_value());
 
-        BOOST_TEST(dto.code().value() == testValue);
+        BOOST_TEST(dto.code.value() == testValue);
 
-        // Проверка clear
-        dto.clearCode();
-        BOOST_TEST(!dto.hasCode());
+        // Проверка сброса значения
+        dto.code = std::nullopt;
+        BOOST_TEST(!dto.code.has_value());
     }
     // Проверка поля: message
     {
-        BOOST_TEST(!dto.hasMessage());
+        BOOST_TEST(!dto.message.has_value());
 
         std::string testValue ="test_value";
-        dto.setMessage(testValue);
+        dto.message = testValue;
 
-        BOOST_TEST(dto.hasMessage());
+        BOOST_TEST(dto.message.has_value());
 
-        BOOST_TEST(dto.message().value() == testValue);
+        BOOST_TEST(dto.message.value() == testValue);
 
-        // Проверка clear
-        dto.clearMessage();
-        BOOST_TEST(!dto.hasMessage());
+        // Проверка сброса значения
+        dto.message = std::nullopt;
+        BOOST_TEST(!dto.message.has_value());
     }
     // Проверка поля: details
     {
-        BOOST_TEST(!dto.hasDetails());
+        BOOST_TEST(!dto.details.has_value());
 
         std::string testValue ="test_value";
-        dto.setDetails(testValue);
+        dto.details = testValue;
 
-        BOOST_TEST(dto.hasDetails());
+        BOOST_TEST(dto.details.has_value());
 
-        BOOST_TEST(dto.details().value() == testValue);
+        BOOST_TEST(dto.details.value() == testValue);
 
-        // Проверка clear
-        dto.clearDetails();
-        BOOST_TEST(!dto.hasDetails());
+        // Проверка сброса значения
+        dto.details = std::nullopt;
+        BOOST_TEST(!dto.details.has_value());
     }
 }
 
@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     ErrorResponse dto;
 
     // Поле: code
-    dto.setCode(42);
+    dto.code = 42;
     // Поле: message
-    dto.setMessage("test_message");
+    dto.message = "test_message";
     // Поле: details
-    dto.setDetails("test_details");
+    dto.details = "test_details";
 
     nlohmann::json json = dto.toJson();
 
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     ErrorResponse dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasCode());
-    BOOST_TEST(dto.code().value() == 42);
-    BOOST_TEST(dto.hasMessage());
-    BOOST_TEST(dto.message().value() == "test_message");
-    BOOST_TEST(dto.hasDetails());
-    BOOST_TEST(dto.details().value() == "test_details");
+    BOOST_TEST(dto.code.has_value());
+    BOOST_TEST(dto.code.value() == 42);
+    BOOST_TEST(dto.message.has_value());
+    BOOST_TEST(dto.message.value() == "test_message");
+    BOOST_TEST(dto.details.has_value());
+    BOOST_TEST(dto.details.value() == "test_details");
 }
 
 // Тест: Сериализация в оба конца
@@ -126,11 +126,11 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     ErrorResponse original;
 
     // Поле: code
-    original.setCode(42);
+    original.code = 42;
     // Поле: message
-    original.setMessage("test_message");
+    original.message = "test_message";
     // Поле: details
-    original.setDetails("test_details");
+    original.details = "test_details";
 
     nlohmann::json json = original.toJson();
     ErrorResponse deserialized(json);
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setCode(42);
+    dto.code = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле code, чтобы сделать их разными
-    dto1.setCode(999);
+    dto1.code = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     ErrorResponse dto;
 
-    dto.setCode(42);
+    dto.code = 42;
 
     std::stringstream ss;
     ss << dto;

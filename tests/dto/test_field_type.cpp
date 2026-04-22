@@ -21,108 +21,108 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     FieldType dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasItemTypeId());
-    BOOST_TEST(!dto.hasCaption());
-    BOOST_TEST(!dto.hasDescription());
-    BOOST_TEST(!dto.hasValueType());
-    BOOST_TEST(!dto.hasIsBoardVisible());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.itemTypeId.has_value());
+    BOOST_TEST(!dto.caption.has_value());
+    BOOST_TEST(!dto.description.has_value());
+    BOOST_TEST(!dto.valueType.has_value());
+    BOOST_TEST(!dto.isBoardVisible.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     FieldType dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: itemTypeId
     {
-        BOOST_TEST(!dto.hasItemTypeId());
+        BOOST_TEST(!dto.itemTypeId.has_value());
 
         int64_t testValue =42;
-        dto.setItemTypeId(testValue);
+        dto.itemTypeId = testValue;
 
-        BOOST_TEST(dto.hasItemTypeId());
+        BOOST_TEST(dto.itemTypeId.has_value());
 
-        BOOST_TEST(dto.itemTypeId().value() == testValue);
+        BOOST_TEST(dto.itemTypeId.value() == testValue);
 
-        // Проверка clear
-        dto.clearItemTypeId();
-        BOOST_TEST(!dto.hasItemTypeId());
+        // Проверка сброса значения
+        dto.itemTypeId = std::nullopt;
+        BOOST_TEST(!dto.itemTypeId.has_value());
     }
     // Проверка поля: caption
     {
-        BOOST_TEST(!dto.hasCaption());
+        BOOST_TEST(!dto.caption.has_value());
 
         std::string testValue ="test_value";
-        dto.setCaption(testValue);
+        dto.caption = testValue;
 
-        BOOST_TEST(dto.hasCaption());
+        BOOST_TEST(dto.caption.has_value());
 
-        BOOST_TEST(dto.caption().value() == testValue);
+        BOOST_TEST(dto.caption.value() == testValue);
 
-        // Проверка clear
-        dto.clearCaption();
-        BOOST_TEST(!dto.hasCaption());
+        // Проверка сброса значения
+        dto.caption = std::nullopt;
+        BOOST_TEST(!dto.caption.has_value());
     }
     // Проверка поля: description
     {
-        BOOST_TEST(!dto.hasDescription());
+        BOOST_TEST(!dto.description.has_value());
 
         std::string testValue ="test_value";
-        dto.setDescription(testValue);
+        dto.description = testValue;
 
-        BOOST_TEST(dto.hasDescription());
+        BOOST_TEST(dto.description.has_value());
 
-        BOOST_TEST(dto.description().value() == testValue);
+        BOOST_TEST(dto.description.value() == testValue);
 
-        // Проверка clear
-        dto.clearDescription();
-        BOOST_TEST(!dto.hasDescription());
+        // Проверка сброса значения
+        dto.description = std::nullopt;
+        BOOST_TEST(!dto.description.has_value());
     }
     // Проверка поля: valueType
     {
-        BOOST_TEST(!dto.hasValueType());
+        BOOST_TEST(!dto.valueType.has_value());
 
         std::string testValue ="test_value";
-        dto.setValueType(testValue);
+        dto.valueType = testValue;
 
-        BOOST_TEST(dto.hasValueType());
+        BOOST_TEST(dto.valueType.has_value());
 
-        BOOST_TEST(dto.valueType().value() == testValue);
+        BOOST_TEST(dto.valueType.value() == testValue);
 
-        // Проверка clear
-        dto.clearValueType();
-        BOOST_TEST(!dto.hasValueType());
+        // Проверка сброса значения
+        dto.valueType = std::nullopt;
+        BOOST_TEST(!dto.valueType.has_value());
     }
     // Проверка поля: isBoardVisible
     {
-        BOOST_TEST(!dto.hasIsBoardVisible());
+        BOOST_TEST(!dto.isBoardVisible.has_value());
 
         bool testValue =true;
-        dto.setIsBoardVisible(testValue);
+        dto.isBoardVisible = testValue;
 
-        BOOST_TEST(dto.hasIsBoardVisible());
+        BOOST_TEST(dto.isBoardVisible.has_value());
 
-        BOOST_TEST(dto.isBoardVisible().value() == testValue);
+        BOOST_TEST(dto.isBoardVisible.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsBoardVisible();
-        BOOST_TEST(!dto.hasIsBoardVisible());
+        // Проверка сброса значения
+        dto.isBoardVisible = std::nullopt;
+        BOOST_TEST(!dto.isBoardVisible.has_value());
     }
 }
 
@@ -132,17 +132,17 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     FieldType dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: itemTypeId
-    dto.setItemTypeId(42);
+    dto.itemTypeId = 42;
     // Поле: caption
-    dto.setCaption("test_caption");
+    dto.caption = "test_caption";
     // Поле: description
-    dto.setDescription("test_description");
+    dto.description = "test_description";
     // Поле: valueType
-    dto.setValueType("test_value_type");
+    dto.valueType = "test_value_type";
     // Поле: isBoardVisible
-    dto.setIsBoardVisible(true);
+    dto.isBoardVisible = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -175,18 +175,18 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     FieldType dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasItemTypeId());
-    BOOST_TEST(dto.itemTypeId().value() == 42);
-    BOOST_TEST(dto.hasCaption());
-    BOOST_TEST(dto.caption().value() == "test_caption");
-    BOOST_TEST(dto.hasDescription());
-    BOOST_TEST(dto.description().value() == "test_description");
-    BOOST_TEST(dto.hasValueType());
-    BOOST_TEST(dto.valueType().value() == "test_value_type");
-    BOOST_TEST(dto.hasIsBoardVisible());
-    BOOST_TEST(dto.isBoardVisible().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.itemTypeId.has_value());
+    BOOST_TEST(dto.itemTypeId.value() == 42);
+    BOOST_TEST(dto.caption.has_value());
+    BOOST_TEST(dto.caption.value() == "test_caption");
+    BOOST_TEST(dto.description.has_value());
+    BOOST_TEST(dto.description.value() == "test_description");
+    BOOST_TEST(dto.valueType.has_value());
+    BOOST_TEST(dto.valueType.value() == "test_value_type");
+    BOOST_TEST(dto.isBoardVisible.has_value());
+    BOOST_TEST(dto.isBoardVisible.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -195,17 +195,17 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     FieldType original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: itemTypeId
-    original.setItemTypeId(42);
+    original.itemTypeId = 42;
     // Поле: caption
-    original.setCaption("test_caption");
+    original.caption = "test_caption";
     // Поле: description
-    original.setDescription("test_description");
+    original.description = "test_description";
     // Поле: valueType
-    original.setValueType("test_value_type");
+    original.valueType = "test_value_type";
     // Поле: isBoardVisible
-    original.setIsBoardVisible(true);
+    original.isBoardVisible = true;
 
     nlohmann::json json = original.toJson();
     FieldType deserialized(json);
@@ -226,9 +226,9 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setItemTypeId(42);
-    dto.setCaption("test_caption");
-    dto.setValueType("test_value_type");
+    dto.itemTypeId = 42;
+    dto.caption = "test_caption";
+    dto.valueType = "test_value_type";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле itemTypeId, чтобы сделать их разными
-    dto1.setItemTypeId(999);
+    dto1.itemTypeId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -258,9 +258,9 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     FieldType dto;
 
-    dto.setItemTypeId(42);
-    dto.setCaption("test_value");
-    dto.setValueType("test_value");
+    dto.itemTypeId = 42;
+    dto.caption = "test_value";
+    dto.valueType = "test_value";
 
     std::stringstream ss;
     ss << dto;

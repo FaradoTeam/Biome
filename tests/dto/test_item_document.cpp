@@ -21,60 +21,60 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     ItemDocument dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasItemId());
-    BOOST_TEST(!dto.hasDocumentId());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.itemId.has_value());
+    BOOST_TEST(!dto.documentId.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     ItemDocument dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: itemId
     {
-        BOOST_TEST(!dto.hasItemId());
+        BOOST_TEST(!dto.itemId.has_value());
 
         int64_t testValue =42;
-        dto.setItemId(testValue);
+        dto.itemId = testValue;
 
-        BOOST_TEST(dto.hasItemId());
+        BOOST_TEST(dto.itemId.has_value());
 
-        BOOST_TEST(dto.itemId().value() == testValue);
+        BOOST_TEST(dto.itemId.value() == testValue);
 
-        // Проверка clear
-        dto.clearItemId();
-        BOOST_TEST(!dto.hasItemId());
+        // Проверка сброса значения
+        dto.itemId = std::nullopt;
+        BOOST_TEST(!dto.itemId.has_value());
     }
     // Проверка поля: documentId
     {
-        BOOST_TEST(!dto.hasDocumentId());
+        BOOST_TEST(!dto.documentId.has_value());
 
         int64_t testValue =42;
-        dto.setDocumentId(testValue);
+        dto.documentId = testValue;
 
-        BOOST_TEST(dto.hasDocumentId());
+        BOOST_TEST(dto.documentId.has_value());
 
-        BOOST_TEST(dto.documentId().value() == testValue);
+        BOOST_TEST(dto.documentId.value() == testValue);
 
-        // Проверка clear
-        dto.clearDocumentId();
-        BOOST_TEST(!dto.hasDocumentId());
+        // Проверка сброса значения
+        dto.documentId = std::nullopt;
+        BOOST_TEST(!dto.documentId.has_value());
     }
 }
 
@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     ItemDocument dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: itemId
-    dto.setItemId(42);
+    dto.itemId = 42;
     // Поле: documentId
-    dto.setDocumentId(42);
+    dto.documentId = 42;
 
     nlohmann::json json = dto.toJson();
 
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     ItemDocument dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasItemId());
-    BOOST_TEST(dto.itemId().value() == 42);
-    BOOST_TEST(dto.hasDocumentId());
-    BOOST_TEST(dto.documentId().value() == 42);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.itemId.has_value());
+    BOOST_TEST(dto.itemId.value() == 42);
+    BOOST_TEST(dto.documentId.has_value());
+    BOOST_TEST(dto.documentId.value() == 42);
 }
 
 // Тест: Сериализация в оба конца
@@ -126,11 +126,11 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     ItemDocument original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: itemId
-    original.setItemId(42);
+    original.itemId = 42;
     // Поле: documentId
-    original.setDocumentId(42);
+    original.documentId = 42;
 
     nlohmann::json json = original.toJson();
     ItemDocument deserialized(json);
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setItemId(42);
-    dto.setDocumentId(42);
+    dto.itemId = 42;
+    dto.documentId = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле itemId, чтобы сделать их разными
-    dto1.setItemId(999);
+    dto1.itemId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -182,8 +182,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     ItemDocument dto;
 
-    dto.setItemId(42);
-    dto.setDocumentId(42);
+    dto.itemId = 42;
+    dto.documentId = 42;
 
     std::stringstream ss;
     ss << dto;

@@ -20,29 +20,29 @@ nlohmann::json UserTodo::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор элемента
-    if (m_itemId.has_value())
+    if (itemId.has_value())
     {
-        result["item_id"] = m_itemId.value();
+        result["item_id"] = itemId.value();
     }
     // Идентификатор пользователя
-    if (m_userId.has_value())
+    if (userId.has_value())
     {
-        result["user_id"] = m_userId.value();
+        result["user_id"] = userId.value();
     }
     // Плановая дата начала
-    if (m_startDate.has_value())
+    if (startDate.has_value())
     {
-        result["start_date"] = timePointToSeconds(m_startDate.value());
+        result["start_date"] = timePointToSeconds(startDate.value());
     }
     // Плановая дата окончания
-    if (m_endDate.has_value())
+    if (endDate.has_value())
     {
-        result["end_date"] = timePointToSeconds(m_endDate.value());
+        result["end_date"] = timePointToSeconds(endDate.value());
     }
 
     return result;
@@ -57,7 +57,7 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -66,14 +66,14 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор элемента
     if (json.contains("item_id") && !json["item_id"].is_null())
     {
         try
         {
-            m_itemId = json["item_id"].get<int64_t>();
+            itemId = json["item_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -82,14 +82,14 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_itemId = std::nullopt;
+        itemId = std::nullopt;
     }
     // Идентификатор пользователя
     if (json.contains("user_id") && !json["user_id"].is_null())
     {
         try
         {
-            m_userId = json["user_id"].get<int64_t>();
+            userId = json["user_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -98,15 +98,15 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_userId = std::nullopt;
+        userId = std::nullopt;
     }
     // Плановая дата начала
     if (json.contains("start_date") && !json["start_date"].is_null())
     {
         try
         {
-            auto timestamp = json["start_date"].get<int64_t>();
-            m_startDate = secondsToTimePoint(timestamp);
+            auto timestampValue = json["start_date"].get<int64_t>();
+            startDate = secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -115,15 +115,15 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_startDate = std::nullopt;
+        startDate = std::nullopt;
     }
     // Плановая дата окончания
     if (json.contains("end_date") && !json["end_date"].is_null())
     {
         try
         {
-            auto timestamp = json["end_date"].get<int64_t>();
-            m_endDate = secondsToTimePoint(timestamp);
+            auto timestampValue = json["end_date"].get<int64_t>();
+            endDate = secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -132,7 +132,7 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_endDate = std::nullopt;
+        endDate = std::nullopt;
     }
 
     return success;
@@ -140,19 +140,19 @@ bool UserTodo::fromJson(const nlohmann::json& json)
 
 bool UserTodo::isValid() const
 {
-    if (!m_itemId.has_value())
+    if (!itemId.has_value())
     {
         return false;
     }
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return false;
     }
-    if (!m_startDate.has_value())
+    if (!startDate.has_value())
     {
         return false;
     }
-    if (!m_endDate.has_value())
+    if (!endDate.has_value())
     {
         return false;
     }
@@ -164,19 +164,19 @@ bool UserTodo::isValid() const
 
 std::string UserTodo::validationError() const
 {
-    if (!m_itemId.has_value())
+    if (!itemId.has_value())
     {
         return "Поле «item_id» является обязательным для заполнения";
     }
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return "Поле «user_id» является обязательным для заполнения";
     }
-    if (!m_startDate.has_value())
+    if (!startDate.has_value())
     {
         return "Поле «start_date» является обязательным для заполнения";
     }
-    if (!m_endDate.has_value())
+    if (!endDate.has_value())
     {
         return "Поле «end_date» является обязательным для заполнения";
     }
@@ -188,11 +188,11 @@ std::string UserTodo::validationError() const
 bool UserTodo::operator==(const UserTodo& other) const
 {
     return
-        m_id == other.m_id
-        && m_itemId == other.m_itemId
-        && m_userId == other.m_userId
-        && m_startDate == other.m_startDate
-        && m_endDate == other.m_endDate
+        id == other.id
+        && itemId == other.itemId
+        && userId == other.userId
+        && startDate == other.startDate
+        && endDate == other.endDate
 ;
 }
 

@@ -21,95 +21,95 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     Comment dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasUserId());
-    BOOST_TEST(!dto.hasItemId());
-    BOOST_TEST(!dto.hasCreatedAt());
-    BOOST_TEST(!dto.hasContent());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.userId.has_value());
+    BOOST_TEST(!dto.itemId.has_value());
+    BOOST_TEST(!dto.createdAt.has_value());
+    BOOST_TEST(!dto.content.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     Comment dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: userId
     {
-        BOOST_TEST(!dto.hasUserId());
+        BOOST_TEST(!dto.userId.has_value());
 
         int64_t testValue =42;
-        dto.setUserId(testValue);
+        dto.userId = testValue;
 
-        BOOST_TEST(dto.hasUserId());
+        BOOST_TEST(dto.userId.has_value());
 
-        BOOST_TEST(dto.userId().value() == testValue);
+        BOOST_TEST(dto.userId.value() == testValue);
 
-        // Проверка clear
-        dto.clearUserId();
-        BOOST_TEST(!dto.hasUserId());
+        // Проверка сброса значения
+        dto.userId = std::nullopt;
+        BOOST_TEST(!dto.userId.has_value());
     }
     // Проверка поля: itemId
     {
-        BOOST_TEST(!dto.hasItemId());
+        BOOST_TEST(!dto.itemId.has_value());
 
         int64_t testValue =42;
-        dto.setItemId(testValue);
+        dto.itemId = testValue;
 
-        BOOST_TEST(dto.hasItemId());
+        BOOST_TEST(dto.itemId.has_value());
 
-        BOOST_TEST(dto.itemId().value() == testValue);
+        BOOST_TEST(dto.itemId.value() == testValue);
 
-        // Проверка clear
-        dto.clearItemId();
-        BOOST_TEST(!dto.hasItemId());
+        // Проверка сброса значения
+        dto.itemId = std::nullopt;
+        BOOST_TEST(!dto.itemId.has_value());
     }
     // Проверка поля: createdAt
     {
-        BOOST_TEST(!dto.hasCreatedAt());
+        BOOST_TEST(!dto.createdAt.has_value());
 
         std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
-        dto.setCreatedAt(testValue);
+        dto.createdAt = testValue;
 
-        BOOST_TEST(dto.hasCreatedAt());
+        BOOST_TEST(dto.createdAt.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.createdAt().value()),
+            timePointToSeconds(dto.createdAt.value()),
             timePointToSeconds(testValue)
         );
 
-        // Проверка clear
-        dto.clearCreatedAt();
-        BOOST_TEST(!dto.hasCreatedAt());
+        // Проверка сброса значения
+        dto.createdAt = std::nullopt;
+        BOOST_TEST(!dto.createdAt.has_value());
     }
     // Проверка поля: content
     {
-        BOOST_TEST(!dto.hasContent());
+        BOOST_TEST(!dto.content.has_value());
 
         std::string testValue ="test_value";
-        dto.setContent(testValue);
+        dto.content = testValue;
 
-        BOOST_TEST(dto.hasContent());
+        BOOST_TEST(dto.content.has_value());
 
-        BOOST_TEST(dto.content().value() == testValue);
+        BOOST_TEST(dto.content.value() == testValue);
 
-        // Проверка clear
-        dto.clearContent();
-        BOOST_TEST(!dto.hasContent());
+        // Проверка сброса значения
+        dto.content = std::nullopt;
+        BOOST_TEST(!dto.content.has_value());
     }
 }
 
@@ -119,15 +119,15 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     Comment dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: userId
-    dto.setUserId(42);
+    dto.userId = 42;
     // Поле: itemId
-    dto.setItemId(42);
+    dto.itemId = 42;
     // Поле: createdAt
-    dto.setCreatedAt(secondsToTimePoint(1640995200));
+    dto.createdAt = secondsToTimePoint(1640995200);
     // Поле: content
-    dto.setContent("test_content");
+    dto.content = "test_content";
 
     nlohmann::json json = dto.toJson();
 
@@ -157,16 +157,16 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     Comment dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasUserId());
-    BOOST_TEST(dto.userId().value() == 42);
-    BOOST_TEST(dto.hasItemId());
-    BOOST_TEST(dto.itemId().value() == 42);
-    BOOST_TEST(dto.hasCreatedAt());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.createdAt().value()), 1640995200);
-    BOOST_TEST(dto.hasContent());
-    BOOST_TEST(dto.content().value() == "test_content");
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.userId.has_value());
+    BOOST_TEST(dto.userId.value() == 42);
+    BOOST_TEST(dto.itemId.has_value());
+    BOOST_TEST(dto.itemId.value() == 42);
+    BOOST_TEST(dto.createdAt.has_value());
+    BOOST_CHECK_EQUAL(timePointToSeconds(dto.createdAt.value()), 1640995200);
+    BOOST_TEST(dto.content.has_value());
+    BOOST_TEST(dto.content.value() == "test_content");
 }
 
 // Тест: Сериализация в оба конца
@@ -175,15 +175,15 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     Comment original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: userId
-    original.setUserId(42);
+    original.userId = 42;
     // Поле: itemId
-    original.setItemId(42);
+    original.itemId = 42;
     // Поле: createdAt
-    original.setCreatedAt(secondsToTimePoint(1640995200));
+    original.createdAt = secondsToTimePoint(1640995200);
     // Поле: content
-    original.setContent("test_content");
+    original.content = "test_content";
 
     nlohmann::json json = original.toJson();
     Comment deserialized(json);
@@ -204,9 +204,9 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setUserId(42);
-    dto.setItemId(42);
-    dto.setContent("test_content");
+    dto.userId = 42;
+    dto.itemId = 42;
+    dto.content = "test_content";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле userId, чтобы сделать их разными
-    dto1.setUserId(999);
+    dto1.userId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -236,9 +236,9 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     Comment dto;
 
-    dto.setUserId(42);
-    dto.setItemId(42);
-    dto.setContent("test_value");
+    dto.userId = 42;
+    dto.itemId = 42;
+    dto.content = "test_value";
 
     std::stringstream ss;
     ss << dto;

@@ -21,143 +21,143 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     UserDay dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasUserId());
-    BOOST_TEST(!dto.hasDate());
-    BOOST_TEST(!dto.hasIsWorkDay());
-    BOOST_TEST(!dto.hasBeginWorkTime());
-    BOOST_TEST(!dto.hasEndWorkTime());
-    BOOST_TEST(!dto.hasBreakDuration());
-    BOOST_TEST(!dto.hasDescription());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.userId.has_value());
+    BOOST_TEST(!dto.date.has_value());
+    BOOST_TEST(!dto.isWorkDay.has_value());
+    BOOST_TEST(!dto.beginWorkTime.has_value());
+    BOOST_TEST(!dto.endWorkTime.has_value());
+    BOOST_TEST(!dto.breakDuration.has_value());
+    BOOST_TEST(!dto.description.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     UserDay dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: userId
     {
-        BOOST_TEST(!dto.hasUserId());
+        BOOST_TEST(!dto.userId.has_value());
 
         int64_t testValue =42;
-        dto.setUserId(testValue);
+        dto.userId = testValue;
 
-        BOOST_TEST(dto.hasUserId());
+        BOOST_TEST(dto.userId.has_value());
 
-        BOOST_TEST(dto.userId().value() == testValue);
+        BOOST_TEST(dto.userId.value() == testValue);
 
-        // Проверка clear
-        dto.clearUserId();
-        BOOST_TEST(!dto.hasUserId());
+        // Проверка сброса значения
+        dto.userId = std::nullopt;
+        BOOST_TEST(!dto.userId.has_value());
     }
     // Проверка поля: date
     {
-        BOOST_TEST(!dto.hasDate());
+        BOOST_TEST(!dto.date.has_value());
 
         std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
-        dto.setDate(testValue);
+        dto.date = testValue;
 
-        BOOST_TEST(dto.hasDate());
+        BOOST_TEST(dto.date.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.date().value()),
+            timePointToSeconds(dto.date.value()),
             timePointToSeconds(testValue)
         );
 
-        // Проверка clear
-        dto.clearDate();
-        BOOST_TEST(!dto.hasDate());
+        // Проверка сброса значения
+        dto.date = std::nullopt;
+        BOOST_TEST(!dto.date.has_value());
     }
     // Проверка поля: isWorkDay
     {
-        BOOST_TEST(!dto.hasIsWorkDay());
+        BOOST_TEST(!dto.isWorkDay.has_value());
 
         bool testValue =true;
-        dto.setIsWorkDay(testValue);
+        dto.isWorkDay = testValue;
 
-        BOOST_TEST(dto.hasIsWorkDay());
+        BOOST_TEST(dto.isWorkDay.has_value());
 
-        BOOST_TEST(dto.isWorkDay().value() == testValue);
+        BOOST_TEST(dto.isWorkDay.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsWorkDay();
-        BOOST_TEST(!dto.hasIsWorkDay());
+        // Проверка сброса значения
+        dto.isWorkDay = std::nullopt;
+        BOOST_TEST(!dto.isWorkDay.has_value());
     }
     // Проверка поля: beginWorkTime
     {
-        BOOST_TEST(!dto.hasBeginWorkTime());
+        BOOST_TEST(!dto.beginWorkTime.has_value());
 
         std::string testValue ="test_value";
-        dto.setBeginWorkTime(testValue);
+        dto.beginWorkTime = testValue;
 
-        BOOST_TEST(dto.hasBeginWorkTime());
+        BOOST_TEST(dto.beginWorkTime.has_value());
 
-        BOOST_TEST(dto.beginWorkTime().value() == testValue);
+        BOOST_TEST(dto.beginWorkTime.value() == testValue);
 
-        // Проверка clear
-        dto.clearBeginWorkTime();
-        BOOST_TEST(!dto.hasBeginWorkTime());
+        // Проверка сброса значения
+        dto.beginWorkTime = std::nullopt;
+        BOOST_TEST(!dto.beginWorkTime.has_value());
     }
     // Проверка поля: endWorkTime
     {
-        BOOST_TEST(!dto.hasEndWorkTime());
+        BOOST_TEST(!dto.endWorkTime.has_value());
 
         std::string testValue ="test_value";
-        dto.setEndWorkTime(testValue);
+        dto.endWorkTime = testValue;
 
-        BOOST_TEST(dto.hasEndWorkTime());
+        BOOST_TEST(dto.endWorkTime.has_value());
 
-        BOOST_TEST(dto.endWorkTime().value() == testValue);
+        BOOST_TEST(dto.endWorkTime.value() == testValue);
 
-        // Проверка clear
-        dto.clearEndWorkTime();
-        BOOST_TEST(!dto.hasEndWorkTime());
+        // Проверка сброса значения
+        dto.endWorkTime = std::nullopt;
+        BOOST_TEST(!dto.endWorkTime.has_value());
     }
     // Проверка поля: breakDuration
     {
-        BOOST_TEST(!dto.hasBreakDuration());
+        BOOST_TEST(!dto.breakDuration.has_value());
 
         int64_t testValue =42;
-        dto.setBreakDuration(testValue);
+        dto.breakDuration = testValue;
 
-        BOOST_TEST(dto.hasBreakDuration());
+        BOOST_TEST(dto.breakDuration.has_value());
 
-        BOOST_TEST(dto.breakDuration().value() == testValue);
+        BOOST_TEST(dto.breakDuration.value() == testValue);
 
-        // Проверка clear
-        dto.clearBreakDuration();
-        BOOST_TEST(!dto.hasBreakDuration());
+        // Проверка сброса значения
+        dto.breakDuration = std::nullopt;
+        BOOST_TEST(!dto.breakDuration.has_value());
     }
     // Проверка поля: description
     {
-        BOOST_TEST(!dto.hasDescription());
+        BOOST_TEST(!dto.description.has_value());
 
         std::string testValue ="test_value";
-        dto.setDescription(testValue);
+        dto.description = testValue;
 
-        BOOST_TEST(dto.hasDescription());
+        BOOST_TEST(dto.description.has_value());
 
-        BOOST_TEST(dto.description().value() == testValue);
+        BOOST_TEST(dto.description.value() == testValue);
 
-        // Проверка clear
-        dto.clearDescription();
-        BOOST_TEST(!dto.hasDescription());
+        // Проверка сброса значения
+        dto.description = std::nullopt;
+        BOOST_TEST(!dto.description.has_value());
     }
 }
 
@@ -167,21 +167,21 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     UserDay dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: userId
-    dto.setUserId(42);
+    dto.userId = 42;
     // Поле: date
-    dto.setDate(secondsToTimePoint(1640995200));
+    dto.date = secondsToTimePoint(1640995200);
     // Поле: isWorkDay
-    dto.setIsWorkDay(true);
+    dto.isWorkDay = true;
     // Поле: beginWorkTime
-    dto.setBeginWorkTime("test_begin_work_time");
+    dto.beginWorkTime = "test_begin_work_time";
     // Поле: endWorkTime
-    dto.setEndWorkTime("test_end_work_time");
+    dto.endWorkTime = "test_end_work_time";
     // Поле: breakDuration
-    dto.setBreakDuration(42);
+    dto.breakDuration = 42;
     // Поле: description
-    dto.setDescription("test_description");
+    dto.description = "test_description";
 
     nlohmann::json json = dto.toJson();
 
@@ -220,22 +220,22 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     UserDay dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasUserId());
-    BOOST_TEST(dto.userId().value() == 42);
-    BOOST_TEST(dto.hasDate());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.date().value()), 1640995200);
-    BOOST_TEST(dto.hasIsWorkDay());
-    BOOST_TEST(dto.isWorkDay().value() == true);
-    BOOST_TEST(dto.hasBeginWorkTime());
-    BOOST_TEST(dto.beginWorkTime().value() == "test_begin_work_time");
-    BOOST_TEST(dto.hasEndWorkTime());
-    BOOST_TEST(dto.endWorkTime().value() == "test_end_work_time");
-    BOOST_TEST(dto.hasBreakDuration());
-    BOOST_TEST(dto.breakDuration().value() == 42);
-    BOOST_TEST(dto.hasDescription());
-    BOOST_TEST(dto.description().value() == "test_description");
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.userId.has_value());
+    BOOST_TEST(dto.userId.value() == 42);
+    BOOST_TEST(dto.date.has_value());
+    BOOST_CHECK_EQUAL(timePointToSeconds(dto.date.value()), 1640995200);
+    BOOST_TEST(dto.isWorkDay.has_value());
+    BOOST_TEST(dto.isWorkDay.value() == true);
+    BOOST_TEST(dto.beginWorkTime.has_value());
+    BOOST_TEST(dto.beginWorkTime.value() == "test_begin_work_time");
+    BOOST_TEST(dto.endWorkTime.has_value());
+    BOOST_TEST(dto.endWorkTime.value() == "test_end_work_time");
+    BOOST_TEST(dto.breakDuration.has_value());
+    BOOST_TEST(dto.breakDuration.value() == 42);
+    BOOST_TEST(dto.description.has_value());
+    BOOST_TEST(dto.description.value() == "test_description");
 }
 
 // Тест: Сериализация в оба конца
@@ -244,21 +244,21 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     UserDay original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: userId
-    original.setUserId(42);
+    original.userId = 42;
     // Поле: date
-    original.setDate(secondsToTimePoint(1640995200));
+    original.date = secondsToTimePoint(1640995200);
     // Поле: isWorkDay
-    original.setIsWorkDay(true);
+    original.isWorkDay = true;
     // Поле: beginWorkTime
-    original.setBeginWorkTime("test_begin_work_time");
+    original.beginWorkTime = "test_begin_work_time";
     // Поле: endWorkTime
-    original.setEndWorkTime("test_end_work_time");
+    original.endWorkTime = "test_end_work_time";
     // Поле: breakDuration
-    original.setBreakDuration(42);
+    original.breakDuration = 42;
     // Поле: description
-    original.setDescription("test_description");
+    original.description = "test_description";
 
     nlohmann::json json = original.toJson();
     UserDay deserialized(json);
@@ -279,8 +279,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setUserId(42);
-    dto.setDate(secondsToTimePoint(1640995200));
+    dto.userId = 42;
+    dto.date = secondsToTimePoint(1640995200);
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле userId, чтобы сделать их разными
-    dto1.setUserId(999);
+    dto1.userId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -310,8 +310,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     UserDay dto;
 
-    dto.setUserId(42);
-    dto.setDate(secondsToTimePoint(1640995200));
+    dto.userId = 42;
+    dto.date = secondsToTimePoint(1640995200);
 
     std::stringstream ss;
     ss << dto;

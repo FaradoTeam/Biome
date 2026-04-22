@@ -21,92 +21,92 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     BoardColumn dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasBoardId());
-    BOOST_TEST(!dto.hasStateId());
-    BOOST_TEST(!dto.hasOrderNumber());
-    BOOST_TEST(!dto.hasSettings());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.boardId.has_value());
+    BOOST_TEST(!dto.stateId.has_value());
+    BOOST_TEST(!dto.orderNumber.has_value());
+    BOOST_TEST(!dto.settings.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     BoardColumn dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: boardId
     {
-        BOOST_TEST(!dto.hasBoardId());
+        BOOST_TEST(!dto.boardId.has_value());
 
         int64_t testValue =42;
-        dto.setBoardId(testValue);
+        dto.boardId = testValue;
 
-        BOOST_TEST(dto.hasBoardId());
+        BOOST_TEST(dto.boardId.has_value());
 
-        BOOST_TEST(dto.boardId().value() == testValue);
+        BOOST_TEST(dto.boardId.value() == testValue);
 
-        // Проверка clear
-        dto.clearBoardId();
-        BOOST_TEST(!dto.hasBoardId());
+        // Проверка сброса значения
+        dto.boardId = std::nullopt;
+        BOOST_TEST(!dto.boardId.has_value());
     }
     // Проверка поля: stateId
     {
-        BOOST_TEST(!dto.hasStateId());
+        BOOST_TEST(!dto.stateId.has_value());
 
         int64_t testValue =42;
-        dto.setStateId(testValue);
+        dto.stateId = testValue;
 
-        BOOST_TEST(dto.hasStateId());
+        BOOST_TEST(dto.stateId.has_value());
 
-        BOOST_TEST(dto.stateId().value() == testValue);
+        BOOST_TEST(dto.stateId.value() == testValue);
 
-        // Проверка clear
-        dto.clearStateId();
-        BOOST_TEST(!dto.hasStateId());
+        // Проверка сброса значения
+        dto.stateId = std::nullopt;
+        BOOST_TEST(!dto.stateId.has_value());
     }
     // Проверка поля: orderNumber
     {
-        BOOST_TEST(!dto.hasOrderNumber());
+        BOOST_TEST(!dto.orderNumber.has_value());
 
         int64_t testValue =42;
-        dto.setOrderNumber(testValue);
+        dto.orderNumber = testValue;
 
-        BOOST_TEST(dto.hasOrderNumber());
+        BOOST_TEST(dto.orderNumber.has_value());
 
-        BOOST_TEST(dto.orderNumber().value() == testValue);
+        BOOST_TEST(dto.orderNumber.value() == testValue);
 
-        // Проверка clear
-        dto.clearOrderNumber();
-        BOOST_TEST(!dto.hasOrderNumber());
+        // Проверка сброса значения
+        dto.orderNumber = std::nullopt;
+        BOOST_TEST(!dto.orderNumber.has_value());
     }
     // Проверка поля: settings
     {
-        BOOST_TEST(!dto.hasSettings());
+        BOOST_TEST(!dto.settings.has_value());
 
         std::string testValue ="test_value";
-        dto.setSettings(testValue);
+        dto.settings = testValue;
 
-        BOOST_TEST(dto.hasSettings());
+        BOOST_TEST(dto.settings.has_value());
 
-        BOOST_TEST(dto.settings().value() == testValue);
+        BOOST_TEST(dto.settings.value() == testValue);
 
-        // Проверка clear
-        dto.clearSettings();
-        BOOST_TEST(!dto.hasSettings());
+        // Проверка сброса значения
+        dto.settings = std::nullopt;
+        BOOST_TEST(!dto.settings.has_value());
     }
 }
 
@@ -116,15 +116,15 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     BoardColumn dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: boardId
-    dto.setBoardId(42);
+    dto.boardId = 42;
     // Поле: stateId
-    dto.setStateId(42);
+    dto.stateId = 42;
     // Поле: orderNumber
-    dto.setOrderNumber(42);
+    dto.orderNumber = 42;
     // Поле: settings
-    dto.setSettings("test_settings");
+    dto.settings = "test_settings";
 
     nlohmann::json json = dto.toJson();
 
@@ -154,16 +154,16 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BoardColumn dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasBoardId());
-    BOOST_TEST(dto.boardId().value() == 42);
-    BOOST_TEST(dto.hasStateId());
-    BOOST_TEST(dto.stateId().value() == 42);
-    BOOST_TEST(dto.hasOrderNumber());
-    BOOST_TEST(dto.orderNumber().value() == 42);
-    BOOST_TEST(dto.hasSettings());
-    BOOST_TEST(dto.settings().value() == "test_settings");
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.boardId.has_value());
+    BOOST_TEST(dto.boardId.value() == 42);
+    BOOST_TEST(dto.stateId.has_value());
+    BOOST_TEST(dto.stateId.value() == 42);
+    BOOST_TEST(dto.orderNumber.has_value());
+    BOOST_TEST(dto.orderNumber.value() == 42);
+    BOOST_TEST(dto.settings.has_value());
+    BOOST_TEST(dto.settings.value() == "test_settings");
 }
 
 // Тест: Сериализация в оба конца
@@ -172,15 +172,15 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     BoardColumn original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: boardId
-    original.setBoardId(42);
+    original.boardId = 42;
     // Поле: stateId
-    original.setStateId(42);
+    original.stateId = 42;
     // Поле: orderNumber
-    original.setOrderNumber(42);
+    original.orderNumber = 42;
     // Поле: settings
-    original.setSettings("test_settings");
+    original.settings = "test_settings";
 
     nlohmann::json json = original.toJson();
     BoardColumn deserialized(json);
@@ -201,9 +201,9 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setBoardId(42);
-    dto.setStateId(42);
-    dto.setOrderNumber(42);
+    dto.boardId = 42;
+    dto.stateId = 42;
+    dto.orderNumber = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле boardId, чтобы сделать их разными
-    dto1.setBoardId(999);
+    dto1.boardId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -233,9 +233,9 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     BoardColumn dto;
 
-    dto.setBoardId(42);
-    dto.setStateId(42);
-    dto.setOrderNumber(42);
+    dto.boardId = 42;
+    dto.stateId = 42;
+    dto.orderNumber = 42;
 
     std::stringstream ss;
     ss << dto;

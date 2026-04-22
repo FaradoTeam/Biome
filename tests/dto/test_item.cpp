@@ -21,140 +21,140 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     Item dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasItemTypeId());
-    BOOST_TEST(!dto.hasParentId());
-    BOOST_TEST(!dto.hasStateId());
-    BOOST_TEST(!dto.hasPhaseId());
-    BOOST_TEST(!dto.hasCaption());
-    BOOST_TEST(!dto.hasContent());
-    BOOST_TEST(!dto.hasIsDeleted());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.itemTypeId.has_value());
+    BOOST_TEST(!dto.parentId.has_value());
+    BOOST_TEST(!dto.stateId.has_value());
+    BOOST_TEST(!dto.phaseId.has_value());
+    BOOST_TEST(!dto.caption.has_value());
+    BOOST_TEST(!dto.content.has_value());
+    BOOST_TEST(!dto.isDeleted.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     Item dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: itemTypeId
     {
-        BOOST_TEST(!dto.hasItemTypeId());
+        BOOST_TEST(!dto.itemTypeId.has_value());
 
         int64_t testValue =42;
-        dto.setItemTypeId(testValue);
+        dto.itemTypeId = testValue;
 
-        BOOST_TEST(dto.hasItemTypeId());
+        BOOST_TEST(dto.itemTypeId.has_value());
 
-        BOOST_TEST(dto.itemTypeId().value() == testValue);
+        BOOST_TEST(dto.itemTypeId.value() == testValue);
 
-        // Проверка clear
-        dto.clearItemTypeId();
-        BOOST_TEST(!dto.hasItemTypeId());
+        // Проверка сброса значения
+        dto.itemTypeId = std::nullopt;
+        BOOST_TEST(!dto.itemTypeId.has_value());
     }
     // Проверка поля: parentId
     {
-        BOOST_TEST(!dto.hasParentId());
+        BOOST_TEST(!dto.parentId.has_value());
 
         int64_t testValue =42;
-        dto.setParentId(testValue);
+        dto.parentId = testValue;
 
-        BOOST_TEST(dto.hasParentId());
+        BOOST_TEST(dto.parentId.has_value());
 
-        BOOST_TEST(dto.parentId().value() == testValue);
+        BOOST_TEST(dto.parentId.value() == testValue);
 
-        // Проверка clear
-        dto.clearParentId();
-        BOOST_TEST(!dto.hasParentId());
+        // Проверка сброса значения
+        dto.parentId = std::nullopt;
+        BOOST_TEST(!dto.parentId.has_value());
     }
     // Проверка поля: stateId
     {
-        BOOST_TEST(!dto.hasStateId());
+        BOOST_TEST(!dto.stateId.has_value());
 
         int64_t testValue =42;
-        dto.setStateId(testValue);
+        dto.stateId = testValue;
 
-        BOOST_TEST(dto.hasStateId());
+        BOOST_TEST(dto.stateId.has_value());
 
-        BOOST_TEST(dto.stateId().value() == testValue);
+        BOOST_TEST(dto.stateId.value() == testValue);
 
-        // Проверка clear
-        dto.clearStateId();
-        BOOST_TEST(!dto.hasStateId());
+        // Проверка сброса значения
+        dto.stateId = std::nullopt;
+        BOOST_TEST(!dto.stateId.has_value());
     }
     // Проверка поля: phaseId
     {
-        BOOST_TEST(!dto.hasPhaseId());
+        BOOST_TEST(!dto.phaseId.has_value());
 
         int64_t testValue =42;
-        dto.setPhaseId(testValue);
+        dto.phaseId = testValue;
 
-        BOOST_TEST(dto.hasPhaseId());
+        BOOST_TEST(dto.phaseId.has_value());
 
-        BOOST_TEST(dto.phaseId().value() == testValue);
+        BOOST_TEST(dto.phaseId.value() == testValue);
 
-        // Проверка clear
-        dto.clearPhaseId();
-        BOOST_TEST(!dto.hasPhaseId());
+        // Проверка сброса значения
+        dto.phaseId = std::nullopt;
+        BOOST_TEST(!dto.phaseId.has_value());
     }
     // Проверка поля: caption
     {
-        BOOST_TEST(!dto.hasCaption());
+        BOOST_TEST(!dto.caption.has_value());
 
         std::string testValue ="test_value";
-        dto.setCaption(testValue);
+        dto.caption = testValue;
 
-        BOOST_TEST(dto.hasCaption());
+        BOOST_TEST(dto.caption.has_value());
 
-        BOOST_TEST(dto.caption().value() == testValue);
+        BOOST_TEST(dto.caption.value() == testValue);
 
-        // Проверка clear
-        dto.clearCaption();
-        BOOST_TEST(!dto.hasCaption());
+        // Проверка сброса значения
+        dto.caption = std::nullopt;
+        BOOST_TEST(!dto.caption.has_value());
     }
     // Проверка поля: content
     {
-        BOOST_TEST(!dto.hasContent());
+        BOOST_TEST(!dto.content.has_value());
 
         std::string testValue ="test_value";
-        dto.setContent(testValue);
+        dto.content = testValue;
 
-        BOOST_TEST(dto.hasContent());
+        BOOST_TEST(dto.content.has_value());
 
-        BOOST_TEST(dto.content().value() == testValue);
+        BOOST_TEST(dto.content.value() == testValue);
 
-        // Проверка clear
-        dto.clearContent();
-        BOOST_TEST(!dto.hasContent());
+        // Проверка сброса значения
+        dto.content = std::nullopt;
+        BOOST_TEST(!dto.content.has_value());
     }
     // Проверка поля: isDeleted
     {
-        BOOST_TEST(!dto.hasIsDeleted());
+        BOOST_TEST(!dto.isDeleted.has_value());
 
         bool testValue =true;
-        dto.setIsDeleted(testValue);
+        dto.isDeleted = testValue;
 
-        BOOST_TEST(dto.hasIsDeleted());
+        BOOST_TEST(dto.isDeleted.has_value());
 
-        BOOST_TEST(dto.isDeleted().value() == testValue);
+        BOOST_TEST(dto.isDeleted.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsDeleted();
-        BOOST_TEST(!dto.hasIsDeleted());
+        // Проверка сброса значения
+        dto.isDeleted = std::nullopt;
+        BOOST_TEST(!dto.isDeleted.has_value());
     }
 }
 
@@ -164,21 +164,21 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     Item dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: itemTypeId
-    dto.setItemTypeId(42);
+    dto.itemTypeId = 42;
     // Поле: parentId
-    dto.setParentId(42);
+    dto.parentId = 42;
     // Поле: stateId
-    dto.setStateId(42);
+    dto.stateId = 42;
     // Поле: phaseId
-    dto.setPhaseId(42);
+    dto.phaseId = 42;
     // Поле: caption
-    dto.setCaption("test_caption");
+    dto.caption = "test_caption";
     // Поле: content
-    dto.setContent("test_content");
+    dto.content = "test_content";
     // Поле: isDeleted
-    dto.setIsDeleted(true);
+    dto.isDeleted = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -217,22 +217,22 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     Item dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasItemTypeId());
-    BOOST_TEST(dto.itemTypeId().value() == 42);
-    BOOST_TEST(dto.hasParentId());
-    BOOST_TEST(dto.parentId().value() == 42);
-    BOOST_TEST(dto.hasStateId());
-    BOOST_TEST(dto.stateId().value() == 42);
-    BOOST_TEST(dto.hasPhaseId());
-    BOOST_TEST(dto.phaseId().value() == 42);
-    BOOST_TEST(dto.hasCaption());
-    BOOST_TEST(dto.caption().value() == "test_caption");
-    BOOST_TEST(dto.hasContent());
-    BOOST_TEST(dto.content().value() == "test_content");
-    BOOST_TEST(dto.hasIsDeleted());
-    BOOST_TEST(dto.isDeleted().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.itemTypeId.has_value());
+    BOOST_TEST(dto.itemTypeId.value() == 42);
+    BOOST_TEST(dto.parentId.has_value());
+    BOOST_TEST(dto.parentId.value() == 42);
+    BOOST_TEST(dto.stateId.has_value());
+    BOOST_TEST(dto.stateId.value() == 42);
+    BOOST_TEST(dto.phaseId.has_value());
+    BOOST_TEST(dto.phaseId.value() == 42);
+    BOOST_TEST(dto.caption.has_value());
+    BOOST_TEST(dto.caption.value() == "test_caption");
+    BOOST_TEST(dto.content.has_value());
+    BOOST_TEST(dto.content.value() == "test_content");
+    BOOST_TEST(dto.isDeleted.has_value());
+    BOOST_TEST(dto.isDeleted.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -241,21 +241,21 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     Item original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: itemTypeId
-    original.setItemTypeId(42);
+    original.itemTypeId = 42;
     // Поле: parentId
-    original.setParentId(42);
+    original.parentId = 42;
     // Поле: stateId
-    original.setStateId(42);
+    original.stateId = 42;
     // Поле: phaseId
-    original.setPhaseId(42);
+    original.phaseId = 42;
     // Поле: caption
-    original.setCaption("test_caption");
+    original.caption = "test_caption";
     // Поле: content
-    original.setContent("test_content");
+    original.content = "test_content";
     // Поле: isDeleted
-    original.setIsDeleted(true);
+    original.isDeleted = true;
 
     nlohmann::json json = original.toJson();
     Item deserialized(json);
@@ -276,10 +276,10 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setItemTypeId(42);
-    dto.setStateId(42);
-    dto.setPhaseId(42);
-    dto.setCaption("test_caption");
+    dto.itemTypeId = 42;
+    dto.stateId = 42;
+    dto.phaseId = 42;
+    dto.caption = "test_caption";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле itemTypeId, чтобы сделать их разными
-    dto1.setItemTypeId(999);
+    dto1.itemTypeId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -309,10 +309,10 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     Item dto;
 
-    dto.setItemTypeId(42);
-    dto.setStateId(42);
-    dto.setPhaseId(42);
-    dto.setCaption("test_value");
+    dto.itemTypeId = 42;
+    dto.stateId = 42;
+    dto.phaseId = 42;
+    dto.caption = "test_value";
 
     std::stringstream ss;
     ss << dto;

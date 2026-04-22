@@ -21,76 +21,76 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     ItemLink dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasLinkTypeId());
-    BOOST_TEST(!dto.hasSourceItemId());
-    BOOST_TEST(!dto.hasDestinationItemId());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.linkTypeId.has_value());
+    BOOST_TEST(!dto.sourceItemId.has_value());
+    BOOST_TEST(!dto.destinationItemId.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     ItemLink dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: linkTypeId
     {
-        BOOST_TEST(!dto.hasLinkTypeId());
+        BOOST_TEST(!dto.linkTypeId.has_value());
 
         int64_t testValue =42;
-        dto.setLinkTypeId(testValue);
+        dto.linkTypeId = testValue;
 
-        BOOST_TEST(dto.hasLinkTypeId());
+        BOOST_TEST(dto.linkTypeId.has_value());
 
-        BOOST_TEST(dto.linkTypeId().value() == testValue);
+        BOOST_TEST(dto.linkTypeId.value() == testValue);
 
-        // Проверка clear
-        dto.clearLinkTypeId();
-        BOOST_TEST(!dto.hasLinkTypeId());
+        // Проверка сброса значения
+        dto.linkTypeId = std::nullopt;
+        BOOST_TEST(!dto.linkTypeId.has_value());
     }
     // Проверка поля: sourceItemId
     {
-        BOOST_TEST(!dto.hasSourceItemId());
+        BOOST_TEST(!dto.sourceItemId.has_value());
 
         int64_t testValue =42;
-        dto.setSourceItemId(testValue);
+        dto.sourceItemId = testValue;
 
-        BOOST_TEST(dto.hasSourceItemId());
+        BOOST_TEST(dto.sourceItemId.has_value());
 
-        BOOST_TEST(dto.sourceItemId().value() == testValue);
+        BOOST_TEST(dto.sourceItemId.value() == testValue);
 
-        // Проверка clear
-        dto.clearSourceItemId();
-        BOOST_TEST(!dto.hasSourceItemId());
+        // Проверка сброса значения
+        dto.sourceItemId = std::nullopt;
+        BOOST_TEST(!dto.sourceItemId.has_value());
     }
     // Проверка поля: destinationItemId
     {
-        BOOST_TEST(!dto.hasDestinationItemId());
+        BOOST_TEST(!dto.destinationItemId.has_value());
 
         int64_t testValue =42;
-        dto.setDestinationItemId(testValue);
+        dto.destinationItemId = testValue;
 
-        BOOST_TEST(dto.hasDestinationItemId());
+        BOOST_TEST(dto.destinationItemId.has_value());
 
-        BOOST_TEST(dto.destinationItemId().value() == testValue);
+        BOOST_TEST(dto.destinationItemId.value() == testValue);
 
-        // Проверка clear
-        dto.clearDestinationItemId();
-        BOOST_TEST(!dto.hasDestinationItemId());
+        // Проверка сброса значения
+        dto.destinationItemId = std::nullopt;
+        BOOST_TEST(!dto.destinationItemId.has_value());
     }
 }
 
@@ -100,13 +100,13 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     ItemLink dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: linkTypeId
-    dto.setLinkTypeId(42);
+    dto.linkTypeId = 42;
     // Поле: sourceItemId
-    dto.setSourceItemId(42);
+    dto.sourceItemId = 42;
     // Поле: destinationItemId
-    dto.setDestinationItemId(42);
+    dto.destinationItemId = 42;
 
     nlohmann::json json = dto.toJson();
 
@@ -133,14 +133,14 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     ItemLink dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasLinkTypeId());
-    BOOST_TEST(dto.linkTypeId().value() == 42);
-    BOOST_TEST(dto.hasSourceItemId());
-    BOOST_TEST(dto.sourceItemId().value() == 42);
-    BOOST_TEST(dto.hasDestinationItemId());
-    BOOST_TEST(dto.destinationItemId().value() == 42);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.linkTypeId.has_value());
+    BOOST_TEST(dto.linkTypeId.value() == 42);
+    BOOST_TEST(dto.sourceItemId.has_value());
+    BOOST_TEST(dto.sourceItemId.value() == 42);
+    BOOST_TEST(dto.destinationItemId.has_value());
+    BOOST_TEST(dto.destinationItemId.value() == 42);
 }
 
 // Тест: Сериализация в оба конца
@@ -149,13 +149,13 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     ItemLink original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: linkTypeId
-    original.setLinkTypeId(42);
+    original.linkTypeId = 42;
     // Поле: sourceItemId
-    original.setSourceItemId(42);
+    original.sourceItemId = 42;
     // Поле: destinationItemId
-    original.setDestinationItemId(42);
+    original.destinationItemId = 42;
 
     nlohmann::json json = original.toJson();
     ItemLink deserialized(json);
@@ -176,9 +176,9 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setLinkTypeId(42);
-    dto.setSourceItemId(42);
-    dto.setDestinationItemId(42);
+    dto.linkTypeId = 42;
+    dto.sourceItemId = 42;
+    dto.destinationItemId = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле linkTypeId, чтобы сделать их разными
-    dto1.setLinkTypeId(999);
+    dto1.linkTypeId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -208,9 +208,9 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     ItemLink dto;
 
-    dto.setLinkTypeId(42);
-    dto.setSourceItemId(42);
-    dto.setDestinationItemId(42);
+    dto.linkTypeId = 42;
+    dto.sourceItemId = 42;
+    dto.destinationItemId = 42;
 
     std::stringstream ss;
     ss << dto;

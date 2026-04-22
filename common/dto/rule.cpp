@@ -20,19 +20,19 @@ nlohmann::json Rule::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор правила
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор роли
-    if (m_roleId.has_value())
+    if (roleId.has_value())
     {
-        result["role_id"] = m_roleId.value();
+        result["role_id"] = roleId.value();
     }
     // Право на создание корневых проектов
-    if (m_isRootProjectCreator.has_value())
+    if (isRootProjectCreator.has_value())
     {
-        result["is_root_project_creator"] = m_isRootProjectCreator.value();
+        result["is_root_project_creator"] = isRootProjectCreator.value();
     }
 
     return result;
@@ -47,7 +47,7 @@ bool Rule::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -56,14 +56,14 @@ bool Rule::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор роли
     if (json.contains("role_id") && !json["role_id"].is_null())
     {
         try
         {
-            m_roleId = json["role_id"].get<int64_t>();
+            roleId = json["role_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -72,14 +72,14 @@ bool Rule::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_roleId = std::nullopt;
+        roleId = std::nullopt;
     }
     // Право на создание корневых проектов
     if (json.contains("is_root_project_creator") && !json["is_root_project_creator"].is_null())
     {
         try
         {
-            m_isRootProjectCreator = json["is_root_project_creator"].get<bool>();
+            isRootProjectCreator = json["is_root_project_creator"].get<bool>();
         }
         catch (const std::exception& e)
         {
@@ -88,7 +88,7 @@ bool Rule::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_isRootProjectCreator = std::nullopt;
+        isRootProjectCreator = std::nullopt;
     }
 
     return success;
@@ -96,7 +96,7 @@ bool Rule::fromJson(const nlohmann::json& json)
 
 bool Rule::isValid() const
 {
-    if (!m_roleId.has_value())
+    if (!roleId.has_value())
     {
         return false;
     }
@@ -108,7 +108,7 @@ bool Rule::isValid() const
 
 std::string Rule::validationError() const
 {
-    if (!m_roleId.has_value())
+    if (!roleId.has_value())
     {
         return "Поле «role_id» является обязательным для заполнения";
     }
@@ -120,9 +120,9 @@ std::string Rule::validationError() const
 bool Rule::operator==(const Rule& other) const
 {
     return
-        m_id == other.m_id
-        && m_roleId == other.m_roleId
-        && m_isRootProjectCreator == other.m_isRootProjectCreator
+        id == other.id
+        && roleId == other.roleId
+        && isRootProjectCreator == other.isRootProjectCreator
 ;
 }
 

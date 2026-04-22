@@ -21,92 +21,92 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     RoleMenuItem dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasRoleId());
-    BOOST_TEST(!dto.hasCaption());
-    BOOST_TEST(!dto.hasLink());
-    BOOST_TEST(!dto.hasIcon());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.roleId.has_value());
+    BOOST_TEST(!dto.caption.has_value());
+    BOOST_TEST(!dto.link.has_value());
+    BOOST_TEST(!dto.icon.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     RoleMenuItem dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: roleId
     {
-        BOOST_TEST(!dto.hasRoleId());
+        BOOST_TEST(!dto.roleId.has_value());
 
         int64_t testValue =42;
-        dto.setRoleId(testValue);
+        dto.roleId = testValue;
 
-        BOOST_TEST(dto.hasRoleId());
+        BOOST_TEST(dto.roleId.has_value());
 
-        BOOST_TEST(dto.roleId().value() == testValue);
+        BOOST_TEST(dto.roleId.value() == testValue);
 
-        // Проверка clear
-        dto.clearRoleId();
-        BOOST_TEST(!dto.hasRoleId());
+        // Проверка сброса значения
+        dto.roleId = std::nullopt;
+        BOOST_TEST(!dto.roleId.has_value());
     }
     // Проверка поля: caption
     {
-        BOOST_TEST(!dto.hasCaption());
+        BOOST_TEST(!dto.caption.has_value());
 
         std::string testValue ="test_value";
-        dto.setCaption(testValue);
+        dto.caption = testValue;
 
-        BOOST_TEST(dto.hasCaption());
+        BOOST_TEST(dto.caption.has_value());
 
-        BOOST_TEST(dto.caption().value() == testValue);
+        BOOST_TEST(dto.caption.value() == testValue);
 
-        // Проверка clear
-        dto.clearCaption();
-        BOOST_TEST(!dto.hasCaption());
+        // Проверка сброса значения
+        dto.caption = std::nullopt;
+        BOOST_TEST(!dto.caption.has_value());
     }
     // Проверка поля: link
     {
-        BOOST_TEST(!dto.hasLink());
+        BOOST_TEST(!dto.link.has_value());
 
         std::string testValue ="test_value";
-        dto.setLink(testValue);
+        dto.link = testValue;
 
-        BOOST_TEST(dto.hasLink());
+        BOOST_TEST(dto.link.has_value());
 
-        BOOST_TEST(dto.link().value() == testValue);
+        BOOST_TEST(dto.link.value() == testValue);
 
-        // Проверка clear
-        dto.clearLink();
-        BOOST_TEST(!dto.hasLink());
+        // Проверка сброса значения
+        dto.link = std::nullopt;
+        BOOST_TEST(!dto.link.has_value());
     }
     // Проверка поля: icon
     {
-        BOOST_TEST(!dto.hasIcon());
+        BOOST_TEST(!dto.icon.has_value());
 
         std::string testValue ="test_value";
-        dto.setIcon(testValue);
+        dto.icon = testValue;
 
-        BOOST_TEST(dto.hasIcon());
+        BOOST_TEST(dto.icon.has_value());
 
-        BOOST_TEST(dto.icon().value() == testValue);
+        BOOST_TEST(dto.icon.value() == testValue);
 
-        // Проверка clear
-        dto.clearIcon();
-        BOOST_TEST(!dto.hasIcon());
+        // Проверка сброса значения
+        dto.icon = std::nullopt;
+        BOOST_TEST(!dto.icon.has_value());
     }
 }
 
@@ -116,15 +116,15 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     RoleMenuItem dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: roleId
-    dto.setRoleId(42);
+    dto.roleId = 42;
     // Поле: caption
-    dto.setCaption("test_caption");
+    dto.caption = "test_caption";
     // Поле: link
-    dto.setLink("test_link");
+    dto.link = "test_link";
     // Поле: icon
-    dto.setIcon("test_icon");
+    dto.icon = "test_icon";
 
     nlohmann::json json = dto.toJson();
 
@@ -154,16 +154,16 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     RoleMenuItem dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasRoleId());
-    BOOST_TEST(dto.roleId().value() == 42);
-    BOOST_TEST(dto.hasCaption());
-    BOOST_TEST(dto.caption().value() == "test_caption");
-    BOOST_TEST(dto.hasLink());
-    BOOST_TEST(dto.link().value() == "test_link");
-    BOOST_TEST(dto.hasIcon());
-    BOOST_TEST(dto.icon().value() == "test_icon");
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.roleId.has_value());
+    BOOST_TEST(dto.roleId.value() == 42);
+    BOOST_TEST(dto.caption.has_value());
+    BOOST_TEST(dto.caption.value() == "test_caption");
+    BOOST_TEST(dto.link.has_value());
+    BOOST_TEST(dto.link.value() == "test_link");
+    BOOST_TEST(dto.icon.has_value());
+    BOOST_TEST(dto.icon.value() == "test_icon");
 }
 
 // Тест: Сериализация в оба конца
@@ -172,15 +172,15 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     RoleMenuItem original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: roleId
-    original.setRoleId(42);
+    original.roleId = 42;
     // Поле: caption
-    original.setCaption("test_caption");
+    original.caption = "test_caption";
     // Поле: link
-    original.setLink("test_link");
+    original.link = "test_link";
     // Поле: icon
-    original.setIcon("test_icon");
+    original.icon = "test_icon";
 
     nlohmann::json json = original.toJson();
     RoleMenuItem deserialized(json);
@@ -201,9 +201,9 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setRoleId(42);
-    dto.setCaption("test_caption");
-    dto.setLink("test_link");
+    dto.roleId = 42;
+    dto.caption = "test_caption";
+    dto.link = "test_link";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле roleId, чтобы сделать их разными
-    dto1.setRoleId(999);
+    dto1.roleId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -233,9 +233,9 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     RoleMenuItem dto;
 
-    dto.setRoleId(42);
-    dto.setCaption("test_value");
-    dto.setLink("test_value");
+    dto.roleId = 42;
+    dto.caption = "test_value";
+    dto.link = "test_value";
 
     std::stringstream ss;
     ss << dto;

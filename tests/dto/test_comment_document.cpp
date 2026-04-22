@@ -21,60 +21,60 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     CommentDocument dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasCommentId());
-    BOOST_TEST(!dto.hasDocumentId());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.commentId.has_value());
+    BOOST_TEST(!dto.documentId.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     CommentDocument dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: commentId
     {
-        BOOST_TEST(!dto.hasCommentId());
+        BOOST_TEST(!dto.commentId.has_value());
 
         int64_t testValue =42;
-        dto.setCommentId(testValue);
+        dto.commentId = testValue;
 
-        BOOST_TEST(dto.hasCommentId());
+        BOOST_TEST(dto.commentId.has_value());
 
-        BOOST_TEST(dto.commentId().value() == testValue);
+        BOOST_TEST(dto.commentId.value() == testValue);
 
-        // Проверка clear
-        dto.clearCommentId();
-        BOOST_TEST(!dto.hasCommentId());
+        // Проверка сброса значения
+        dto.commentId = std::nullopt;
+        BOOST_TEST(!dto.commentId.has_value());
     }
     // Проверка поля: documentId
     {
-        BOOST_TEST(!dto.hasDocumentId());
+        BOOST_TEST(!dto.documentId.has_value());
 
         int64_t testValue =42;
-        dto.setDocumentId(testValue);
+        dto.documentId = testValue;
 
-        BOOST_TEST(dto.hasDocumentId());
+        BOOST_TEST(dto.documentId.has_value());
 
-        BOOST_TEST(dto.documentId().value() == testValue);
+        BOOST_TEST(dto.documentId.value() == testValue);
 
-        // Проверка clear
-        dto.clearDocumentId();
-        BOOST_TEST(!dto.hasDocumentId());
+        // Проверка сброса значения
+        dto.documentId = std::nullopt;
+        BOOST_TEST(!dto.documentId.has_value());
     }
 }
 
@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     CommentDocument dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: commentId
-    dto.setCommentId(42);
+    dto.commentId = 42;
     // Поле: documentId
-    dto.setDocumentId(42);
+    dto.documentId = 42;
 
     nlohmann::json json = dto.toJson();
 
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     CommentDocument dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasCommentId());
-    BOOST_TEST(dto.commentId().value() == 42);
-    BOOST_TEST(dto.hasDocumentId());
-    BOOST_TEST(dto.documentId().value() == 42);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.commentId.has_value());
+    BOOST_TEST(dto.commentId.value() == 42);
+    BOOST_TEST(dto.documentId.has_value());
+    BOOST_TEST(dto.documentId.value() == 42);
 }
 
 // Тест: Сериализация в оба конца
@@ -126,11 +126,11 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     CommentDocument original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: commentId
-    original.setCommentId(42);
+    original.commentId = 42;
     // Поле: documentId
-    original.setDocumentId(42);
+    original.documentId = 42;
 
     nlohmann::json json = original.toJson();
     CommentDocument deserialized(json);
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setCommentId(42);
-    dto.setDocumentId(42);
+    dto.commentId = 42;
+    dto.documentId = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле commentId, чтобы сделать их разными
-    dto1.setCommentId(999);
+    dto1.commentId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -182,8 +182,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     CommentDocument dto;
 
-    dto.setCommentId(42);
-    dto.setDocumentId(42);
+    dto.commentId = 42;
+    dto.documentId = 42;
 
     std::stringstream ss;
     ss << dto;

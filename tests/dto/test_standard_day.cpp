@@ -21,124 +21,124 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     StandardDay dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasWeekDayNumber());
-    BOOST_TEST(!dto.hasWeekOrder());
-    BOOST_TEST(!dto.hasIsWorkDay());
-    BOOST_TEST(!dto.hasBeginWorkTime());
-    BOOST_TEST(!dto.hasEndWorkTime());
-    BOOST_TEST(!dto.hasBreakDuration());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.weekDayNumber.has_value());
+    BOOST_TEST(!dto.weekOrder.has_value());
+    BOOST_TEST(!dto.isWorkDay.has_value());
+    BOOST_TEST(!dto.beginWorkTime.has_value());
+    BOOST_TEST(!dto.endWorkTime.has_value());
+    BOOST_TEST(!dto.breakDuration.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     StandardDay dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: weekDayNumber
     {
-        BOOST_TEST(!dto.hasWeekDayNumber());
+        BOOST_TEST(!dto.weekDayNumber.has_value());
 
         int64_t testValue =42;
-        dto.setWeekDayNumber(testValue);
+        dto.weekDayNumber = testValue;
 
-        BOOST_TEST(dto.hasWeekDayNumber());
+        BOOST_TEST(dto.weekDayNumber.has_value());
 
-        BOOST_TEST(dto.weekDayNumber().value() == testValue);
+        BOOST_TEST(dto.weekDayNumber.value() == testValue);
 
-        // Проверка clear
-        dto.clearWeekDayNumber();
-        BOOST_TEST(!dto.hasWeekDayNumber());
+        // Проверка сброса значения
+        dto.weekDayNumber = std::nullopt;
+        BOOST_TEST(!dto.weekDayNumber.has_value());
     }
     // Проверка поля: weekOrder
     {
-        BOOST_TEST(!dto.hasWeekOrder());
+        BOOST_TEST(!dto.weekOrder.has_value());
 
         int64_t testValue =42;
-        dto.setWeekOrder(testValue);
+        dto.weekOrder = testValue;
 
-        BOOST_TEST(dto.hasWeekOrder());
+        BOOST_TEST(dto.weekOrder.has_value());
 
-        BOOST_TEST(dto.weekOrder().value() == testValue);
+        BOOST_TEST(dto.weekOrder.value() == testValue);
 
-        // Проверка clear
-        dto.clearWeekOrder();
-        BOOST_TEST(!dto.hasWeekOrder());
+        // Проверка сброса значения
+        dto.weekOrder = std::nullopt;
+        BOOST_TEST(!dto.weekOrder.has_value());
     }
     // Проверка поля: isWorkDay
     {
-        BOOST_TEST(!dto.hasIsWorkDay());
+        BOOST_TEST(!dto.isWorkDay.has_value());
 
         bool testValue =true;
-        dto.setIsWorkDay(testValue);
+        dto.isWorkDay = testValue;
 
-        BOOST_TEST(dto.hasIsWorkDay());
+        BOOST_TEST(dto.isWorkDay.has_value());
 
-        BOOST_TEST(dto.isWorkDay().value() == testValue);
+        BOOST_TEST(dto.isWorkDay.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsWorkDay();
-        BOOST_TEST(!dto.hasIsWorkDay());
+        // Проверка сброса значения
+        dto.isWorkDay = std::nullopt;
+        BOOST_TEST(!dto.isWorkDay.has_value());
     }
     // Проверка поля: beginWorkTime
     {
-        BOOST_TEST(!dto.hasBeginWorkTime());
+        BOOST_TEST(!dto.beginWorkTime.has_value());
 
         std::string testValue ="test_value";
-        dto.setBeginWorkTime(testValue);
+        dto.beginWorkTime = testValue;
 
-        BOOST_TEST(dto.hasBeginWorkTime());
+        BOOST_TEST(dto.beginWorkTime.has_value());
 
-        BOOST_TEST(dto.beginWorkTime().value() == testValue);
+        BOOST_TEST(dto.beginWorkTime.value() == testValue);
 
-        // Проверка clear
-        dto.clearBeginWorkTime();
-        BOOST_TEST(!dto.hasBeginWorkTime());
+        // Проверка сброса значения
+        dto.beginWorkTime = std::nullopt;
+        BOOST_TEST(!dto.beginWorkTime.has_value());
     }
     // Проверка поля: endWorkTime
     {
-        BOOST_TEST(!dto.hasEndWorkTime());
+        BOOST_TEST(!dto.endWorkTime.has_value());
 
         std::string testValue ="test_value";
-        dto.setEndWorkTime(testValue);
+        dto.endWorkTime = testValue;
 
-        BOOST_TEST(dto.hasEndWorkTime());
+        BOOST_TEST(dto.endWorkTime.has_value());
 
-        BOOST_TEST(dto.endWorkTime().value() == testValue);
+        BOOST_TEST(dto.endWorkTime.value() == testValue);
 
-        // Проверка clear
-        dto.clearEndWorkTime();
-        BOOST_TEST(!dto.hasEndWorkTime());
+        // Проверка сброса значения
+        dto.endWorkTime = std::nullopt;
+        BOOST_TEST(!dto.endWorkTime.has_value());
     }
     // Проверка поля: breakDuration
     {
-        BOOST_TEST(!dto.hasBreakDuration());
+        BOOST_TEST(!dto.breakDuration.has_value());
 
         int64_t testValue =42;
-        dto.setBreakDuration(testValue);
+        dto.breakDuration = testValue;
 
-        BOOST_TEST(dto.hasBreakDuration());
+        BOOST_TEST(dto.breakDuration.has_value());
 
-        BOOST_TEST(dto.breakDuration().value() == testValue);
+        BOOST_TEST(dto.breakDuration.value() == testValue);
 
-        // Проверка clear
-        dto.clearBreakDuration();
-        BOOST_TEST(!dto.hasBreakDuration());
+        // Проверка сброса значения
+        dto.breakDuration = std::nullopt;
+        BOOST_TEST(!dto.breakDuration.has_value());
     }
 }
 
@@ -148,19 +148,19 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     StandardDay dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: weekDayNumber
-    dto.setWeekDayNumber(42);
+    dto.weekDayNumber = 42;
     // Поле: weekOrder
-    dto.setWeekOrder(42);
+    dto.weekOrder = 42;
     // Поле: isWorkDay
-    dto.setIsWorkDay(true);
+    dto.isWorkDay = true;
     // Поле: beginWorkTime
-    dto.setBeginWorkTime("test_begin_work_time");
+    dto.beginWorkTime = "test_begin_work_time";
     // Поле: endWorkTime
-    dto.setEndWorkTime("test_end_work_time");
+    dto.endWorkTime = "test_end_work_time";
     // Поле: breakDuration
-    dto.setBreakDuration(42);
+    dto.breakDuration = 42;
 
     nlohmann::json json = dto.toJson();
 
@@ -196,20 +196,20 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     StandardDay dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasWeekDayNumber());
-    BOOST_TEST(dto.weekDayNumber().value() == 42);
-    BOOST_TEST(dto.hasWeekOrder());
-    BOOST_TEST(dto.weekOrder().value() == 42);
-    BOOST_TEST(dto.hasIsWorkDay());
-    BOOST_TEST(dto.isWorkDay().value() == true);
-    BOOST_TEST(dto.hasBeginWorkTime());
-    BOOST_TEST(dto.beginWorkTime().value() == "test_begin_work_time");
-    BOOST_TEST(dto.hasEndWorkTime());
-    BOOST_TEST(dto.endWorkTime().value() == "test_end_work_time");
-    BOOST_TEST(dto.hasBreakDuration());
-    BOOST_TEST(dto.breakDuration().value() == 42);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.weekDayNumber.has_value());
+    BOOST_TEST(dto.weekDayNumber.value() == 42);
+    BOOST_TEST(dto.weekOrder.has_value());
+    BOOST_TEST(dto.weekOrder.value() == 42);
+    BOOST_TEST(dto.isWorkDay.has_value());
+    BOOST_TEST(dto.isWorkDay.value() == true);
+    BOOST_TEST(dto.beginWorkTime.has_value());
+    BOOST_TEST(dto.beginWorkTime.value() == "test_begin_work_time");
+    BOOST_TEST(dto.endWorkTime.has_value());
+    BOOST_TEST(dto.endWorkTime.value() == "test_end_work_time");
+    BOOST_TEST(dto.breakDuration.has_value());
+    BOOST_TEST(dto.breakDuration.value() == 42);
 }
 
 // Тест: Сериализация в оба конца
@@ -218,19 +218,19 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     StandardDay original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: weekDayNumber
-    original.setWeekDayNumber(42);
+    original.weekDayNumber = 42;
     // Поле: weekOrder
-    original.setWeekOrder(42);
+    original.weekOrder = 42;
     // Поле: isWorkDay
-    original.setIsWorkDay(true);
+    original.isWorkDay = true;
     // Поле: beginWorkTime
-    original.setBeginWorkTime("test_begin_work_time");
+    original.beginWorkTime = "test_begin_work_time";
     // Поле: endWorkTime
-    original.setEndWorkTime("test_end_work_time");
+    original.endWorkTime = "test_end_work_time";
     // Поле: breakDuration
-    original.setBreakDuration(42);
+    original.breakDuration = 42;
 
     nlohmann::json json = original.toJson();
     StandardDay deserialized(json);
@@ -251,9 +251,9 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setWeekDayNumber(42);
-    dto.setWeekOrder(42);
-    dto.setIsWorkDay(true);
+    dto.weekDayNumber = 42;
+    dto.weekOrder = 42;
+    dto.isWorkDay = true;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле weekDayNumber, чтобы сделать их разными
-    dto1.setWeekDayNumber(999);
+    dto1.weekDayNumber = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -283,9 +283,9 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     StandardDay dto;
 
-    dto.setWeekDayNumber(42);
-    dto.setWeekOrder(42);
-    dto.setIsWorkDay(true);
+    dto.weekDayNumber = 42;
+    dto.weekOrder = 42;
+    dto.isWorkDay = true;
 
     std::stringstream ss;
     ss << dto;

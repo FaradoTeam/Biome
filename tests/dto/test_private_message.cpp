@@ -21,111 +21,111 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     PrivateMessage dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasSenderUserId());
-    BOOST_TEST(!dto.hasReceiverUserId());
-    BOOST_TEST(!dto.hasCreationTimestamp());
-    BOOST_TEST(!dto.hasContent());
-    BOOST_TEST(!dto.hasIsViewed());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.senderUserId.has_value());
+    BOOST_TEST(!dto.receiverUserId.has_value());
+    BOOST_TEST(!dto.creationTimestamp.has_value());
+    BOOST_TEST(!dto.content.has_value());
+    BOOST_TEST(!dto.isViewed.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     PrivateMessage dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: senderUserId
     {
-        BOOST_TEST(!dto.hasSenderUserId());
+        BOOST_TEST(!dto.senderUserId.has_value());
 
         int64_t testValue =42;
-        dto.setSenderUserId(testValue);
+        dto.senderUserId = testValue;
 
-        BOOST_TEST(dto.hasSenderUserId());
+        BOOST_TEST(dto.senderUserId.has_value());
 
-        BOOST_TEST(dto.senderUserId().value() == testValue);
+        BOOST_TEST(dto.senderUserId.value() == testValue);
 
-        // Проверка clear
-        dto.clearSenderUserId();
-        BOOST_TEST(!dto.hasSenderUserId());
+        // Проверка сброса значения
+        dto.senderUserId = std::nullopt;
+        BOOST_TEST(!dto.senderUserId.has_value());
     }
     // Проверка поля: receiverUserId
     {
-        BOOST_TEST(!dto.hasReceiverUserId());
+        BOOST_TEST(!dto.receiverUserId.has_value());
 
         int64_t testValue =42;
-        dto.setReceiverUserId(testValue);
+        dto.receiverUserId = testValue;
 
-        BOOST_TEST(dto.hasReceiverUserId());
+        BOOST_TEST(dto.receiverUserId.has_value());
 
-        BOOST_TEST(dto.receiverUserId().value() == testValue);
+        BOOST_TEST(dto.receiverUserId.value() == testValue);
 
-        // Проверка clear
-        dto.clearReceiverUserId();
-        BOOST_TEST(!dto.hasReceiverUserId());
+        // Проверка сброса значения
+        dto.receiverUserId = std::nullopt;
+        BOOST_TEST(!dto.receiverUserId.has_value());
     }
     // Проверка поля: creationTimestamp
     {
-        BOOST_TEST(!dto.hasCreationTimestamp());
+        BOOST_TEST(!dto.creationTimestamp.has_value());
 
         std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
-        dto.setCreationTimestamp(testValue);
+        dto.creationTimestamp = testValue;
 
-        BOOST_TEST(dto.hasCreationTimestamp());
+        BOOST_TEST(dto.creationTimestamp.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.creationTimestamp().value()),
+            timePointToSeconds(dto.creationTimestamp.value()),
             timePointToSeconds(testValue)
         );
 
-        // Проверка clear
-        dto.clearCreationTimestamp();
-        BOOST_TEST(!dto.hasCreationTimestamp());
+        // Проверка сброса значения
+        dto.creationTimestamp = std::nullopt;
+        BOOST_TEST(!dto.creationTimestamp.has_value());
     }
     // Проверка поля: content
     {
-        BOOST_TEST(!dto.hasContent());
+        BOOST_TEST(!dto.content.has_value());
 
         std::string testValue ="test_value";
-        dto.setContent(testValue);
+        dto.content = testValue;
 
-        BOOST_TEST(dto.hasContent());
+        BOOST_TEST(dto.content.has_value());
 
-        BOOST_TEST(dto.content().value() == testValue);
+        BOOST_TEST(dto.content.value() == testValue);
 
-        // Проверка clear
-        dto.clearContent();
-        BOOST_TEST(!dto.hasContent());
+        // Проверка сброса значения
+        dto.content = std::nullopt;
+        BOOST_TEST(!dto.content.has_value());
     }
     // Проверка поля: isViewed
     {
-        BOOST_TEST(!dto.hasIsViewed());
+        BOOST_TEST(!dto.isViewed.has_value());
 
         bool testValue =true;
-        dto.setIsViewed(testValue);
+        dto.isViewed = testValue;
 
-        BOOST_TEST(dto.hasIsViewed());
+        BOOST_TEST(dto.isViewed.has_value());
 
-        BOOST_TEST(dto.isViewed().value() == testValue);
+        BOOST_TEST(dto.isViewed.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsViewed();
-        BOOST_TEST(!dto.hasIsViewed());
+        // Проверка сброса значения
+        dto.isViewed = std::nullopt;
+        BOOST_TEST(!dto.isViewed.has_value());
     }
 }
 
@@ -135,17 +135,17 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     PrivateMessage dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: senderUserId
-    dto.setSenderUserId(42);
+    dto.senderUserId = 42;
     // Поле: receiverUserId
-    dto.setReceiverUserId(42);
+    dto.receiverUserId = 42;
     // Поле: creationTimestamp
-    dto.setCreationTimestamp(secondsToTimePoint(1640995200));
+    dto.creationTimestamp = secondsToTimePoint(1640995200);
     // Поле: content
-    dto.setContent("test_content");
+    dto.content = "test_content";
     // Поле: isViewed
-    dto.setIsViewed(true);
+    dto.isViewed = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -178,18 +178,18 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     PrivateMessage dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasSenderUserId());
-    BOOST_TEST(dto.senderUserId().value() == 42);
-    BOOST_TEST(dto.hasReceiverUserId());
-    BOOST_TEST(dto.receiverUserId().value() == 42);
-    BOOST_TEST(dto.hasCreationTimestamp());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.creationTimestamp().value()), 1640995200);
-    BOOST_TEST(dto.hasContent());
-    BOOST_TEST(dto.content().value() == "test_content");
-    BOOST_TEST(dto.hasIsViewed());
-    BOOST_TEST(dto.isViewed().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.senderUserId.has_value());
+    BOOST_TEST(dto.senderUserId.value() == 42);
+    BOOST_TEST(dto.receiverUserId.has_value());
+    BOOST_TEST(dto.receiverUserId.value() == 42);
+    BOOST_TEST(dto.creationTimestamp.has_value());
+    BOOST_CHECK_EQUAL(timePointToSeconds(dto.creationTimestamp.value()), 1640995200);
+    BOOST_TEST(dto.content.has_value());
+    BOOST_TEST(dto.content.value() == "test_content");
+    BOOST_TEST(dto.isViewed.has_value());
+    BOOST_TEST(dto.isViewed.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -198,17 +198,17 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     PrivateMessage original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: senderUserId
-    original.setSenderUserId(42);
+    original.senderUserId = 42;
     // Поле: receiverUserId
-    original.setReceiverUserId(42);
+    original.receiverUserId = 42;
     // Поле: creationTimestamp
-    original.setCreationTimestamp(secondsToTimePoint(1640995200));
+    original.creationTimestamp = secondsToTimePoint(1640995200);
     // Поле: content
-    original.setContent("test_content");
+    original.content = "test_content";
     // Поле: isViewed
-    original.setIsViewed(true);
+    original.isViewed = true;
 
     nlohmann::json json = original.toJson();
     PrivateMessage deserialized(json);
@@ -229,10 +229,10 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setSenderUserId(42);
-    dto.setReceiverUserId(42);
-    dto.setCreationTimestamp(secondsToTimePoint(1640995200));
-    dto.setContent("test_content");
+    dto.senderUserId = 42;
+    dto.receiverUserId = 42;
+    dto.creationTimestamp = secondsToTimePoint(1640995200);
+    dto.content = "test_content";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле senderUserId, чтобы сделать их разными
-    dto1.setSenderUserId(999);
+    dto1.senderUserId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -262,10 +262,10 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     PrivateMessage dto;
 
-    dto.setSenderUserId(42);
-    dto.setReceiverUserId(42);
-    dto.setCreationTimestamp(secondsToTimePoint(1640995200));
-    dto.setContent("test_value");
+    dto.senderUserId = 42;
+    dto.receiverUserId = 42;
+    dto.creationTimestamp = secondsToTimePoint(1640995200);
+    dto.content = "test_value";
 
     std::stringstream ss;
     ss << dto;

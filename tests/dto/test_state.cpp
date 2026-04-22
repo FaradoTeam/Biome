@@ -21,140 +21,140 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     State dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasWorkflowId());
-    BOOST_TEST(!dto.hasCaption());
-    BOOST_TEST(!dto.hasDescription());
-    BOOST_TEST(!dto.hasWeight());
-    BOOST_TEST(!dto.hasOrderNumber());
-    BOOST_TEST(!dto.hasIsArchive());
-    BOOST_TEST(!dto.hasIsQueue());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.workflowId.has_value());
+    BOOST_TEST(!dto.caption.has_value());
+    BOOST_TEST(!dto.description.has_value());
+    BOOST_TEST(!dto.weight.has_value());
+    BOOST_TEST(!dto.orderNumber.has_value());
+    BOOST_TEST(!dto.isArchive.has_value());
+    BOOST_TEST(!dto.isQueue.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     State dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: workflowId
     {
-        BOOST_TEST(!dto.hasWorkflowId());
+        BOOST_TEST(!dto.workflowId.has_value());
 
         int64_t testValue =42;
-        dto.setWorkflowId(testValue);
+        dto.workflowId = testValue;
 
-        BOOST_TEST(dto.hasWorkflowId());
+        BOOST_TEST(dto.workflowId.has_value());
 
-        BOOST_TEST(dto.workflowId().value() == testValue);
+        BOOST_TEST(dto.workflowId.value() == testValue);
 
-        // Проверка clear
-        dto.clearWorkflowId();
-        BOOST_TEST(!dto.hasWorkflowId());
+        // Проверка сброса значения
+        dto.workflowId = std::nullopt;
+        BOOST_TEST(!dto.workflowId.has_value());
     }
     // Проверка поля: caption
     {
-        BOOST_TEST(!dto.hasCaption());
+        BOOST_TEST(!dto.caption.has_value());
 
         std::string testValue ="test_value";
-        dto.setCaption(testValue);
+        dto.caption = testValue;
 
-        BOOST_TEST(dto.hasCaption());
+        BOOST_TEST(dto.caption.has_value());
 
-        BOOST_TEST(dto.caption().value() == testValue);
+        BOOST_TEST(dto.caption.value() == testValue);
 
-        // Проверка clear
-        dto.clearCaption();
-        BOOST_TEST(!dto.hasCaption());
+        // Проверка сброса значения
+        dto.caption = std::nullopt;
+        BOOST_TEST(!dto.caption.has_value());
     }
     // Проверка поля: description
     {
-        BOOST_TEST(!dto.hasDescription());
+        BOOST_TEST(!dto.description.has_value());
 
         std::string testValue ="test_value";
-        dto.setDescription(testValue);
+        dto.description = testValue;
 
-        BOOST_TEST(dto.hasDescription());
+        BOOST_TEST(dto.description.has_value());
 
-        BOOST_TEST(dto.description().value() == testValue);
+        BOOST_TEST(dto.description.value() == testValue);
 
-        // Проверка clear
-        dto.clearDescription();
-        BOOST_TEST(!dto.hasDescription());
+        // Проверка сброса значения
+        dto.description = std::nullopt;
+        BOOST_TEST(!dto.description.has_value());
     }
     // Проверка поля: weight
     {
-        BOOST_TEST(!dto.hasWeight());
+        BOOST_TEST(!dto.weight.has_value());
 
         int64_t testValue =42;
-        dto.setWeight(testValue);
+        dto.weight = testValue;
 
-        BOOST_TEST(dto.hasWeight());
+        BOOST_TEST(dto.weight.has_value());
 
-        BOOST_TEST(dto.weight().value() == testValue);
+        BOOST_TEST(dto.weight.value() == testValue);
 
-        // Проверка clear
-        dto.clearWeight();
-        BOOST_TEST(!dto.hasWeight());
+        // Проверка сброса значения
+        dto.weight = std::nullopt;
+        BOOST_TEST(!dto.weight.has_value());
     }
     // Проверка поля: orderNumber
     {
-        BOOST_TEST(!dto.hasOrderNumber());
+        BOOST_TEST(!dto.orderNumber.has_value());
 
         int64_t testValue =42;
-        dto.setOrderNumber(testValue);
+        dto.orderNumber = testValue;
 
-        BOOST_TEST(dto.hasOrderNumber());
+        BOOST_TEST(dto.orderNumber.has_value());
 
-        BOOST_TEST(dto.orderNumber().value() == testValue);
+        BOOST_TEST(dto.orderNumber.value() == testValue);
 
-        // Проверка clear
-        dto.clearOrderNumber();
-        BOOST_TEST(!dto.hasOrderNumber());
+        // Проверка сброса значения
+        dto.orderNumber = std::nullopt;
+        BOOST_TEST(!dto.orderNumber.has_value());
     }
     // Проверка поля: isArchive
     {
-        BOOST_TEST(!dto.hasIsArchive());
+        BOOST_TEST(!dto.isArchive.has_value());
 
         bool testValue =true;
-        dto.setIsArchive(testValue);
+        dto.isArchive = testValue;
 
-        BOOST_TEST(dto.hasIsArchive());
+        BOOST_TEST(dto.isArchive.has_value());
 
-        BOOST_TEST(dto.isArchive().value() == testValue);
+        BOOST_TEST(dto.isArchive.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsArchive();
-        BOOST_TEST(!dto.hasIsArchive());
+        // Проверка сброса значения
+        dto.isArchive = std::nullopt;
+        BOOST_TEST(!dto.isArchive.has_value());
     }
     // Проверка поля: isQueue
     {
-        BOOST_TEST(!dto.hasIsQueue());
+        BOOST_TEST(!dto.isQueue.has_value());
 
         bool testValue =true;
-        dto.setIsQueue(testValue);
+        dto.isQueue = testValue;
 
-        BOOST_TEST(dto.hasIsQueue());
+        BOOST_TEST(dto.isQueue.has_value());
 
-        BOOST_TEST(dto.isQueue().value() == testValue);
+        BOOST_TEST(dto.isQueue.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsQueue();
-        BOOST_TEST(!dto.hasIsQueue());
+        // Проверка сброса значения
+        dto.isQueue = std::nullopt;
+        BOOST_TEST(!dto.isQueue.has_value());
     }
 }
 
@@ -164,21 +164,21 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     State dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: workflowId
-    dto.setWorkflowId(42);
+    dto.workflowId = 42;
     // Поле: caption
-    dto.setCaption("test_caption");
+    dto.caption = "test_caption";
     // Поле: description
-    dto.setDescription("test_description");
+    dto.description = "test_description";
     // Поле: weight
-    dto.setWeight(42);
+    dto.weight = 42;
     // Поле: orderNumber
-    dto.setOrderNumber(42);
+    dto.orderNumber = 42;
     // Поле: isArchive
-    dto.setIsArchive(true);
+    dto.isArchive = true;
     // Поле: isQueue
-    dto.setIsQueue(true);
+    dto.isQueue = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -217,22 +217,22 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     State dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasWorkflowId());
-    BOOST_TEST(dto.workflowId().value() == 42);
-    BOOST_TEST(dto.hasCaption());
-    BOOST_TEST(dto.caption().value() == "test_caption");
-    BOOST_TEST(dto.hasDescription());
-    BOOST_TEST(dto.description().value() == "test_description");
-    BOOST_TEST(dto.hasWeight());
-    BOOST_TEST(dto.weight().value() == 42);
-    BOOST_TEST(dto.hasOrderNumber());
-    BOOST_TEST(dto.orderNumber().value() == 42);
-    BOOST_TEST(dto.hasIsArchive());
-    BOOST_TEST(dto.isArchive().value() == true);
-    BOOST_TEST(dto.hasIsQueue());
-    BOOST_TEST(dto.isQueue().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.workflowId.has_value());
+    BOOST_TEST(dto.workflowId.value() == 42);
+    BOOST_TEST(dto.caption.has_value());
+    BOOST_TEST(dto.caption.value() == "test_caption");
+    BOOST_TEST(dto.description.has_value());
+    BOOST_TEST(dto.description.value() == "test_description");
+    BOOST_TEST(dto.weight.has_value());
+    BOOST_TEST(dto.weight.value() == 42);
+    BOOST_TEST(dto.orderNumber.has_value());
+    BOOST_TEST(dto.orderNumber.value() == 42);
+    BOOST_TEST(dto.isArchive.has_value());
+    BOOST_TEST(dto.isArchive.value() == true);
+    BOOST_TEST(dto.isQueue.has_value());
+    BOOST_TEST(dto.isQueue.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -241,21 +241,21 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     State original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: workflowId
-    original.setWorkflowId(42);
+    original.workflowId = 42;
     // Поле: caption
-    original.setCaption("test_caption");
+    original.caption = "test_caption";
     // Поле: description
-    original.setDescription("test_description");
+    original.description = "test_description";
     // Поле: weight
-    original.setWeight(42);
+    original.weight = 42;
     // Поле: orderNumber
-    original.setOrderNumber(42);
+    original.orderNumber = 42;
     // Поле: isArchive
-    original.setIsArchive(true);
+    original.isArchive = true;
     // Поле: isQueue
-    original.setIsQueue(true);
+    original.isQueue = true;
 
     nlohmann::json json = original.toJson();
     State deserialized(json);
@@ -276,8 +276,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setWorkflowId(42);
-    dto.setCaption("test_caption");
+    dto.workflowId = 42;
+    dto.caption = "test_caption";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле workflowId, чтобы сделать их разными
-    dto1.setWorkflowId(999);
+    dto1.workflowId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -307,8 +307,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     State dto;
 
-    dto.setWorkflowId(42);
-    dto.setCaption("test_value");
+    dto.workflowId = 42;
+    dto.caption = "test_value";
 
     std::stringstream ss;
     ss << dto;

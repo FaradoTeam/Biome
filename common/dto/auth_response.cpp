@@ -20,12 +20,12 @@ nlohmann::json AuthResponse::toJson() const
     nlohmann::json result;
 
     // accessToken
-    if (m_accessToken.has_value())
+    if (accessToken.has_value())
     {
-        result["access_token"] = m_accessToken.value();
+        result["access_token"] = accessToken.value();
     }
     // tokenType
-    result["token_type"] = m_tokenType;
+    result["token_type"] = tokenType;
 
     return result;
 }
@@ -39,7 +39,7 @@ bool AuthResponse::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_accessToken = json["access_token"].get<std::string>();
+            accessToken = json["access_token"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -48,7 +48,7 @@ bool AuthResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_accessToken = std::nullopt;
+        accessToken = std::nullopt;
     }
     // tokenType
     // Constant field - ignore value from JSON
@@ -74,7 +74,7 @@ std::string AuthResponse::validationError() const
 bool AuthResponse::operator==(const AuthResponse& other) const
 {
     return
-        m_accessToken == other.m_accessToken
+        accessToken == other.accessToken
 ;
 }
 

@@ -21,44 +21,44 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     ChangePasswordRequest dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasOldPassword());
-    BOOST_TEST(!dto.hasNewPassword());
+    BOOST_TEST(!dto.oldPassword.has_value());
+    BOOST_TEST(!dto.newPassword.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     ChangePasswordRequest dto;
 
     // Проверка поля: oldPassword
     {
-        BOOST_TEST(!dto.hasOldPassword());
+        BOOST_TEST(!dto.oldPassword.has_value());
 
         std::string testValue ="test_value";
-        dto.setOldPassword(testValue);
+        dto.oldPassword = testValue;
 
-        BOOST_TEST(dto.hasOldPassword());
+        BOOST_TEST(dto.oldPassword.has_value());
 
-        BOOST_TEST(dto.oldPassword().value() == testValue);
+        BOOST_TEST(dto.oldPassword.value() == testValue);
 
-        // Проверка clear
-        dto.clearOldPassword();
-        BOOST_TEST(!dto.hasOldPassword());
+        // Проверка сброса значения
+        dto.oldPassword = std::nullopt;
+        BOOST_TEST(!dto.oldPassword.has_value());
     }
     // Проверка поля: newPassword
     {
-        BOOST_TEST(!dto.hasNewPassword());
+        BOOST_TEST(!dto.newPassword.has_value());
 
         std::string testValue ="test_value";
-        dto.setNewPassword(testValue);
+        dto.newPassword = testValue;
 
-        BOOST_TEST(dto.hasNewPassword());
+        BOOST_TEST(dto.newPassword.has_value());
 
-        BOOST_TEST(dto.newPassword().value() == testValue);
+        BOOST_TEST(dto.newPassword.value() == testValue);
 
-        // Проверка clear
-        dto.clearNewPassword();
-        BOOST_TEST(!dto.hasNewPassword());
+        // Проверка сброса значения
+        dto.newPassword = std::nullopt;
+        BOOST_TEST(!dto.newPassword.has_value());
     }
 }
 
@@ -68,9 +68,9 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     ChangePasswordRequest dto;
 
     // Поле: oldPassword
-    dto.setOldPassword("test_old_password");
+    dto.oldPassword = "test_old_password";
     // Поле: newPassword
-    dto.setNewPassword("test_new_password");
+    dto.newPassword = "test_new_password";
 
     nlohmann::json json = dto.toJson();
 
@@ -91,10 +91,10 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     ChangePasswordRequest dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasOldPassword());
-    BOOST_TEST(dto.oldPassword().value() == "test_old_password");
-    BOOST_TEST(dto.hasNewPassword());
-    BOOST_TEST(dto.newPassword().value() == "test_new_password");
+    BOOST_TEST(dto.oldPassword.has_value());
+    BOOST_TEST(dto.oldPassword.value() == "test_old_password");
+    BOOST_TEST(dto.newPassword.has_value());
+    BOOST_TEST(dto.newPassword.value() == "test_new_password");
 }
 
 // Тест: Сериализация в оба конца
@@ -103,9 +103,9 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     ChangePasswordRequest original;
 
     // Поле: oldPassword
-    original.setOldPassword("test_old_password");
+    original.oldPassword = "test_old_password";
     // Поле: newPassword
-    original.setNewPassword("test_new_password");
+    original.newPassword = "test_new_password";
 
     nlohmann::json json = original.toJson();
     ChangePasswordRequest deserialized(json);
@@ -126,8 +126,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setOldPassword("test_old_password");
-    dto.setNewPassword("test_new_password");
+    dto.oldPassword = "test_old_password";
+    dto.newPassword = "test_new_password";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле oldPassword, чтобы сделать их разными
-    dto1.setOldPassword("different_value");
+    dto1.oldPassword = "different_value";
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -157,8 +157,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     ChangePasswordRequest dto;
 
-    dto.setOldPassword("test_value");
-    dto.setNewPassword("test_value");
+    dto.oldPassword = "test_value";
+    dto.newPassword = "test_value";
 
     std::stringstream ss;
     ss << dto;

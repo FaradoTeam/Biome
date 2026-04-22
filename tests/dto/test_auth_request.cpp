@@ -21,44 +21,44 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     AuthRequest dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasLogin());
-    BOOST_TEST(!dto.hasPassword());
+    BOOST_TEST(!dto.login.has_value());
+    BOOST_TEST(!dto.password.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     AuthRequest dto;
 
     // Проверка поля: login
     {
-        BOOST_TEST(!dto.hasLogin());
+        BOOST_TEST(!dto.login.has_value());
 
         std::string testValue ="test_value";
-        dto.setLogin(testValue);
+        dto.login = testValue;
 
-        BOOST_TEST(dto.hasLogin());
+        BOOST_TEST(dto.login.has_value());
 
-        BOOST_TEST(dto.login().value() == testValue);
+        BOOST_TEST(dto.login.value() == testValue);
 
-        // Проверка clear
-        dto.clearLogin();
-        BOOST_TEST(!dto.hasLogin());
+        // Проверка сброса значения
+        dto.login = std::nullopt;
+        BOOST_TEST(!dto.login.has_value());
     }
     // Проверка поля: password
     {
-        BOOST_TEST(!dto.hasPassword());
+        BOOST_TEST(!dto.password.has_value());
 
         std::string testValue ="test_value";
-        dto.setPassword(testValue);
+        dto.password = testValue;
 
-        BOOST_TEST(dto.hasPassword());
+        BOOST_TEST(dto.password.has_value());
 
-        BOOST_TEST(dto.password().value() == testValue);
+        BOOST_TEST(dto.password.value() == testValue);
 
-        // Проверка clear
-        dto.clearPassword();
-        BOOST_TEST(!dto.hasPassword());
+        // Проверка сброса значения
+        dto.password = std::nullopt;
+        BOOST_TEST(!dto.password.has_value());
     }
 }
 
@@ -68,9 +68,9 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     AuthRequest dto;
 
     // Поле: login
-    dto.setLogin("test_login");
+    dto.login = "test_login";
     // Поле: password
-    dto.setPassword("test_password");
+    dto.password = "test_password";
 
     nlohmann::json json = dto.toJson();
 
@@ -91,10 +91,10 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     AuthRequest dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasLogin());
-    BOOST_TEST(dto.login().value() == "test_login");
-    BOOST_TEST(dto.hasPassword());
-    BOOST_TEST(dto.password().value() == "test_password");
+    BOOST_TEST(dto.login.has_value());
+    BOOST_TEST(dto.login.value() == "test_login");
+    BOOST_TEST(dto.password.has_value());
+    BOOST_TEST(dto.password.value() == "test_password");
 }
 
 // Тест: Сериализация в оба конца
@@ -103,9 +103,9 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     AuthRequest original;
 
     // Поле: login
-    original.setLogin("test_login");
+    original.login = "test_login";
     // Поле: password
-    original.setPassword("test_password");
+    original.password = "test_password";
 
     nlohmann::json json = original.toJson();
     AuthRequest deserialized(json);
@@ -126,8 +126,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setLogin("test_login");
-    dto.setPassword("test_password");
+    dto.login = "test_login";
+    dto.password = "test_password";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле login, чтобы сделать их разными
-    dto1.setLogin("different_value");
+    dto1.login = "different_value";
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -157,8 +157,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     AuthRequest dto;
 
-    dto.setLogin("test_value");
-    dto.setPassword("test_value");
+    dto.login = "test_value";
+    dto.password = "test_value";
 
     std::stringstream ss;
     ss << dto;

@@ -20,49 +20,49 @@ nlohmann::json Document::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Название документа
-    if (m_caption.has_value())
+    if (caption.has_value())
     {
-        result["caption"] = m_caption.value();
+        result["caption"] = caption.value();
     }
     // Описание документа
-    if (m_description.has_value())
+    if (description.has_value())
     {
-        result["description"] = m_description.value();
+        result["description"] = description.value();
     }
     // Путь к файлу на диске
-    if (m_path.has_value())
+    if (path.has_value())
     {
-        result["path"] = m_path.value();
+        result["path"] = path.value();
     }
     // Исходное имя файла
-    if (m_filename.has_value())
+    if (filename.has_value())
     {
-        result["filename"] = m_filename.value();
+        result["filename"] = filename.value();
     }
     // Размер файла в байтах
-    if (m_size.has_value())
+    if (size.has_value())
     {
-        result["size"] = m_size.value();
+        result["size"] = size.value();
     }
     // MIME-тип файла
-    if (m_mimeType.has_value())
+    if (mimeType.has_value())
     {
-        result["mime_type"] = m_mimeType.value();
+        result["mime_type"] = mimeType.value();
     }
     // Время загрузки
-    if (m_uploadedAt.has_value())
+    if (uploadedAt.has_value())
     {
-        result["uploaded_at"] = timePointToSeconds(m_uploadedAt.value());
+        result["uploaded_at"] = timePointToSeconds(uploadedAt.value());
     }
     // Идентификатор пользователя
-    if (m_uploadedByUserId.has_value())
+    if (uploadedByUserId.has_value())
     {
-        result["uploaded_by_user_id"] = m_uploadedByUserId.value();
+        result["uploaded_by_user_id"] = uploadedByUserId.value();
     }
 
     return result;
@@ -77,7 +77,7 @@ bool Document::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -86,14 +86,14 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Название документа
     if (json.contains("caption") && !json["caption"].is_null())
     {
         try
         {
-            m_caption = json["caption"].get<std::string>();
+            caption = json["caption"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -102,14 +102,14 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_caption = std::nullopt;
+        caption = std::nullopt;
     }
     // Описание документа
     if (json.contains("description") && !json["description"].is_null())
     {
         try
         {
-            m_description = json["description"].get<std::string>();
+            description = json["description"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -118,14 +118,14 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_description = std::nullopt;
+        description = std::nullopt;
     }
     // Путь к файлу на диске
     if (json.contains("path") && !json["path"].is_null())
     {
         try
         {
-            m_path = json["path"].get<std::string>();
+            path = json["path"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -134,14 +134,14 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_path = std::nullopt;
+        path = std::nullopt;
     }
     // Исходное имя файла
     if (json.contains("filename") && !json["filename"].is_null())
     {
         try
         {
-            m_filename = json["filename"].get<std::string>();
+            filename = json["filename"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -150,14 +150,14 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_filename = std::nullopt;
+        filename = std::nullopt;
     }
     // Размер файла в байтах
     if (json.contains("size") && !json["size"].is_null())
     {
         try
         {
-            m_size = json["size"].get<int64_t>();
+            size = json["size"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -166,14 +166,14 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_size = std::nullopt;
+        size = std::nullopt;
     }
     // MIME-тип файла
     if (json.contains("mime_type") && !json["mime_type"].is_null())
     {
         try
         {
-            m_mimeType = json["mime_type"].get<std::string>();
+            mimeType = json["mime_type"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -182,15 +182,15 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_mimeType = std::nullopt;
+        mimeType = std::nullopt;
     }
     // Время загрузки
     if (json.contains("uploaded_at") && !json["uploaded_at"].is_null())
     {
         try
         {
-            auto timestamp = json["uploaded_at"].get<int64_t>();
-            m_uploadedAt = secondsToTimePoint(timestamp);
+            auto timestampValue = json["uploaded_at"].get<int64_t>();
+            uploadedAt = secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -199,14 +199,14 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_uploadedAt = std::nullopt;
+        uploadedAt = std::nullopt;
     }
     // Идентификатор пользователя
     if (json.contains("uploaded_by_user_id") && !json["uploaded_by_user_id"].is_null())
     {
         try
         {
-            m_uploadedByUserId = json["uploaded_by_user_id"].get<int64_t>();
+            uploadedByUserId = json["uploaded_by_user_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -215,7 +215,7 @@ bool Document::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_uploadedByUserId = std::nullopt;
+        uploadedByUserId = std::nullopt;
     }
 
     return success;
@@ -223,13 +223,13 @@ bool Document::fromJson(const nlohmann::json& json)
 
 bool Document::isValid() const
 {
-    if (!m_caption.has_value())
+    if (!caption.has_value())
     {
         return false;
     }
 
     // Дополнительные проверки для непустых значений
-    if (m_caption.value().empty())
+    if (caption.value().empty())
     {
         return false;
     }
@@ -239,12 +239,12 @@ bool Document::isValid() const
 
 std::string Document::validationError() const
 {
-    if (!m_caption.has_value())
+    if (!caption.has_value())
     {
         return "Поле «caption» является обязательным для заполнения";
     }
 
-    if (m_caption.value().empty())
+    if (caption.value().empty())
     {
         return "Поле «caption» не может быть пустой строкой";
     }
@@ -255,15 +255,15 @@ std::string Document::validationError() const
 bool Document::operator==(const Document& other) const
 {
     return
-        m_id == other.m_id
-        && m_caption == other.m_caption
-        && m_description == other.m_description
-        && m_path == other.m_path
-        && m_filename == other.m_filename
-        && m_size == other.m_size
-        && m_mimeType == other.m_mimeType
-        && m_uploadedAt == other.m_uploadedAt
-        && m_uploadedByUserId == other.m_uploadedByUserId
+        id == other.id
+        && caption == other.caption
+        && description == other.description
+        && path == other.path
+        && filename == other.filename
+        && size == other.size
+        && mimeType == other.mimeType
+        && uploadedAt == other.uploadedAt
+        && uploadedByUserId == other.uploadedByUserId
 ;
 }
 

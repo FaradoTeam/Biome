@@ -21,172 +21,172 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     User dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasLogin());
-    BOOST_TEST(!dto.hasFirstName());
-    BOOST_TEST(!dto.hasMiddleName());
-    BOOST_TEST(!dto.hasLastName());
-    BOOST_TEST(!dto.hasEmail());
-    BOOST_TEST(!dto.hasNeedChangePassword());
-    BOOST_TEST(!dto.hasIsBlocked());
-    BOOST_TEST(!dto.hasIsSuperAdmin());
-    BOOST_TEST(!dto.hasIsHidden());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.login.has_value());
+    BOOST_TEST(!dto.firstName.has_value());
+    BOOST_TEST(!dto.middleName.has_value());
+    BOOST_TEST(!dto.lastName.has_value());
+    BOOST_TEST(!dto.email.has_value());
+    BOOST_TEST(!dto.needChangePassword.has_value());
+    BOOST_TEST(!dto.isBlocked.has_value());
+    BOOST_TEST(!dto.isSuperAdmin.has_value());
+    BOOST_TEST(!dto.isHidden.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     User dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: login
     {
-        BOOST_TEST(!dto.hasLogin());
+        BOOST_TEST(!dto.login.has_value());
 
         std::string testValue ="test_value";
-        dto.setLogin(testValue);
+        dto.login = testValue;
 
-        BOOST_TEST(dto.hasLogin());
+        BOOST_TEST(dto.login.has_value());
 
-        BOOST_TEST(dto.login().value() == testValue);
+        BOOST_TEST(dto.login.value() == testValue);
 
-        // Проверка clear
-        dto.clearLogin();
-        BOOST_TEST(!dto.hasLogin());
+        // Проверка сброса значения
+        dto.login = std::nullopt;
+        BOOST_TEST(!dto.login.has_value());
     }
     // Проверка поля: firstName
     {
-        BOOST_TEST(!dto.hasFirstName());
+        BOOST_TEST(!dto.firstName.has_value());
 
         std::string testValue ="test_value";
-        dto.setFirstName(testValue);
+        dto.firstName = testValue;
 
-        BOOST_TEST(dto.hasFirstName());
+        BOOST_TEST(dto.firstName.has_value());
 
-        BOOST_TEST(dto.firstName().value() == testValue);
+        BOOST_TEST(dto.firstName.value() == testValue);
 
-        // Проверка clear
-        dto.clearFirstName();
-        BOOST_TEST(!dto.hasFirstName());
+        // Проверка сброса значения
+        dto.firstName = std::nullopt;
+        BOOST_TEST(!dto.firstName.has_value());
     }
     // Проверка поля: middleName
     {
-        BOOST_TEST(!dto.hasMiddleName());
+        BOOST_TEST(!dto.middleName.has_value());
 
         std::string testValue ="test_value";
-        dto.setMiddleName(testValue);
+        dto.middleName = testValue;
 
-        BOOST_TEST(dto.hasMiddleName());
+        BOOST_TEST(dto.middleName.has_value());
 
-        BOOST_TEST(dto.middleName().value() == testValue);
+        BOOST_TEST(dto.middleName.value() == testValue);
 
-        // Проверка clear
-        dto.clearMiddleName();
-        BOOST_TEST(!dto.hasMiddleName());
+        // Проверка сброса значения
+        dto.middleName = std::nullopt;
+        BOOST_TEST(!dto.middleName.has_value());
     }
     // Проверка поля: lastName
     {
-        BOOST_TEST(!dto.hasLastName());
+        BOOST_TEST(!dto.lastName.has_value());
 
         std::string testValue ="test_value";
-        dto.setLastName(testValue);
+        dto.lastName = testValue;
 
-        BOOST_TEST(dto.hasLastName());
+        BOOST_TEST(dto.lastName.has_value());
 
-        BOOST_TEST(dto.lastName().value() == testValue);
+        BOOST_TEST(dto.lastName.value() == testValue);
 
-        // Проверка clear
-        dto.clearLastName();
-        BOOST_TEST(!dto.hasLastName());
+        // Проверка сброса значения
+        dto.lastName = std::nullopt;
+        BOOST_TEST(!dto.lastName.has_value());
     }
     // Проверка поля: email
     {
-        BOOST_TEST(!dto.hasEmail());
+        BOOST_TEST(!dto.email.has_value());
 
         std::string testValue ="test_value";
-        dto.setEmail(testValue);
+        dto.email = testValue;
 
-        BOOST_TEST(dto.hasEmail());
+        BOOST_TEST(dto.email.has_value());
 
-        BOOST_TEST(dto.email().value() == testValue);
+        BOOST_TEST(dto.email.value() == testValue);
 
-        // Проверка clear
-        dto.clearEmail();
-        BOOST_TEST(!dto.hasEmail());
+        // Проверка сброса значения
+        dto.email = std::nullopt;
+        BOOST_TEST(!dto.email.has_value());
     }
     // Проверка поля: needChangePassword
     {
-        BOOST_TEST(!dto.hasNeedChangePassword());
+        BOOST_TEST(!dto.needChangePassword.has_value());
 
         bool testValue =true;
-        dto.setNeedChangePassword(testValue);
+        dto.needChangePassword = testValue;
 
-        BOOST_TEST(dto.hasNeedChangePassword());
+        BOOST_TEST(dto.needChangePassword.has_value());
 
-        BOOST_TEST(dto.needChangePassword().value() == testValue);
+        BOOST_TEST(dto.needChangePassword.value() == testValue);
 
-        // Проверка clear
-        dto.clearNeedChangePassword();
-        BOOST_TEST(!dto.hasNeedChangePassword());
+        // Проверка сброса значения
+        dto.needChangePassword = std::nullopt;
+        BOOST_TEST(!dto.needChangePassword.has_value());
     }
     // Проверка поля: isBlocked
     {
-        BOOST_TEST(!dto.hasIsBlocked());
+        BOOST_TEST(!dto.isBlocked.has_value());
 
         bool testValue =true;
-        dto.setIsBlocked(testValue);
+        dto.isBlocked = testValue;
 
-        BOOST_TEST(dto.hasIsBlocked());
+        BOOST_TEST(dto.isBlocked.has_value());
 
-        BOOST_TEST(dto.isBlocked().value() == testValue);
+        BOOST_TEST(dto.isBlocked.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsBlocked();
-        BOOST_TEST(!dto.hasIsBlocked());
+        // Проверка сброса значения
+        dto.isBlocked = std::nullopt;
+        BOOST_TEST(!dto.isBlocked.has_value());
     }
     // Проверка поля: isSuperAdmin
     {
-        BOOST_TEST(!dto.hasIsSuperAdmin());
+        BOOST_TEST(!dto.isSuperAdmin.has_value());
 
         bool testValue =true;
-        dto.setIsSuperAdmin(testValue);
+        dto.isSuperAdmin = testValue;
 
-        BOOST_TEST(dto.hasIsSuperAdmin());
+        BOOST_TEST(dto.isSuperAdmin.has_value());
 
-        BOOST_TEST(dto.isSuperAdmin().value() == testValue);
+        BOOST_TEST(dto.isSuperAdmin.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsSuperAdmin();
-        BOOST_TEST(!dto.hasIsSuperAdmin());
+        // Проверка сброса значения
+        dto.isSuperAdmin = std::nullopt;
+        BOOST_TEST(!dto.isSuperAdmin.has_value());
     }
     // Проверка поля: isHidden
     {
-        BOOST_TEST(!dto.hasIsHidden());
+        BOOST_TEST(!dto.isHidden.has_value());
 
         bool testValue =true;
-        dto.setIsHidden(testValue);
+        dto.isHidden = testValue;
 
-        BOOST_TEST(dto.hasIsHidden());
+        BOOST_TEST(dto.isHidden.has_value());
 
-        BOOST_TEST(dto.isHidden().value() == testValue);
+        BOOST_TEST(dto.isHidden.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsHidden();
-        BOOST_TEST(!dto.hasIsHidden());
+        // Проверка сброса значения
+        dto.isHidden = std::nullopt;
+        BOOST_TEST(!dto.isHidden.has_value());
     }
 }
 
@@ -196,25 +196,25 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     User dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: login
-    dto.setLogin("test_login");
+    dto.login = "test_login";
     // Поле: firstName
-    dto.setFirstName("test_first_name");
+    dto.firstName = "test_first_name";
     // Поле: middleName
-    dto.setMiddleName("test_middle_name");
+    dto.middleName = "test_middle_name";
     // Поле: lastName
-    dto.setLastName("test_last_name");
+    dto.lastName = "test_last_name";
     // Поле: email
-    dto.setEmail("test_email");
+    dto.email = "test_email";
     // Поле: needChangePassword
-    dto.setNeedChangePassword(true);
+    dto.needChangePassword = true;
     // Поле: isBlocked
-    dto.setIsBlocked(true);
+    dto.isBlocked = true;
     // Поле: isSuperAdmin
-    dto.setIsSuperAdmin(true);
+    dto.isSuperAdmin = true;
     // Поле: isHidden
-    dto.setIsHidden(true);
+    dto.isHidden = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -259,26 +259,26 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     User dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasLogin());
-    BOOST_TEST(dto.login().value() == "test_login");
-    BOOST_TEST(dto.hasFirstName());
-    BOOST_TEST(dto.firstName().value() == "test_first_name");
-    BOOST_TEST(dto.hasMiddleName());
-    BOOST_TEST(dto.middleName().value() == "test_middle_name");
-    BOOST_TEST(dto.hasLastName());
-    BOOST_TEST(dto.lastName().value() == "test_last_name");
-    BOOST_TEST(dto.hasEmail());
-    BOOST_TEST(dto.email().value() == "test_email");
-    BOOST_TEST(dto.hasNeedChangePassword());
-    BOOST_TEST(dto.needChangePassword().value() == true);
-    BOOST_TEST(dto.hasIsBlocked());
-    BOOST_TEST(dto.isBlocked().value() == true);
-    BOOST_TEST(dto.hasIsSuperAdmin());
-    BOOST_TEST(dto.isSuperAdmin().value() == true);
-    BOOST_TEST(dto.hasIsHidden());
-    BOOST_TEST(dto.isHidden().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.login.has_value());
+    BOOST_TEST(dto.login.value() == "test_login");
+    BOOST_TEST(dto.firstName.has_value());
+    BOOST_TEST(dto.firstName.value() == "test_first_name");
+    BOOST_TEST(dto.middleName.has_value());
+    BOOST_TEST(dto.middleName.value() == "test_middle_name");
+    BOOST_TEST(dto.lastName.has_value());
+    BOOST_TEST(dto.lastName.value() == "test_last_name");
+    BOOST_TEST(dto.email.has_value());
+    BOOST_TEST(dto.email.value() == "test_email");
+    BOOST_TEST(dto.needChangePassword.has_value());
+    BOOST_TEST(dto.needChangePassword.value() == true);
+    BOOST_TEST(dto.isBlocked.has_value());
+    BOOST_TEST(dto.isBlocked.value() == true);
+    BOOST_TEST(dto.isSuperAdmin.has_value());
+    BOOST_TEST(dto.isSuperAdmin.value() == true);
+    BOOST_TEST(dto.isHidden.has_value());
+    BOOST_TEST(dto.isHidden.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -287,25 +287,25 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     User original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: login
-    original.setLogin("test_login");
+    original.login = "test_login";
     // Поле: firstName
-    original.setFirstName("test_first_name");
+    original.firstName = "test_first_name";
     // Поле: middleName
-    original.setMiddleName("test_middle_name");
+    original.middleName = "test_middle_name";
     // Поле: lastName
-    original.setLastName("test_last_name");
+    original.lastName = "test_last_name";
     // Поле: email
-    original.setEmail("test_email");
+    original.email = "test_email";
     // Поле: needChangePassword
-    original.setNeedChangePassword(true);
+    original.needChangePassword = true;
     // Поле: isBlocked
-    original.setIsBlocked(true);
+    original.isBlocked = true;
     // Поле: isSuperAdmin
-    original.setIsSuperAdmin(true);
+    original.isSuperAdmin = true;
     // Поле: isHidden
-    original.setIsHidden(true);
+    original.isHidden = true;
 
     nlohmann::json json = original.toJson();
     User deserialized(json);
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setLogin("test_login");
+    dto.login = "test_login";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле login, чтобы сделать их разными
-    dto1.setLogin("different_value");
+    dto1.login = "different_value";
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     User dto;
 
-    dto.setLogin("test_value");
+    dto.login = "test_value";
 
     std::stringstream ss;
     ss << dto;

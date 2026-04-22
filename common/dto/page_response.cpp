@@ -20,12 +20,12 @@ nlohmann::json PageResponse::toJson() const
     nlohmann::json result;
 
     // items
-    if (m_items.has_value())
+    if (items.has_value())
     {
-        if (!m_items.value().empty())
+        if (!items.value().empty())
         {
             nlohmann::json arr = nlohmann::json::array();
-            for (const auto& item : m_items.value())
+            for (const auto& item : items.value())
             {
                 arr.push_back(item);
             }
@@ -33,19 +33,19 @@ nlohmann::json PageResponse::toJson() const
         }
     }
     // totalCount
-    if (m_totalCount.has_value())
+    if (totalCount.has_value())
     {
-        result["total_count"] = m_totalCount.value();
+        result["total_count"] = totalCount.value();
     }
     // page
-    if (m_page.has_value())
+    if (page.has_value())
     {
-        result["page"] = m_page.value();
+        result["page"] = page.value();
     }
     // pageSize
-    if (m_pageSize.has_value())
+    if (pageSize.has_value())
     {
-        result["page_size"] = m_pageSize.value();
+        result["page_size"] = pageSize.value();
     }
 
     return result;
@@ -65,7 +65,7 @@ bool PageResponse::fromJson(const nlohmann::json& json)
             {
                 vec.push_back(item.get<std::string>());
             }
-            m_items = std::move(vec);
+            items = std::move(vec);
         }
         catch (const std::exception& e)
         {
@@ -74,14 +74,14 @@ bool PageResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_items = std::nullopt;
+        items = std::nullopt;
     }
     // totalCount
     if (json.contains("total_count") && !json["total_count"].is_null())
     {
         try
         {
-            m_totalCount = json["total_count"].get<int64_t>();
+            totalCount = json["total_count"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -90,14 +90,14 @@ bool PageResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_totalCount = std::nullopt;
+        totalCount = std::nullopt;
     }
     // page
     if (json.contains("page") && !json["page"].is_null())
     {
         try
         {
-            m_page = json["page"].get<int64_t>();
+            page = json["page"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -106,14 +106,14 @@ bool PageResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_page = std::nullopt;
+        page = std::nullopt;
     }
     // pageSize
     if (json.contains("page_size") && !json["page_size"].is_null())
     {
         try
         {
-            m_pageSize = json["page_size"].get<int64_t>();
+            pageSize = json["page_size"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -122,7 +122,7 @@ bool PageResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_pageSize = std::nullopt;
+        pageSize = std::nullopt;
     }
 
     return success;
@@ -146,10 +146,10 @@ std::string PageResponse::validationError() const
 bool PageResponse::operator==(const PageResponse& other) const
 {
     return
-        m_items == other.m_items
-        && m_totalCount == other.m_totalCount
-        && m_page == other.m_page
-        && m_pageSize == other.m_pageSize
+        items == other.items
+        && totalCount == other.totalCount
+        && page == other.page
+        && pageSize == other.pageSize
 ;
 }
 

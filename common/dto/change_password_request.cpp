@@ -20,14 +20,14 @@ nlohmann::json ChangePasswordRequest::toJson() const
     nlohmann::json result;
 
     // oldPassword
-    if (m_oldPassword.has_value())
+    if (oldPassword.has_value())
     {
-        result["old_password"] = m_oldPassword.value();
+        result["old_password"] = oldPassword.value();
     }
     // newPassword
-    if (m_newPassword.has_value())
+    if (newPassword.has_value())
     {
-        result["new_password"] = m_newPassword.value();
+        result["new_password"] = newPassword.value();
     }
 
     return result;
@@ -42,7 +42,7 @@ bool ChangePasswordRequest::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_oldPassword = json["old_password"].get<std::string>();
+            oldPassword = json["old_password"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -51,14 +51,14 @@ bool ChangePasswordRequest::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_oldPassword = std::nullopt;
+        oldPassword = std::nullopt;
     }
     // newPassword
     if (json.contains("new_password") && !json["new_password"].is_null())
     {
         try
         {
-            m_newPassword = json["new_password"].get<std::string>();
+            newPassword = json["new_password"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -67,7 +67,7 @@ bool ChangePasswordRequest::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_newPassword = std::nullopt;
+        newPassword = std::nullopt;
     }
 
     return success;
@@ -75,21 +75,21 @@ bool ChangePasswordRequest::fromJson(const nlohmann::json& json)
 
 bool ChangePasswordRequest::isValid() const
 {
-    if (!m_oldPassword.has_value())
+    if (!oldPassword.has_value())
     {
         return false;
     }
-    if (!m_newPassword.has_value())
+    if (!newPassword.has_value())
     {
         return false;
     }
 
     // Дополнительные проверки для непустых значений
-    if (m_oldPassword.value().empty())
+    if (oldPassword.value().empty())
     {
         return false;
     }
-    if (m_newPassword.value().empty())
+    if (newPassword.value().empty())
     {
         return false;
     }
@@ -99,20 +99,20 @@ bool ChangePasswordRequest::isValid() const
 
 std::string ChangePasswordRequest::validationError() const
 {
-    if (!m_oldPassword.has_value())
+    if (!oldPassword.has_value())
     {
         return "Поле «old_password» является обязательным для заполнения";
     }
-    if (!m_newPassword.has_value())
+    if (!newPassword.has_value())
     {
         return "Поле «new_password» является обязательным для заполнения";
     }
 
-    if (m_oldPassword.value().empty())
+    if (oldPassword.value().empty())
     {
         return "Поле «old_password» не может быть пустой строкой";
     }
-    if (m_newPassword.value().empty())
+    if (newPassword.value().empty())
     {
         return "Поле «new_password» не может быть пустой строкой";
     }
@@ -123,8 +123,8 @@ std::string ChangePasswordRequest::validationError() const
 bool ChangePasswordRequest::operator==(const ChangePasswordRequest& other) const
 {
     return
-        m_oldPassword == other.m_oldPassword
-        && m_newPassword == other.m_newPassword
+        oldPassword == other.oldPassword
+        && newPassword == other.newPassword
 ;
 }
 

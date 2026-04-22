@@ -21,28 +21,28 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     AuthResponse dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasAccessToken());
+    BOOST_TEST(!dto.accessToken.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     AuthResponse dto;
 
     // Проверка поля: accessToken
     {
-        BOOST_TEST(!dto.hasAccessToken());
+        BOOST_TEST(!dto.accessToken.has_value());
 
         std::string testValue ="test_value";
-        dto.setAccessToken(testValue);
+        dto.accessToken = testValue;
 
-        BOOST_TEST(dto.hasAccessToken());
+        BOOST_TEST(dto.accessToken.has_value());
 
-        BOOST_TEST(dto.accessToken().value() == testValue);
+        BOOST_TEST(dto.accessToken.value() == testValue);
 
-        // Проверка clear
-        dto.clearAccessToken();
-        BOOST_TEST(!dto.hasAccessToken());
+        // Проверка сброса значения
+        dto.accessToken = std::nullopt;
+        BOOST_TEST(!dto.accessToken.has_value());
     }
     // Проверка поля: tokenType
     {
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     AuthResponse dto;
 
     // Поле: accessToken
-    dto.setAccessToken("test_access_token");
+    dto.accessToken = "test_access_token";
     // Поле: tokenType
 
     nlohmann::json json = dto.toJson();
@@ -77,10 +77,10 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     AuthResponse dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasAccessToken());
-    BOOST_TEST(dto.accessToken().value() == "test_access_token");
+    BOOST_TEST(dto.accessToken.has_value());
+    BOOST_TEST(dto.accessToken.value() == "test_access_token");
     // Константное поле должно иметь значение по умолчанию
-    BOOST_TEST(dto.tokenType() == "Bearer");
+    BOOST_TEST(dto.tokenType == "Bearer");
 }
 
 // Тест: Сериализация в оба конца
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     AuthResponse original;
 
     // Поле: accessToken
-    original.setAccessToken("test_access_token");
+    original.accessToken = "test_access_token";
     // Поле: tokenType
 
     nlohmann::json json = original.toJson();
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
 
 
     // Если нет обязательных полей, используем первое неконстантное поле
-    dto1.setAccessToken("different_value");
+    dto1.accessToken = "different_value";
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));

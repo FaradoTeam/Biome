@@ -20,29 +20,29 @@ nlohmann::json RuleItemType::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор правила
-    if (m_ruleId.has_value())
+    if (ruleId.has_value())
     {
-        result["rule_id"] = m_ruleId.value();
+        result["rule_id"] = ruleId.value();
     }
     // Идентификатор типа элемента
-    if (m_itemTypeId.has_value())
+    if (itemTypeId.has_value())
     {
-        result["item_type_id"] = m_itemTypeId.value();
+        result["item_type_id"] = itemTypeId.value();
     }
     // Право на чтение элементов данного типа
-    if (m_isReader.has_value())
+    if (isReader.has_value())
     {
-        result["is_reader"] = m_isReader.value();
+        result["is_reader"] = isReader.value();
     }
     // Право на создание и изменение элементов данного типа
-    if (m_isWriter.has_value())
+    if (isWriter.has_value())
     {
-        result["is_writer"] = m_isWriter.value();
+        result["is_writer"] = isWriter.value();
     }
 
     return result;
@@ -57,7 +57,7 @@ bool RuleItemType::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -66,14 +66,14 @@ bool RuleItemType::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор правила
     if (json.contains("rule_id") && !json["rule_id"].is_null())
     {
         try
         {
-            m_ruleId = json["rule_id"].get<int64_t>();
+            ruleId = json["rule_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -82,14 +82,14 @@ bool RuleItemType::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_ruleId = std::nullopt;
+        ruleId = std::nullopt;
     }
     // Идентификатор типа элемента
     if (json.contains("item_type_id") && !json["item_type_id"].is_null())
     {
         try
         {
-            m_itemTypeId = json["item_type_id"].get<int64_t>();
+            itemTypeId = json["item_type_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -98,14 +98,14 @@ bool RuleItemType::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_itemTypeId = std::nullopt;
+        itemTypeId = std::nullopt;
     }
     // Право на чтение элементов данного типа
     if (json.contains("is_reader") && !json["is_reader"].is_null())
     {
         try
         {
-            m_isReader = json["is_reader"].get<bool>();
+            isReader = json["is_reader"].get<bool>();
         }
         catch (const std::exception& e)
         {
@@ -114,14 +114,14 @@ bool RuleItemType::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_isReader = std::nullopt;
+        isReader = std::nullopt;
     }
     // Право на создание и изменение элементов данного типа
     if (json.contains("is_writer") && !json["is_writer"].is_null())
     {
         try
         {
-            m_isWriter = json["is_writer"].get<bool>();
+            isWriter = json["is_writer"].get<bool>();
         }
         catch (const std::exception& e)
         {
@@ -130,7 +130,7 @@ bool RuleItemType::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_isWriter = std::nullopt;
+        isWriter = std::nullopt;
     }
 
     return success;
@@ -138,11 +138,11 @@ bool RuleItemType::fromJson(const nlohmann::json& json)
 
 bool RuleItemType::isValid() const
 {
-    if (!m_ruleId.has_value())
+    if (!ruleId.has_value())
     {
         return false;
     }
-    if (!m_itemTypeId.has_value())
+    if (!itemTypeId.has_value())
     {
         return false;
     }
@@ -154,11 +154,11 @@ bool RuleItemType::isValid() const
 
 std::string RuleItemType::validationError() const
 {
-    if (!m_ruleId.has_value())
+    if (!ruleId.has_value())
     {
         return "Поле «rule_id» является обязательным для заполнения";
     }
-    if (!m_itemTypeId.has_value())
+    if (!itemTypeId.has_value())
     {
         return "Поле «item_type_id» является обязательным для заполнения";
     }
@@ -170,11 +170,11 @@ std::string RuleItemType::validationError() const
 bool RuleItemType::operator==(const RuleItemType& other) const
 {
     return
-        m_id == other.m_id
-        && m_ruleId == other.m_ruleId
-        && m_itemTypeId == other.m_itemTypeId
-        && m_isReader == other.m_isReader
-        && m_isWriter == other.m_isWriter
+        id == other.id
+        && ruleId == other.ruleId
+        && itemTypeId == other.itemTypeId
+        && isReader == other.isReader
+        && isWriter == other.isWriter
 ;
 }
 

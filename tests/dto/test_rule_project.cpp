@@ -21,140 +21,140 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     RuleProject dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasRuleId());
-    BOOST_TEST(!dto.hasProjectId());
-    BOOST_TEST(!dto.hasIsReader());
-    BOOST_TEST(!dto.hasIsWriter());
-    BOOST_TEST(!dto.hasIsProjectEditor());
-    BOOST_TEST(!dto.hasIsPhaseEditor());
-    BOOST_TEST(!dto.hasIsBoardEditor());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.ruleId.has_value());
+    BOOST_TEST(!dto.projectId.has_value());
+    BOOST_TEST(!dto.isReader.has_value());
+    BOOST_TEST(!dto.isWriter.has_value());
+    BOOST_TEST(!dto.isProjectEditor.has_value());
+    BOOST_TEST(!dto.isPhaseEditor.has_value());
+    BOOST_TEST(!dto.isBoardEditor.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     RuleProject dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: ruleId
     {
-        BOOST_TEST(!dto.hasRuleId());
+        BOOST_TEST(!dto.ruleId.has_value());
 
         int64_t testValue =42;
-        dto.setRuleId(testValue);
+        dto.ruleId = testValue;
 
-        BOOST_TEST(dto.hasRuleId());
+        BOOST_TEST(dto.ruleId.has_value());
 
-        BOOST_TEST(dto.ruleId().value() == testValue);
+        BOOST_TEST(dto.ruleId.value() == testValue);
 
-        // Проверка clear
-        dto.clearRuleId();
-        BOOST_TEST(!dto.hasRuleId());
+        // Проверка сброса значения
+        dto.ruleId = std::nullopt;
+        BOOST_TEST(!dto.ruleId.has_value());
     }
     // Проверка поля: projectId
     {
-        BOOST_TEST(!dto.hasProjectId());
+        BOOST_TEST(!dto.projectId.has_value());
 
         int64_t testValue =42;
-        dto.setProjectId(testValue);
+        dto.projectId = testValue;
 
-        BOOST_TEST(dto.hasProjectId());
+        BOOST_TEST(dto.projectId.has_value());
 
-        BOOST_TEST(dto.projectId().value() == testValue);
+        BOOST_TEST(dto.projectId.value() == testValue);
 
-        // Проверка clear
-        dto.clearProjectId();
-        BOOST_TEST(!dto.hasProjectId());
+        // Проверка сброса значения
+        dto.projectId = std::nullopt;
+        BOOST_TEST(!dto.projectId.has_value());
     }
     // Проверка поля: isReader
     {
-        BOOST_TEST(!dto.hasIsReader());
+        BOOST_TEST(!dto.isReader.has_value());
 
         bool testValue =true;
-        dto.setIsReader(testValue);
+        dto.isReader = testValue;
 
-        BOOST_TEST(dto.hasIsReader());
+        BOOST_TEST(dto.isReader.has_value());
 
-        BOOST_TEST(dto.isReader().value() == testValue);
+        BOOST_TEST(dto.isReader.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsReader();
-        BOOST_TEST(!dto.hasIsReader());
+        // Проверка сброса значения
+        dto.isReader = std::nullopt;
+        BOOST_TEST(!dto.isReader.has_value());
     }
     // Проверка поля: isWriter
     {
-        BOOST_TEST(!dto.hasIsWriter());
+        BOOST_TEST(!dto.isWriter.has_value());
 
         bool testValue =true;
-        dto.setIsWriter(testValue);
+        dto.isWriter = testValue;
 
-        BOOST_TEST(dto.hasIsWriter());
+        BOOST_TEST(dto.isWriter.has_value());
 
-        BOOST_TEST(dto.isWriter().value() == testValue);
+        BOOST_TEST(dto.isWriter.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsWriter();
-        BOOST_TEST(!dto.hasIsWriter());
+        // Проверка сброса значения
+        dto.isWriter = std::nullopt;
+        BOOST_TEST(!dto.isWriter.has_value());
     }
     // Проверка поля: isProjectEditor
     {
-        BOOST_TEST(!dto.hasIsProjectEditor());
+        BOOST_TEST(!dto.isProjectEditor.has_value());
 
         bool testValue =true;
-        dto.setIsProjectEditor(testValue);
+        dto.isProjectEditor = testValue;
 
-        BOOST_TEST(dto.hasIsProjectEditor());
+        BOOST_TEST(dto.isProjectEditor.has_value());
 
-        BOOST_TEST(dto.isProjectEditor().value() == testValue);
+        BOOST_TEST(dto.isProjectEditor.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsProjectEditor();
-        BOOST_TEST(!dto.hasIsProjectEditor());
+        // Проверка сброса значения
+        dto.isProjectEditor = std::nullopt;
+        BOOST_TEST(!dto.isProjectEditor.has_value());
     }
     // Проверка поля: isPhaseEditor
     {
-        BOOST_TEST(!dto.hasIsPhaseEditor());
+        BOOST_TEST(!dto.isPhaseEditor.has_value());
 
         bool testValue =true;
-        dto.setIsPhaseEditor(testValue);
+        dto.isPhaseEditor = testValue;
 
-        BOOST_TEST(dto.hasIsPhaseEditor());
+        BOOST_TEST(dto.isPhaseEditor.has_value());
 
-        BOOST_TEST(dto.isPhaseEditor().value() == testValue);
+        BOOST_TEST(dto.isPhaseEditor.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsPhaseEditor();
-        BOOST_TEST(!dto.hasIsPhaseEditor());
+        // Проверка сброса значения
+        dto.isPhaseEditor = std::nullopt;
+        BOOST_TEST(!dto.isPhaseEditor.has_value());
     }
     // Проверка поля: isBoardEditor
     {
-        BOOST_TEST(!dto.hasIsBoardEditor());
+        BOOST_TEST(!dto.isBoardEditor.has_value());
 
         bool testValue =true;
-        dto.setIsBoardEditor(testValue);
+        dto.isBoardEditor = testValue;
 
-        BOOST_TEST(dto.hasIsBoardEditor());
+        BOOST_TEST(dto.isBoardEditor.has_value());
 
-        BOOST_TEST(dto.isBoardEditor().value() == testValue);
+        BOOST_TEST(dto.isBoardEditor.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsBoardEditor();
-        BOOST_TEST(!dto.hasIsBoardEditor());
+        // Проверка сброса значения
+        dto.isBoardEditor = std::nullopt;
+        BOOST_TEST(!dto.isBoardEditor.has_value());
     }
 }
 
@@ -164,21 +164,21 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     RuleProject dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: ruleId
-    dto.setRuleId(42);
+    dto.ruleId = 42;
     // Поле: projectId
-    dto.setProjectId(42);
+    dto.projectId = 42;
     // Поле: isReader
-    dto.setIsReader(true);
+    dto.isReader = true;
     // Поле: isWriter
-    dto.setIsWriter(true);
+    dto.isWriter = true;
     // Поле: isProjectEditor
-    dto.setIsProjectEditor(true);
+    dto.isProjectEditor = true;
     // Поле: isPhaseEditor
-    dto.setIsPhaseEditor(true);
+    dto.isPhaseEditor = true;
     // Поле: isBoardEditor
-    dto.setIsBoardEditor(true);
+    dto.isBoardEditor = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -217,22 +217,22 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     RuleProject dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasRuleId());
-    BOOST_TEST(dto.ruleId().value() == 42);
-    BOOST_TEST(dto.hasProjectId());
-    BOOST_TEST(dto.projectId().value() == 42);
-    BOOST_TEST(dto.hasIsReader());
-    BOOST_TEST(dto.isReader().value() == true);
-    BOOST_TEST(dto.hasIsWriter());
-    BOOST_TEST(dto.isWriter().value() == true);
-    BOOST_TEST(dto.hasIsProjectEditor());
-    BOOST_TEST(dto.isProjectEditor().value() == true);
-    BOOST_TEST(dto.hasIsPhaseEditor());
-    BOOST_TEST(dto.isPhaseEditor().value() == true);
-    BOOST_TEST(dto.hasIsBoardEditor());
-    BOOST_TEST(dto.isBoardEditor().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.ruleId.has_value());
+    BOOST_TEST(dto.ruleId.value() == 42);
+    BOOST_TEST(dto.projectId.has_value());
+    BOOST_TEST(dto.projectId.value() == 42);
+    BOOST_TEST(dto.isReader.has_value());
+    BOOST_TEST(dto.isReader.value() == true);
+    BOOST_TEST(dto.isWriter.has_value());
+    BOOST_TEST(dto.isWriter.value() == true);
+    BOOST_TEST(dto.isProjectEditor.has_value());
+    BOOST_TEST(dto.isProjectEditor.value() == true);
+    BOOST_TEST(dto.isPhaseEditor.has_value());
+    BOOST_TEST(dto.isPhaseEditor.value() == true);
+    BOOST_TEST(dto.isBoardEditor.has_value());
+    BOOST_TEST(dto.isBoardEditor.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -241,21 +241,21 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     RuleProject original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: ruleId
-    original.setRuleId(42);
+    original.ruleId = 42;
     // Поле: projectId
-    original.setProjectId(42);
+    original.projectId = 42;
     // Поле: isReader
-    original.setIsReader(true);
+    original.isReader = true;
     // Поле: isWriter
-    original.setIsWriter(true);
+    original.isWriter = true;
     // Поле: isProjectEditor
-    original.setIsProjectEditor(true);
+    original.isProjectEditor = true;
     // Поле: isPhaseEditor
-    original.setIsPhaseEditor(true);
+    original.isPhaseEditor = true;
     // Поле: isBoardEditor
-    original.setIsBoardEditor(true);
+    original.isBoardEditor = true;
 
     nlohmann::json json = original.toJson();
     RuleProject deserialized(json);
@@ -276,8 +276,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setRuleId(42);
-    dto.setProjectId(42);
+    dto.ruleId = 42;
+    dto.projectId = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле ruleId, чтобы сделать их разными
-    dto1.setRuleId(999);
+    dto1.ruleId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -307,8 +307,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     RuleProject dto;
 
-    dto.setRuleId(42);
-    dto.setProjectId(42);
+    dto.ruleId = 42;
+    dto.projectId = 42;
 
     std::stringstream ss;
     ss << dto;

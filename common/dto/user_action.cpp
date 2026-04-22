@@ -20,29 +20,29 @@ nlohmann::json UserAction::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор пользователя
-    if (m_userId.has_value())
+    if (userId.has_value())
     {
-        result["user_id"] = m_userId.value();
+        result["user_id"] = userId.value();
     }
     // Время действия
-    if (m_timestamp.has_value())
+    if (timestamp.has_value())
     {
-        result["timestamp"] = timePointToSeconds(m_timestamp.value());
+        result["timestamp"] = timePointToSeconds(timestamp.value());
     }
     // Краткое описание действия
-    if (m_caption.has_value())
+    if (caption.has_value())
     {
-        result["caption"] = m_caption.value();
+        result["caption"] = caption.value();
     }
     // Подробное описание (контекст)
-    if (m_description.has_value())
+    if (description.has_value())
     {
-        result["description"] = m_description.value();
+        result["description"] = description.value();
     }
 
     return result;
@@ -57,7 +57,7 @@ bool UserAction::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -66,14 +66,14 @@ bool UserAction::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор пользователя
     if (json.contains("user_id") && !json["user_id"].is_null())
     {
         try
         {
-            m_userId = json["user_id"].get<int64_t>();
+            userId = json["user_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -82,15 +82,15 @@ bool UserAction::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_userId = std::nullopt;
+        userId = std::nullopt;
     }
     // Время действия
     if (json.contains("timestamp") && !json["timestamp"].is_null())
     {
         try
         {
-            auto timestamp = json["timestamp"].get<int64_t>();
-            m_timestamp = secondsToTimePoint(timestamp);
+            auto timestampValue = json["timestamp"].get<int64_t>();
+            timestamp = secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -99,14 +99,14 @@ bool UserAction::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_timestamp = std::nullopt;
+        timestamp = std::nullopt;
     }
     // Краткое описание действия
     if (json.contains("caption") && !json["caption"].is_null())
     {
         try
         {
-            m_caption = json["caption"].get<std::string>();
+            caption = json["caption"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -115,14 +115,14 @@ bool UserAction::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_caption = std::nullopt;
+        caption = std::nullopt;
     }
     // Подробное описание (контекст)
     if (json.contains("description") && !json["description"].is_null())
     {
         try
         {
-            m_description = json["description"].get<std::string>();
+            description = json["description"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -131,7 +131,7 @@ bool UserAction::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_description = std::nullopt;
+        description = std::nullopt;
     }
 
     return success;
@@ -139,21 +139,21 @@ bool UserAction::fromJson(const nlohmann::json& json)
 
 bool UserAction::isValid() const
 {
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return false;
     }
-    if (!m_timestamp.has_value())
+    if (!timestamp.has_value())
     {
         return false;
     }
-    if (!m_caption.has_value())
+    if (!caption.has_value())
     {
         return false;
     }
 
     // Дополнительные проверки для непустых значений
-    if (m_caption.value().empty())
+    if (caption.value().empty())
     {
         return false;
     }
@@ -163,20 +163,20 @@ bool UserAction::isValid() const
 
 std::string UserAction::validationError() const
 {
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return "Поле «user_id» является обязательным для заполнения";
     }
-    if (!m_timestamp.has_value())
+    if (!timestamp.has_value())
     {
         return "Поле «timestamp» является обязательным для заполнения";
     }
-    if (!m_caption.has_value())
+    if (!caption.has_value())
     {
         return "Поле «caption» является обязательным для заполнения";
     }
 
-    if (m_caption.value().empty())
+    if (caption.value().empty())
     {
         return "Поле «caption» не может быть пустой строкой";
     }
@@ -187,11 +187,11 @@ std::string UserAction::validationError() const
 bool UserAction::operator==(const UserAction& other) const
 {
     return
-        m_id == other.m_id
-        && m_userId == other.m_userId
-        && m_timestamp == other.m_timestamp
-        && m_caption == other.m_caption
-        && m_description == other.m_description
+        id == other.id
+        && userId == other.userId
+        && timestamp == other.timestamp
+        && caption == other.caption
+        && description == other.description
 ;
 }
 

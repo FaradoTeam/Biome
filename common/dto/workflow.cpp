@@ -20,19 +20,19 @@ nlohmann::json Workflow::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Название рабочего процесса
-    if (m_caption.has_value())
+    if (caption.has_value())
     {
-        result["caption"] = m_caption.value();
+        result["caption"] = caption.value();
     }
     // Описание рабочего процесса
-    if (m_description.has_value())
+    if (description.has_value())
     {
-        result["description"] = m_description.value();
+        result["description"] = description.value();
     }
 
     return result;
@@ -47,7 +47,7 @@ bool Workflow::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -56,14 +56,14 @@ bool Workflow::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Название рабочего процесса
     if (json.contains("caption") && !json["caption"].is_null())
     {
         try
         {
-            m_caption = json["caption"].get<std::string>();
+            caption = json["caption"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -72,14 +72,14 @@ bool Workflow::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_caption = std::nullopt;
+        caption = std::nullopt;
     }
     // Описание рабочего процесса
     if (json.contains("description") && !json["description"].is_null())
     {
         try
         {
-            m_description = json["description"].get<std::string>();
+            description = json["description"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -88,7 +88,7 @@ bool Workflow::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_description = std::nullopt;
+        description = std::nullopt;
     }
 
     return success;
@@ -96,13 +96,13 @@ bool Workflow::fromJson(const nlohmann::json& json)
 
 bool Workflow::isValid() const
 {
-    if (!m_caption.has_value())
+    if (!caption.has_value())
     {
         return false;
     }
 
     // Дополнительные проверки для непустых значений
-    if (m_caption.value().empty())
+    if (caption.value().empty())
     {
         return false;
     }
@@ -112,12 +112,12 @@ bool Workflow::isValid() const
 
 std::string Workflow::validationError() const
 {
-    if (!m_caption.has_value())
+    if (!caption.has_value())
     {
         return "Поле «caption» является обязательным для заполнения";
     }
 
-    if (m_caption.value().empty())
+    if (caption.value().empty())
     {
         return "Поле «caption» не может быть пустой строкой";
     }
@@ -128,9 +128,9 @@ std::string Workflow::validationError() const
 bool Workflow::operator==(const Workflow& other) const
 {
     return
-        m_id == other.m_id
-        && m_caption == other.m_caption
-        && m_description == other.m_description
+        id == other.id
+        && caption == other.caption
+        && description == other.description
 ;
 }
 

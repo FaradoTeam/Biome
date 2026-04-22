@@ -21,92 +21,92 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     LinkType dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasSourceItemTypeId());
-    BOOST_TEST(!dto.hasDestinationItemTypeId());
-    BOOST_TEST(!dto.hasIsBidirectional());
-    BOOST_TEST(!dto.hasCaption());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.sourceItemTypeId.has_value());
+    BOOST_TEST(!dto.destinationItemTypeId.has_value());
+    BOOST_TEST(!dto.isBidirectional.has_value());
+    BOOST_TEST(!dto.caption.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     LinkType dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: sourceItemTypeId
     {
-        BOOST_TEST(!dto.hasSourceItemTypeId());
+        BOOST_TEST(!dto.sourceItemTypeId.has_value());
 
         int64_t testValue =42;
-        dto.setSourceItemTypeId(testValue);
+        dto.sourceItemTypeId = testValue;
 
-        BOOST_TEST(dto.hasSourceItemTypeId());
+        BOOST_TEST(dto.sourceItemTypeId.has_value());
 
-        BOOST_TEST(dto.sourceItemTypeId().value() == testValue);
+        BOOST_TEST(dto.sourceItemTypeId.value() == testValue);
 
-        // Проверка clear
-        dto.clearSourceItemTypeId();
-        BOOST_TEST(!dto.hasSourceItemTypeId());
+        // Проверка сброса значения
+        dto.sourceItemTypeId = std::nullopt;
+        BOOST_TEST(!dto.sourceItemTypeId.has_value());
     }
     // Проверка поля: destinationItemTypeId
     {
-        BOOST_TEST(!dto.hasDestinationItemTypeId());
+        BOOST_TEST(!dto.destinationItemTypeId.has_value());
 
         int64_t testValue =42;
-        dto.setDestinationItemTypeId(testValue);
+        dto.destinationItemTypeId = testValue;
 
-        BOOST_TEST(dto.hasDestinationItemTypeId());
+        BOOST_TEST(dto.destinationItemTypeId.has_value());
 
-        BOOST_TEST(dto.destinationItemTypeId().value() == testValue);
+        BOOST_TEST(dto.destinationItemTypeId.value() == testValue);
 
-        // Проверка clear
-        dto.clearDestinationItemTypeId();
-        BOOST_TEST(!dto.hasDestinationItemTypeId());
+        // Проверка сброса значения
+        dto.destinationItemTypeId = std::nullopt;
+        BOOST_TEST(!dto.destinationItemTypeId.has_value());
     }
     // Проверка поля: isBidirectional
     {
-        BOOST_TEST(!dto.hasIsBidirectional());
+        BOOST_TEST(!dto.isBidirectional.has_value());
 
         bool testValue =true;
-        dto.setIsBidirectional(testValue);
+        dto.isBidirectional = testValue;
 
-        BOOST_TEST(dto.hasIsBidirectional());
+        BOOST_TEST(dto.isBidirectional.has_value());
 
-        BOOST_TEST(dto.isBidirectional().value() == testValue);
+        BOOST_TEST(dto.isBidirectional.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsBidirectional();
-        BOOST_TEST(!dto.hasIsBidirectional());
+        // Проверка сброса значения
+        dto.isBidirectional = std::nullopt;
+        BOOST_TEST(!dto.isBidirectional.has_value());
     }
     // Проверка поля: caption
     {
-        BOOST_TEST(!dto.hasCaption());
+        BOOST_TEST(!dto.caption.has_value());
 
         std::string testValue ="test_value";
-        dto.setCaption(testValue);
+        dto.caption = testValue;
 
-        BOOST_TEST(dto.hasCaption());
+        BOOST_TEST(dto.caption.has_value());
 
-        BOOST_TEST(dto.caption().value() == testValue);
+        BOOST_TEST(dto.caption.value() == testValue);
 
-        // Проверка clear
-        dto.clearCaption();
-        BOOST_TEST(!dto.hasCaption());
+        // Проверка сброса значения
+        dto.caption = std::nullopt;
+        BOOST_TEST(!dto.caption.has_value());
     }
 }
 
@@ -116,15 +116,15 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     LinkType dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: sourceItemTypeId
-    dto.setSourceItemTypeId(42);
+    dto.sourceItemTypeId = 42;
     // Поле: destinationItemTypeId
-    dto.setDestinationItemTypeId(42);
+    dto.destinationItemTypeId = 42;
     // Поле: isBidirectional
-    dto.setIsBidirectional(true);
+    dto.isBidirectional = true;
     // Поле: caption
-    dto.setCaption("test_caption");
+    dto.caption = "test_caption";
 
     nlohmann::json json = dto.toJson();
 
@@ -154,16 +154,16 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     LinkType dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasSourceItemTypeId());
-    BOOST_TEST(dto.sourceItemTypeId().value() == 42);
-    BOOST_TEST(dto.hasDestinationItemTypeId());
-    BOOST_TEST(dto.destinationItemTypeId().value() == 42);
-    BOOST_TEST(dto.hasIsBidirectional());
-    BOOST_TEST(dto.isBidirectional().value() == true);
-    BOOST_TEST(dto.hasCaption());
-    BOOST_TEST(dto.caption().value() == "test_caption");
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.sourceItemTypeId.has_value());
+    BOOST_TEST(dto.sourceItemTypeId.value() == 42);
+    BOOST_TEST(dto.destinationItemTypeId.has_value());
+    BOOST_TEST(dto.destinationItemTypeId.value() == 42);
+    BOOST_TEST(dto.isBidirectional.has_value());
+    BOOST_TEST(dto.isBidirectional.value() == true);
+    BOOST_TEST(dto.caption.has_value());
+    BOOST_TEST(dto.caption.value() == "test_caption");
 }
 
 // Тест: Сериализация в оба конца
@@ -172,15 +172,15 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     LinkType original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: sourceItemTypeId
-    original.setSourceItemTypeId(42);
+    original.sourceItemTypeId = 42;
     // Поле: destinationItemTypeId
-    original.setDestinationItemTypeId(42);
+    original.destinationItemTypeId = 42;
     // Поле: isBidirectional
-    original.setIsBidirectional(true);
+    original.isBidirectional = true;
     // Поле: caption
-    original.setCaption("test_caption");
+    original.caption = "test_caption";
 
     nlohmann::json json = original.toJson();
     LinkType deserialized(json);
@@ -201,10 +201,10 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setSourceItemTypeId(42);
-    dto.setDestinationItemTypeId(42);
-    dto.setIsBidirectional(true);
-    dto.setCaption("test_caption");
+    dto.sourceItemTypeId = 42;
+    dto.destinationItemTypeId = 42;
+    dto.isBidirectional = true;
+    dto.caption = "test_caption";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле sourceItemTypeId, чтобы сделать их разными
-    dto1.setSourceItemTypeId(999);
+    dto1.sourceItemTypeId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -234,10 +234,10 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     LinkType dto;
 
-    dto.setSourceItemTypeId(42);
-    dto.setDestinationItemTypeId(42);
-    dto.setIsBidirectional(true);
-    dto.setCaption("test_value");
+    dto.sourceItemTypeId = 42;
+    dto.destinationItemTypeId = 42;
+    dto.isBidirectional = true;
+    dto.caption = "test_value";
 
     std::stringstream ss;
     ss << dto;

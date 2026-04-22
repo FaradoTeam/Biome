@@ -29,86 +29,6 @@ public:
     RoleMenuItem() = default;
     explicit RoleMenuItem(const nlohmann::json& json);
 
-    // Поле: «id» Уникальный идентификатор
-    const std::optional<int64_t>& id() const { return m_id; }
-    bool hasId() const { return m_id.has_value(); }
-    void setId(const int64_t& value)
-    {
-        m_id = value;
-    }
-    void setId(int64_t&& value)
-    {
-        m_id = std::move(value);
-    }
-    void clearId()
-    {
-        m_id = std::nullopt;
-    }
-
-    // Поле: «roleId» Идентификатор роли
-    const std::optional<int64_t>& roleId() const { return m_roleId; }
-    bool hasRoleId() const { return m_roleId.has_value(); }
-    void setRoleId(const int64_t& value)
-    {
-        m_roleId = value;
-    }
-    void setRoleId(int64_t&& value)
-    {
-        m_roleId = std::move(value);
-    }
-    void clearRoleId()
-    {
-        m_roleId = std::nullopt;
-    }
-
-    // Поле: «caption» Название пункта меню
-    const std::optional<std::string>& caption() const { return m_caption; }
-    bool hasCaption() const { return m_caption.has_value(); }
-    void setCaption(const std::string& value)
-    {
-        m_caption = value;
-    }
-    void setCaption(std::string&& value)
-    {
-        m_caption = std::move(value);
-    }
-    void clearCaption()
-    {
-        m_caption = std::nullopt;
-    }
-
-    // Поле: «link» Ссылка (URL)
-    const std::optional<std::string>& link() const { return m_link; }
-    bool hasLink() const { return m_link.has_value(); }
-    void setLink(const std::string& value)
-    {
-        m_link = value;
-    }
-    void setLink(std::string&& value)
-    {
-        m_link = std::move(value);
-    }
-    void clearLink()
-    {
-        m_link = std::nullopt;
-    }
-
-    // Поле: «icon» Значок пункта меню
-    const std::optional<std::string>& icon() const { return m_icon; }
-    bool hasIcon() const { return m_icon.has_value(); }
-    void setIcon(const std::string& value)
-    {
-        m_icon = value;
-    }
-    void setIcon(std::string&& value)
-    {
-        m_icon = std::move(value);
-    }
-    void clearIcon()
-    {
-        m_icon = std::nullopt;
-    }
-
     // Сериализация
     nlohmann::json toJson() const;
     bool fromJson(const nlohmann::json& json);
@@ -127,12 +47,22 @@ public:
     // Потоковый вывод для отладки
     friend std::ostream& operator<<(std::ostream& os, const RoleMenuItem& dto);
 
-private:
-    std::optional<int64_t> m_id;
-    std::optional<int64_t> m_roleId;
-    std::optional<std::string> m_caption;
-    std::optional<std::string> m_link;
-    std::optional<std::string> m_icon;
+public:
+    /// Уникальный идентификатор
+    std::optional<int64_t> id;
+
+    /// Идентификатор роли
+    std::optional<int64_t> roleId;
+
+    /// Название пункта меню
+    std::optional<std::string> caption;
+
+    /// Ссылка (URL)
+    std::optional<std::string> link;
+
+    /// Значок пункта меню
+    std::optional<std::string> icon;
+
 };
 
 inline std::ostream& operator<<(std::ostream& os, const RoleMenuItem& dto)

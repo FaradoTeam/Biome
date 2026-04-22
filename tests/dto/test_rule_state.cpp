@@ -21,76 +21,76 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     RuleState dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasRuleId());
-    BOOST_TEST(!dto.hasStateId());
-    BOOST_TEST(!dto.hasIsStateAllowed());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.ruleId.has_value());
+    BOOST_TEST(!dto.stateId.has_value());
+    BOOST_TEST(!dto.isStateAllowed.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     RuleState dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: ruleId
     {
-        BOOST_TEST(!dto.hasRuleId());
+        BOOST_TEST(!dto.ruleId.has_value());
 
         int64_t testValue =42;
-        dto.setRuleId(testValue);
+        dto.ruleId = testValue;
 
-        BOOST_TEST(dto.hasRuleId());
+        BOOST_TEST(dto.ruleId.has_value());
 
-        BOOST_TEST(dto.ruleId().value() == testValue);
+        BOOST_TEST(dto.ruleId.value() == testValue);
 
-        // Проверка clear
-        dto.clearRuleId();
-        BOOST_TEST(!dto.hasRuleId());
+        // Проверка сброса значения
+        dto.ruleId = std::nullopt;
+        BOOST_TEST(!dto.ruleId.has_value());
     }
     // Проверка поля: stateId
     {
-        BOOST_TEST(!dto.hasStateId());
+        BOOST_TEST(!dto.stateId.has_value());
 
         int64_t testValue =42;
-        dto.setStateId(testValue);
+        dto.stateId = testValue;
 
-        BOOST_TEST(dto.hasStateId());
+        BOOST_TEST(dto.stateId.has_value());
 
-        BOOST_TEST(dto.stateId().value() == testValue);
+        BOOST_TEST(dto.stateId.value() == testValue);
 
-        // Проверка clear
-        dto.clearStateId();
-        BOOST_TEST(!dto.hasStateId());
+        // Проверка сброса значения
+        dto.stateId = std::nullopt;
+        BOOST_TEST(!dto.stateId.has_value());
     }
     // Проверка поля: isStateAllowed
     {
-        BOOST_TEST(!dto.hasIsStateAllowed());
+        BOOST_TEST(!dto.isStateAllowed.has_value());
 
         bool testValue =true;
-        dto.setIsStateAllowed(testValue);
+        dto.isStateAllowed = testValue;
 
-        BOOST_TEST(dto.hasIsStateAllowed());
+        BOOST_TEST(dto.isStateAllowed.has_value());
 
-        BOOST_TEST(dto.isStateAllowed().value() == testValue);
+        BOOST_TEST(dto.isStateAllowed.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsStateAllowed();
-        BOOST_TEST(!dto.hasIsStateAllowed());
+        // Проверка сброса значения
+        dto.isStateAllowed = std::nullopt;
+        BOOST_TEST(!dto.isStateAllowed.has_value());
     }
 }
 
@@ -100,13 +100,13 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     RuleState dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: ruleId
-    dto.setRuleId(42);
+    dto.ruleId = 42;
     // Поле: stateId
-    dto.setStateId(42);
+    dto.stateId = 42;
     // Поле: isStateAllowed
-    dto.setIsStateAllowed(true);
+    dto.isStateAllowed = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -133,14 +133,14 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     RuleState dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasRuleId());
-    BOOST_TEST(dto.ruleId().value() == 42);
-    BOOST_TEST(dto.hasStateId());
-    BOOST_TEST(dto.stateId().value() == 42);
-    BOOST_TEST(dto.hasIsStateAllowed());
-    BOOST_TEST(dto.isStateAllowed().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.ruleId.has_value());
+    BOOST_TEST(dto.ruleId.value() == 42);
+    BOOST_TEST(dto.stateId.has_value());
+    BOOST_TEST(dto.stateId.value() == 42);
+    BOOST_TEST(dto.isStateAllowed.has_value());
+    BOOST_TEST(dto.isStateAllowed.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -149,13 +149,13 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     RuleState original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: ruleId
-    original.setRuleId(42);
+    original.ruleId = 42;
     // Поле: stateId
-    original.setStateId(42);
+    original.stateId = 42;
     // Поле: isStateAllowed
-    original.setIsStateAllowed(true);
+    original.isStateAllowed = true;
 
     nlohmann::json json = original.toJson();
     RuleState deserialized(json);
@@ -176,8 +176,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setRuleId(42);
-    dto.setStateId(42);
+    dto.ruleId = 42;
+    dto.stateId = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле ruleId, чтобы сделать их разными
-    dto1.setRuleId(999);
+    dto1.ruleId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -207,8 +207,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     RuleState dto;
 
-    dto.setRuleId(42);
-    dto.setStateId(42);
+    dto.ruleId = 42;
+    dto.stateId = 42;
 
     std::stringstream ss;
     ss << dto;

@@ -20,24 +20,24 @@ nlohmann::json UserTeamRole::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор пользователя
-    if (m_userId.has_value())
+    if (userId.has_value())
     {
-        result["user_id"] = m_userId.value();
+        result["user_id"] = userId.value();
     }
     // Идентификатор команды
-    if (m_teamId.has_value())
+    if (teamId.has_value())
     {
-        result["team_id"] = m_teamId.value();
+        result["team_id"] = teamId.value();
     }
     // Идентификатор роли
-    if (m_roleId.has_value())
+    if (roleId.has_value())
     {
-        result["role_id"] = m_roleId.value();
+        result["role_id"] = roleId.value();
     }
 
     return result;
@@ -52,7 +52,7 @@ bool UserTeamRole::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -61,14 +61,14 @@ bool UserTeamRole::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор пользователя
     if (json.contains("user_id") && !json["user_id"].is_null())
     {
         try
         {
-            m_userId = json["user_id"].get<int64_t>();
+            userId = json["user_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -77,14 +77,14 @@ bool UserTeamRole::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_userId = std::nullopt;
+        userId = std::nullopt;
     }
     // Идентификатор команды
     if (json.contains("team_id") && !json["team_id"].is_null())
     {
         try
         {
-            m_teamId = json["team_id"].get<int64_t>();
+            teamId = json["team_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -93,14 +93,14 @@ bool UserTeamRole::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_teamId = std::nullopt;
+        teamId = std::nullopt;
     }
     // Идентификатор роли
     if (json.contains("role_id") && !json["role_id"].is_null())
     {
         try
         {
-            m_roleId = json["role_id"].get<int64_t>();
+            roleId = json["role_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -109,7 +109,7 @@ bool UserTeamRole::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_roleId = std::nullopt;
+        roleId = std::nullopt;
     }
 
     return success;
@@ -117,15 +117,15 @@ bool UserTeamRole::fromJson(const nlohmann::json& json)
 
 bool UserTeamRole::isValid() const
 {
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return false;
     }
-    if (!m_teamId.has_value())
+    if (!teamId.has_value())
     {
         return false;
     }
-    if (!m_roleId.has_value())
+    if (!roleId.has_value())
     {
         return false;
     }
@@ -137,15 +137,15 @@ bool UserTeamRole::isValid() const
 
 std::string UserTeamRole::validationError() const
 {
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return "Поле «user_id» является обязательным для заполнения";
     }
-    if (!m_teamId.has_value())
+    if (!teamId.has_value())
     {
         return "Поле «team_id» является обязательным для заполнения";
     }
-    if (!m_roleId.has_value())
+    if (!roleId.has_value())
     {
         return "Поле «role_id» является обязательным для заполнения";
     }
@@ -157,10 +157,10 @@ std::string UserTeamRole::validationError() const
 bool UserTeamRole::operator==(const UserTeamRole& other) const
 {
     return
-        m_id == other.m_id
-        && m_userId == other.m_userId
-        && m_teamId == other.m_teamId
-        && m_roleId == other.m_roleId
+        id == other.id
+        && userId == other.userId
+        && teamId == other.teamId
+        && roleId == other.roleId
 ;
 }
 

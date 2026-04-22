@@ -21,60 +21,60 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     Rule dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasRoleId());
-    BOOST_TEST(!dto.hasIsRootProjectCreator());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.roleId.has_value());
+    BOOST_TEST(!dto.isRootProjectCreator.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     Rule dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: roleId
     {
-        BOOST_TEST(!dto.hasRoleId());
+        BOOST_TEST(!dto.roleId.has_value());
 
         int64_t testValue =42;
-        dto.setRoleId(testValue);
+        dto.roleId = testValue;
 
-        BOOST_TEST(dto.hasRoleId());
+        BOOST_TEST(dto.roleId.has_value());
 
-        BOOST_TEST(dto.roleId().value() == testValue);
+        BOOST_TEST(dto.roleId.value() == testValue);
 
-        // Проверка clear
-        dto.clearRoleId();
-        BOOST_TEST(!dto.hasRoleId());
+        // Проверка сброса значения
+        dto.roleId = std::nullopt;
+        BOOST_TEST(!dto.roleId.has_value());
     }
     // Проверка поля: isRootProjectCreator
     {
-        BOOST_TEST(!dto.hasIsRootProjectCreator());
+        BOOST_TEST(!dto.isRootProjectCreator.has_value());
 
         bool testValue =true;
-        dto.setIsRootProjectCreator(testValue);
+        dto.isRootProjectCreator = testValue;
 
-        BOOST_TEST(dto.hasIsRootProjectCreator());
+        BOOST_TEST(dto.isRootProjectCreator.has_value());
 
-        BOOST_TEST(dto.isRootProjectCreator().value() == testValue);
+        BOOST_TEST(dto.isRootProjectCreator.value() == testValue);
 
-        // Проверка clear
-        dto.clearIsRootProjectCreator();
-        BOOST_TEST(!dto.hasIsRootProjectCreator());
+        // Проверка сброса значения
+        dto.isRootProjectCreator = std::nullopt;
+        BOOST_TEST(!dto.isRootProjectCreator.has_value());
     }
 }
 
@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     Rule dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: roleId
-    dto.setRoleId(42);
+    dto.roleId = 42;
     // Поле: isRootProjectCreator
-    dto.setIsRootProjectCreator(true);
+    dto.isRootProjectCreator = true;
 
     nlohmann::json json = dto.toJson();
 
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     Rule dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasRoleId());
-    BOOST_TEST(dto.roleId().value() == 42);
-    BOOST_TEST(dto.hasIsRootProjectCreator());
-    BOOST_TEST(dto.isRootProjectCreator().value() == true);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.roleId.has_value());
+    BOOST_TEST(dto.roleId.value() == 42);
+    BOOST_TEST(dto.isRootProjectCreator.has_value());
+    BOOST_TEST(dto.isRootProjectCreator.value() == true);
 }
 
 // Тест: Сериализация в оба конца
@@ -126,11 +126,11 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     Rule original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: roleId
-    original.setRoleId(42);
+    original.roleId = 42;
     // Поле: isRootProjectCreator
-    original.setIsRootProjectCreator(true);
+    original.isRootProjectCreator = true;
 
     nlohmann::json json = original.toJson();
     Rule deserialized(json);
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setRoleId(42);
+    dto.roleId = 42;
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле roleId, чтобы сделать их разными
-    dto1.setRoleId(999);
+    dto1.roleId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     Rule dto;
 
-    dto.setRoleId(42);
+    dto.roleId = 42;
 
     std::stringstream ss;
     ss << dto;

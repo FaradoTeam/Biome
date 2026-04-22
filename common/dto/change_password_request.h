@@ -29,38 +29,6 @@ public:
     ChangePasswordRequest() = default;
     explicit ChangePasswordRequest(const nlohmann::json& json);
 
-    // Поле: «oldPassword» 
-    const std::optional<std::string>& oldPassword() const { return m_oldPassword; }
-    bool hasOldPassword() const { return m_oldPassword.has_value(); }
-    void setOldPassword(const std::string& value)
-    {
-        m_oldPassword = value;
-    }
-    void setOldPassword(std::string&& value)
-    {
-        m_oldPassword = std::move(value);
-    }
-    void clearOldPassword()
-    {
-        m_oldPassword = std::nullopt;
-    }
-
-    // Поле: «newPassword» 
-    const std::optional<std::string>& newPassword() const { return m_newPassword; }
-    bool hasNewPassword() const { return m_newPassword.has_value(); }
-    void setNewPassword(const std::string& value)
-    {
-        m_newPassword = value;
-    }
-    void setNewPassword(std::string&& value)
-    {
-        m_newPassword = std::move(value);
-    }
-    void clearNewPassword()
-    {
-        m_newPassword = std::nullopt;
-    }
-
     // Сериализация
     nlohmann::json toJson() const;
     bool fromJson(const nlohmann::json& json);
@@ -79,9 +47,11 @@ public:
     // Потоковый вывод для отладки
     friend std::ostream& operator<<(std::ostream& os, const ChangePasswordRequest& dto);
 
-private:
-    std::optional<std::string> m_oldPassword;
-    std::optional<std::string> m_newPassword;
+public:
+    std::optional<std::string> oldPassword;
+
+    std::optional<std::string> newPassword;
+
 };
 
 inline std::ostream& operator<<(std::ostream& os, const ChangePasswordRequest& dto)

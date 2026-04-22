@@ -29,102 +29,6 @@ public:
     SpecialDay() = default;
     explicit SpecialDay(const nlohmann::json& json);
 
-    // Поле: «id» Уникальный идентификатор
-    const std::optional<int64_t>& id() const { return m_id; }
-    bool hasId() const { return m_id.has_value(); }
-    void setId(const int64_t& value)
-    {
-        m_id = value;
-    }
-    void setId(int64_t&& value)
-    {
-        m_id = std::move(value);
-    }
-    void clearId()
-    {
-        m_id = std::nullopt;
-    }
-
-    // Поле: «date» Дата (уникальная)
-    const std::optional<std::chrono::system_clock::time_point>& date() const { return m_date; }
-    bool hasDate() const { return m_date.has_value(); }
-    void setDate(const std::chrono::system_clock::time_point& value)
-    {
-        m_date = value;
-    }
-    void setDate(std::chrono::system_clock::time_point&& value)
-    {
-        m_date = std::move(value);
-    }
-    void clearDate()
-    {
-        m_date = std::nullopt;
-    }
-
-    // Поле: «isWorkDay» Является ли день рабочим
-    const std::optional<bool>& isWorkDay() const { return m_isWorkDay; }
-    bool hasIsWorkDay() const { return m_isWorkDay.has_value(); }
-    void setIsWorkDay(const bool& value)
-    {
-        m_isWorkDay = value;
-    }
-    void setIsWorkDay(bool&& value)
-    {
-        m_isWorkDay = std::move(value);
-    }
-    void clearIsWorkDay()
-    {
-        m_isWorkDay = std::nullopt;
-    }
-
-    // Поле: «beginWorkTime» Время начала работы (если рабочий)
-    const std::optional<std::string>& beginWorkTime() const { return m_beginWorkTime; }
-    bool hasBeginWorkTime() const { return m_beginWorkTime.has_value(); }
-    void setBeginWorkTime(const std::string& value)
-    {
-        m_beginWorkTime = value;
-    }
-    void setBeginWorkTime(std::string&& value)
-    {
-        m_beginWorkTime = std::move(value);
-    }
-    void clearBeginWorkTime()
-    {
-        m_beginWorkTime = std::nullopt;
-    }
-
-    // Поле: «endWorkTime» Время окончания работы (если рабочий)
-    const std::optional<std::string>& endWorkTime() const { return m_endWorkTime; }
-    bool hasEndWorkTime() const { return m_endWorkTime.has_value(); }
-    void setEndWorkTime(const std::string& value)
-    {
-        m_endWorkTime = value;
-    }
-    void setEndWorkTime(std::string&& value)
-    {
-        m_endWorkTime = std::move(value);
-    }
-    void clearEndWorkTime()
-    {
-        m_endWorkTime = std::nullopt;
-    }
-
-    // Поле: «breakDuration» Длительность перерыва в минутах
-    const std::optional<int64_t>& breakDuration() const { return m_breakDuration; }
-    bool hasBreakDuration() const { return m_breakDuration.has_value(); }
-    void setBreakDuration(const int64_t& value)
-    {
-        m_breakDuration = value;
-    }
-    void setBreakDuration(int64_t&& value)
-    {
-        m_breakDuration = std::move(value);
-    }
-    void clearBreakDuration()
-    {
-        m_breakDuration = std::nullopt;
-    }
-
     // Сериализация
     nlohmann::json toJson() const;
     bool fromJson(const nlohmann::json& json);
@@ -143,13 +47,25 @@ public:
     // Потоковый вывод для отладки
     friend std::ostream& operator<<(std::ostream& os, const SpecialDay& dto);
 
-private:
-    std::optional<int64_t> m_id;
-    std::optional<std::chrono::system_clock::time_point> m_date;
-    std::optional<bool> m_isWorkDay;
-    std::optional<std::string> m_beginWorkTime;
-    std::optional<std::string> m_endWorkTime;
-    std::optional<int64_t> m_breakDuration;
+public:
+    /// Уникальный идентификатор
+    std::optional<int64_t> id;
+
+    /// Дата (уникальная)
+    std::optional<std::chrono::system_clock::time_point> date;
+
+    /// Является ли день рабочим
+    std::optional<bool> isWorkDay;
+
+    /// Время начала работы (если рабочий)
+    std::optional<std::string> beginWorkTime;
+
+    /// Время окончания работы (если рабочий)
+    std::optional<std::string> endWorkTime;
+
+    /// Длительность перерыва в минутах
+    std::optional<int64_t> breakDuration;
+
 };
 
 inline std::ostream& operator<<(std::ostream& os, const SpecialDay& dto)

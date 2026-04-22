@@ -20,19 +20,19 @@ nlohmann::json CommentDocument::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор комментария
-    if (m_commentId.has_value())
+    if (commentId.has_value())
     {
-        result["comment_id"] = m_commentId.value();
+        result["comment_id"] = commentId.value();
     }
     // Идентификатор документа
-    if (m_documentId.has_value())
+    if (documentId.has_value())
     {
-        result["document_id"] = m_documentId.value();
+        result["document_id"] = documentId.value();
     }
 
     return result;
@@ -47,7 +47,7 @@ bool CommentDocument::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -56,14 +56,14 @@ bool CommentDocument::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор комментария
     if (json.contains("comment_id") && !json["comment_id"].is_null())
     {
         try
         {
-            m_commentId = json["comment_id"].get<int64_t>();
+            commentId = json["comment_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -72,14 +72,14 @@ bool CommentDocument::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_commentId = std::nullopt;
+        commentId = std::nullopt;
     }
     // Идентификатор документа
     if (json.contains("document_id") && !json["document_id"].is_null())
     {
         try
         {
-            m_documentId = json["document_id"].get<int64_t>();
+            documentId = json["document_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -88,7 +88,7 @@ bool CommentDocument::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_documentId = std::nullopt;
+        documentId = std::nullopt;
     }
 
     return success;
@@ -96,11 +96,11 @@ bool CommentDocument::fromJson(const nlohmann::json& json)
 
 bool CommentDocument::isValid() const
 {
-    if (!m_commentId.has_value())
+    if (!commentId.has_value())
     {
         return false;
     }
-    if (!m_documentId.has_value())
+    if (!documentId.has_value())
     {
         return false;
     }
@@ -112,11 +112,11 @@ bool CommentDocument::isValid() const
 
 std::string CommentDocument::validationError() const
 {
-    if (!m_commentId.has_value())
+    if (!commentId.has_value())
     {
         return "Поле «comment_id» является обязательным для заполнения";
     }
-    if (!m_documentId.has_value())
+    if (!documentId.has_value())
     {
         return "Поле «document_id» является обязательным для заполнения";
     }
@@ -128,9 +128,9 @@ std::string CommentDocument::validationError() const
 bool CommentDocument::operator==(const CommentDocument& other) const
 {
     return
-        m_id == other.m_id
-        && m_commentId == other.m_commentId
-        && m_documentId == other.m_documentId
+        id == other.id
+        && commentId == other.commentId
+        && documentId == other.documentId
 ;
 }
 

@@ -20,19 +20,19 @@ nlohmann::json ErrorResponse::toJson() const
     nlohmann::json result;
 
     // Код ошибки HTTP
-    if (m_code.has_value())
+    if (code.has_value())
     {
-        result["code"] = m_code.value();
+        result["code"] = code.value();
     }
     // Сообщение об ошибке
-    if (m_message.has_value())
+    if (message.has_value())
     {
-        result["message"] = m_message.value();
+        result["message"] = message.value();
     }
     // Дополнительные детали ошибки
-    if (m_details.has_value())
+    if (details.has_value())
     {
-        result["details"] = m_details.value();
+        result["details"] = details.value();
     }
 
     return result;
@@ -47,7 +47,7 @@ bool ErrorResponse::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_code = json["code"].get<int64_t>();
+            code = json["code"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -56,14 +56,14 @@ bool ErrorResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_code = std::nullopt;
+        code = std::nullopt;
     }
     // Сообщение об ошибке
     if (json.contains("message") && !json["message"].is_null())
     {
         try
         {
-            m_message = json["message"].get<std::string>();
+            message = json["message"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -72,14 +72,14 @@ bool ErrorResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_message = std::nullopt;
+        message = std::nullopt;
     }
     // Дополнительные детали ошибки
     if (json.contains("details") && !json["details"].is_null())
     {
         try
         {
-            m_details = json["details"].get<std::string>();
+            details = json["details"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -88,7 +88,7 @@ bool ErrorResponse::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_details = std::nullopt;
+        details = std::nullopt;
     }
 
     return success;
@@ -96,7 +96,7 @@ bool ErrorResponse::fromJson(const nlohmann::json& json)
 
 bool ErrorResponse::isValid() const
 {
-    if (!m_code.has_value())
+    if (!code.has_value())
     {
         return false;
     }
@@ -108,7 +108,7 @@ bool ErrorResponse::isValid() const
 
 std::string ErrorResponse::validationError() const
 {
-    if (!m_code.has_value())
+    if (!code.has_value())
     {
         return "Поле «code» является обязательным для заполнения";
     }
@@ -120,9 +120,9 @@ std::string ErrorResponse::validationError() const
 bool ErrorResponse::operator==(const ErrorResponse& other) const
 {
     return
-        m_code == other.m_code
-        && m_message == other.m_message
-        && m_details == other.m_details
+        code == other.code
+        && message == other.message
+        && details == other.details
 ;
 }
 

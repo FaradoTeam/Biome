@@ -21,60 +21,60 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     FieldTypePossibleValue dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasFieldTypeId());
-    BOOST_TEST(!dto.hasValue());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.fieldTypeId.has_value());
+    BOOST_TEST(!dto.value.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     FieldTypePossibleValue dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: fieldTypeId
     {
-        BOOST_TEST(!dto.hasFieldTypeId());
+        BOOST_TEST(!dto.fieldTypeId.has_value());
 
         int64_t testValue =42;
-        dto.setFieldTypeId(testValue);
+        dto.fieldTypeId = testValue;
 
-        BOOST_TEST(dto.hasFieldTypeId());
+        BOOST_TEST(dto.fieldTypeId.has_value());
 
-        BOOST_TEST(dto.fieldTypeId().value() == testValue);
+        BOOST_TEST(dto.fieldTypeId.value() == testValue);
 
-        // Проверка clear
-        dto.clearFieldTypeId();
-        BOOST_TEST(!dto.hasFieldTypeId());
+        // Проверка сброса значения
+        dto.fieldTypeId = std::nullopt;
+        BOOST_TEST(!dto.fieldTypeId.has_value());
     }
     // Проверка поля: value
     {
-        BOOST_TEST(!dto.hasValue());
+        BOOST_TEST(!dto.value.has_value());
 
         std::string testValue ="test_value";
-        dto.setValue(testValue);
+        dto.value = testValue;
 
-        BOOST_TEST(dto.hasValue());
+        BOOST_TEST(dto.value.has_value());
 
-        BOOST_TEST(dto.value().value() == testValue);
+        BOOST_TEST(dto.value.value() == testValue);
 
-        // Проверка clear
-        dto.clearValue();
-        BOOST_TEST(!dto.hasValue());
+        // Проверка сброса значения
+        dto.value = std::nullopt;
+        BOOST_TEST(!dto.value.has_value());
     }
 }
 
@@ -84,11 +84,11 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     FieldTypePossibleValue dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: fieldTypeId
-    dto.setFieldTypeId(42);
+    dto.fieldTypeId = 42;
     // Поле: value
-    dto.setValue("test_value");
+    dto.value = "test_value";
 
     nlohmann::json json = dto.toJson();
 
@@ -112,12 +112,12 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     FieldTypePossibleValue dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasFieldTypeId());
-    BOOST_TEST(dto.fieldTypeId().value() == 42);
-    BOOST_TEST(dto.hasValue());
-    BOOST_TEST(dto.value().value() == "test_value");
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.fieldTypeId.has_value());
+    BOOST_TEST(dto.fieldTypeId.value() == 42);
+    BOOST_TEST(dto.value.has_value());
+    BOOST_TEST(dto.value.value() == "test_value");
 }
 
 // Тест: Сериализация в оба конца
@@ -126,11 +126,11 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     FieldTypePossibleValue original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: fieldTypeId
-    original.setFieldTypeId(42);
+    original.fieldTypeId = 42;
     // Поле: value
-    original.setValue("test_value");
+    original.value = "test_value";
 
     nlohmann::json json = original.toJson();
     FieldTypePossibleValue deserialized(json);
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setFieldTypeId(42);
-    dto.setValue("test_value");
+    dto.fieldTypeId = 42;
+    dto.value = "test_value";
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле fieldTypeId, чтобы сделать их разными
-    dto1.setFieldTypeId(999);
+    dto1.fieldTypeId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -182,8 +182,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     FieldTypePossibleValue dto;
 
-    dto.setFieldTypeId(42);
-    dto.setValue("test_value");
+    dto.fieldTypeId = 42;
+    dto.value = "test_value";
 
     std::stringstream ss;
     ss << dto;

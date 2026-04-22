@@ -20,19 +20,19 @@ nlohmann::json FieldTypePossibleValue::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор типа поля
-    if (m_fieldTypeId.has_value())
+    if (fieldTypeId.has_value())
     {
-        result["field_type_id"] = m_fieldTypeId.value();
+        result["field_type_id"] = fieldTypeId.value();
     }
     // Значение для выбора
-    if (m_value.has_value())
+    if (value.has_value())
     {
-        result["value"] = m_value.value();
+        result["value"] = value.value();
     }
 
     return result;
@@ -47,7 +47,7 @@ bool FieldTypePossibleValue::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -56,14 +56,14 @@ bool FieldTypePossibleValue::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор типа поля
     if (json.contains("field_type_id") && !json["field_type_id"].is_null())
     {
         try
         {
-            m_fieldTypeId = json["field_type_id"].get<int64_t>();
+            fieldTypeId = json["field_type_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -72,14 +72,14 @@ bool FieldTypePossibleValue::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_fieldTypeId = std::nullopt;
+        fieldTypeId = std::nullopt;
     }
     // Значение для выбора
     if (json.contains("value") && !json["value"].is_null())
     {
         try
         {
-            m_value = json["value"].get<std::string>();
+            value = json["value"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -88,7 +88,7 @@ bool FieldTypePossibleValue::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_value = std::nullopt;
+        value = std::nullopt;
     }
 
     return success;
@@ -96,17 +96,17 @@ bool FieldTypePossibleValue::fromJson(const nlohmann::json& json)
 
 bool FieldTypePossibleValue::isValid() const
 {
-    if (!m_fieldTypeId.has_value())
+    if (!fieldTypeId.has_value())
     {
         return false;
     }
-    if (!m_value.has_value())
+    if (!value.has_value())
     {
         return false;
     }
 
     // Дополнительные проверки для непустых значений
-    if (m_value.value().empty())
+    if (value.value().empty())
     {
         return false;
     }
@@ -116,16 +116,16 @@ bool FieldTypePossibleValue::isValid() const
 
 std::string FieldTypePossibleValue::validationError() const
 {
-    if (!m_fieldTypeId.has_value())
+    if (!fieldTypeId.has_value())
     {
         return "Поле «field_type_id» является обязательным для заполнения";
     }
-    if (!m_value.has_value())
+    if (!value.has_value())
     {
         return "Поле «value» является обязательным для заполнения";
     }
 
-    if (m_value.value().empty())
+    if (value.value().empty())
     {
         return "Поле «value» не может быть пустой строкой";
     }
@@ -136,9 +136,9 @@ std::string FieldTypePossibleValue::validationError() const
 bool FieldTypePossibleValue::operator==(const FieldTypePossibleValue& other) const
 {
     return
-        m_id == other.m_id
-        && m_fieldTypeId == other.m_fieldTypeId
-        && m_value == other.m_value
+        id == other.id
+        && fieldTypeId == other.fieldTypeId
+        && value == other.value
 ;
 }
 

@@ -21,76 +21,76 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     PageResponse dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasItems());
-    BOOST_TEST(!dto.hasTotalCount());
-    BOOST_TEST(!dto.hasPage());
-    BOOST_TEST(!dto.hasPageSize());
+    BOOST_TEST(!dto.items.has_value());
+    BOOST_TEST(!dto.totalCount.has_value());
+    BOOST_TEST(!dto.page.has_value());
+    BOOST_TEST(!dto.pageSize.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     PageResponse dto;
 
     // Проверка поля: items
     {
-        BOOST_TEST(!dto.hasItems());
+        BOOST_TEST(!dto.items.has_value());
 
         std::vector<std::string> testValue ={"item1", "item2"};
-        dto.setItems(testValue);
+        dto.items = testValue;
 
-        BOOST_TEST(dto.hasItems());
+        BOOST_TEST(dto.items.has_value());
 
-        BOOST_TEST(dto.items().value() == testValue);
+        BOOST_TEST(dto.items.value() == testValue);
 
-        // Проверка clear
-        dto.clearItems();
-        BOOST_TEST(!dto.hasItems());
+        // Проверка сброса значения
+        dto.items = std::nullopt;
+        BOOST_TEST(!dto.items.has_value());
     }
     // Проверка поля: totalCount
     {
-        BOOST_TEST(!dto.hasTotalCount());
+        BOOST_TEST(!dto.totalCount.has_value());
 
         int64_t testValue =42;
-        dto.setTotalCount(testValue);
+        dto.totalCount = testValue;
 
-        BOOST_TEST(dto.hasTotalCount());
+        BOOST_TEST(dto.totalCount.has_value());
 
-        BOOST_TEST(dto.totalCount().value() == testValue);
+        BOOST_TEST(dto.totalCount.value() == testValue);
 
-        // Проверка clear
-        dto.clearTotalCount();
-        BOOST_TEST(!dto.hasTotalCount());
+        // Проверка сброса значения
+        dto.totalCount = std::nullopt;
+        BOOST_TEST(!dto.totalCount.has_value());
     }
     // Проверка поля: page
     {
-        BOOST_TEST(!dto.hasPage());
+        BOOST_TEST(!dto.page.has_value());
 
         int64_t testValue =42;
-        dto.setPage(testValue);
+        dto.page = testValue;
 
-        BOOST_TEST(dto.hasPage());
+        BOOST_TEST(dto.page.has_value());
 
-        BOOST_TEST(dto.page().value() == testValue);
+        BOOST_TEST(dto.page.value() == testValue);
 
-        // Проверка clear
-        dto.clearPage();
-        BOOST_TEST(!dto.hasPage());
+        // Проверка сброса значения
+        dto.page = std::nullopt;
+        BOOST_TEST(!dto.page.has_value());
     }
     // Проверка поля: pageSize
     {
-        BOOST_TEST(!dto.hasPageSize());
+        BOOST_TEST(!dto.pageSize.has_value());
 
         int64_t testValue =42;
-        dto.setPageSize(testValue);
+        dto.pageSize = testValue;
 
-        BOOST_TEST(dto.hasPageSize());
+        BOOST_TEST(dto.pageSize.has_value());
 
-        BOOST_TEST(dto.pageSize().value() == testValue);
+        BOOST_TEST(dto.pageSize.value() == testValue);
 
-        // Проверка clear
-        dto.clearPageSize();
-        BOOST_TEST(!dto.hasPageSize());
+        // Проверка сброса значения
+        dto.pageSize = std::nullopt;
+        BOOST_TEST(!dto.pageSize.has_value());
     }
 }
 
@@ -100,13 +100,13 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     PageResponse dto;
 
     // Поле: items
-    dto.setItems({"item1", "item2"});
+    dto.items = {"item1", "item2"};
     // Поле: totalCount
-    dto.setTotalCount(42);
+    dto.totalCount = 42;
     // Поле: page
-    dto.setPage(42);
+    dto.page = 42;
     // Поле: pageSize
-    dto.setPageSize(42);
+    dto.pageSize = 42;
 
     nlohmann::json json = dto.toJson();
 
@@ -134,14 +134,14 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     PageResponse dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasItems());
-    BOOST_TEST(dto.items().value().size() == 2);
-    BOOST_TEST(dto.hasTotalCount());
-    BOOST_TEST(dto.totalCount().value() == 42);
-    BOOST_TEST(dto.hasPage());
-    BOOST_TEST(dto.page().value() == 42);
-    BOOST_TEST(dto.hasPageSize());
-    BOOST_TEST(dto.pageSize().value() == 42);
+    BOOST_TEST(dto.items.has_value());
+    BOOST_TEST(dto.items.value().size() == 2);
+    BOOST_TEST(dto.totalCount.has_value());
+    BOOST_TEST(dto.totalCount.value() == 42);
+    BOOST_TEST(dto.page.has_value());
+    BOOST_TEST(dto.page.value() == 42);
+    BOOST_TEST(dto.pageSize.has_value());
+    BOOST_TEST(dto.pageSize.value() == 42);
 }
 
 // Тест: Сериализация в оба конца
@@ -150,13 +150,13 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     PageResponse original;
 
     // Поле: items
-    original.setItems({"item1", "item2"});
+    original.items = {"item1", "item2"};
     // Поле: totalCount
-    original.setTotalCount(42);
+    original.totalCount = 42;
     // Поле: page
-    original.setPage(42);
+    original.page = 42;
     // Поле: pageSize
-    original.setPageSize(42);
+    original.pageSize = 42;
 
     nlohmann::json json = original.toJson();
     PageResponse deserialized(json);
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
 
 
     // Если нет обязательных полей, используем первое неконстантное поле
-    dto1.setItems({"different"});
+    dto1.items = {"different"};
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));

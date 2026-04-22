@@ -21,98 +21,98 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     UserTodo dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.hasId());
-    BOOST_TEST(!dto.hasItemId());
-    BOOST_TEST(!dto.hasUserId());
-    BOOST_TEST(!dto.hasStartDate());
-    BOOST_TEST(!dto.hasEndDate());
+    BOOST_TEST(!dto.id.has_value());
+    BOOST_TEST(!dto.itemId.has_value());
+    BOOST_TEST(!dto.userId.has_value());
+    BOOST_TEST(!dto.startDate.has_value());
+    BOOST_TEST(!dto.endDate.has_value());
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     UserTodo dto;
 
     // Проверка поля: id
     {
-        BOOST_TEST(!dto.hasId());
+        BOOST_TEST(!dto.id.has_value());
 
         int64_t testValue =42;
-        dto.setId(testValue);
+        dto.id = testValue;
 
-        BOOST_TEST(dto.hasId());
+        BOOST_TEST(dto.id.has_value());
 
-        BOOST_TEST(dto.id().value() == testValue);
+        BOOST_TEST(dto.id.value() == testValue);
 
-        // Проверка clear
-        dto.clearId();
-        BOOST_TEST(!dto.hasId());
+        // Проверка сброса значения
+        dto.id = std::nullopt;
+        BOOST_TEST(!dto.id.has_value());
     }
     // Проверка поля: itemId
     {
-        BOOST_TEST(!dto.hasItemId());
+        BOOST_TEST(!dto.itemId.has_value());
 
         int64_t testValue =42;
-        dto.setItemId(testValue);
+        dto.itemId = testValue;
 
-        BOOST_TEST(dto.hasItemId());
+        BOOST_TEST(dto.itemId.has_value());
 
-        BOOST_TEST(dto.itemId().value() == testValue);
+        BOOST_TEST(dto.itemId.value() == testValue);
 
-        // Проверка clear
-        dto.clearItemId();
-        BOOST_TEST(!dto.hasItemId());
+        // Проверка сброса значения
+        dto.itemId = std::nullopt;
+        BOOST_TEST(!dto.itemId.has_value());
     }
     // Проверка поля: userId
     {
-        BOOST_TEST(!dto.hasUserId());
+        BOOST_TEST(!dto.userId.has_value());
 
         int64_t testValue =42;
-        dto.setUserId(testValue);
+        dto.userId = testValue;
 
-        BOOST_TEST(dto.hasUserId());
+        BOOST_TEST(dto.userId.has_value());
 
-        BOOST_TEST(dto.userId().value() == testValue);
+        BOOST_TEST(dto.userId.value() == testValue);
 
-        // Проверка clear
-        dto.clearUserId();
-        BOOST_TEST(!dto.hasUserId());
+        // Проверка сброса значения
+        dto.userId = std::nullopt;
+        BOOST_TEST(!dto.userId.has_value());
     }
     // Проверка поля: startDate
     {
-        BOOST_TEST(!dto.hasStartDate());
+        BOOST_TEST(!dto.startDate.has_value());
 
         std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
-        dto.setStartDate(testValue);
+        dto.startDate = testValue;
 
-        BOOST_TEST(dto.hasStartDate());
+        BOOST_TEST(dto.startDate.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.startDate().value()),
+            timePointToSeconds(dto.startDate.value()),
             timePointToSeconds(testValue)
         );
 
-        // Проверка clear
-        dto.clearStartDate();
-        BOOST_TEST(!dto.hasStartDate());
+        // Проверка сброса значения
+        dto.startDate = std::nullopt;
+        BOOST_TEST(!dto.startDate.has_value());
     }
     // Проверка поля: endDate
     {
-        BOOST_TEST(!dto.hasEndDate());
+        BOOST_TEST(!dto.endDate.has_value());
 
         std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
-        dto.setEndDate(testValue);
+        dto.endDate = testValue;
 
-        BOOST_TEST(dto.hasEndDate());
+        BOOST_TEST(dto.endDate.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.endDate().value()),
+            timePointToSeconds(dto.endDate.value()),
             timePointToSeconds(testValue)
         );
 
-        // Проверка clear
-        dto.clearEndDate();
-        BOOST_TEST(!dto.hasEndDate());
+        // Проверка сброса значения
+        dto.endDate = std::nullopt;
+        BOOST_TEST(!dto.endDate.has_value());
     }
 }
 
@@ -122,15 +122,15 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     UserTodo dto;
 
     // Поле: id
-    dto.setId(42);
+    dto.id = 42;
     // Поле: itemId
-    dto.setItemId(42);
+    dto.itemId = 42;
     // Поле: userId
-    dto.setUserId(42);
+    dto.userId = 42;
     // Поле: startDate
-    dto.setStartDate(secondsToTimePoint(1640995200));
+    dto.startDate = secondsToTimePoint(1640995200);
     // Поле: endDate
-    dto.setEndDate(secondsToTimePoint(1640995200));
+    dto.endDate = secondsToTimePoint(1640995200);
 
     nlohmann::json json = dto.toJson();
 
@@ -160,16 +160,16 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     UserTodo dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.hasId());
-    BOOST_TEST(dto.id().value() == 42);
-    BOOST_TEST(dto.hasItemId());
-    BOOST_TEST(dto.itemId().value() == 42);
-    BOOST_TEST(dto.hasUserId());
-    BOOST_TEST(dto.userId().value() == 42);
-    BOOST_TEST(dto.hasStartDate());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.startDate().value()), 1640995200);
-    BOOST_TEST(dto.hasEndDate());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.endDate().value()), 1640995200);
+    BOOST_TEST(dto.id.has_value());
+    BOOST_TEST(dto.id.value() == 42);
+    BOOST_TEST(dto.itemId.has_value());
+    BOOST_TEST(dto.itemId.value() == 42);
+    BOOST_TEST(dto.userId.has_value());
+    BOOST_TEST(dto.userId.value() == 42);
+    BOOST_TEST(dto.startDate.has_value());
+    BOOST_CHECK_EQUAL(timePointToSeconds(dto.startDate.value()), 1640995200);
+    BOOST_TEST(dto.endDate.has_value());
+    BOOST_CHECK_EQUAL(timePointToSeconds(dto.endDate.value()), 1640995200);
 }
 
 // Тест: Сериализация в оба конца
@@ -178,15 +178,15 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     UserTodo original;
 
     // Поле: id
-    original.setId(42);
+    original.id = 42;
     // Поле: itemId
-    original.setItemId(42);
+    original.itemId = 42;
     // Поле: userId
-    original.setUserId(42);
+    original.userId = 42;
     // Поле: startDate
-    original.setStartDate(secondsToTimePoint(1640995200));
+    original.startDate = secondsToTimePoint(1640995200);
     // Поле: endDate
-    original.setEndDate(secondsToTimePoint(1640995200));
+    original.endDate = secondsToTimePoint(1640995200);
 
     nlohmann::json json = original.toJson();
     UserTodo deserialized(json);
@@ -207,10 +207,10 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.setItemId(42);
-    dto.setUserId(42);
-    dto.setStartDate(secondsToTimePoint(1640995200));
-    dto.setEndDate(secondsToTimePoint(1640995200));
+    dto.itemId = 42;
+    dto.userId = 42;
+    dto.startDate = secondsToTimePoint(1640995200);
+    dto.endDate = secondsToTimePoint(1640995200);
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле itemId, чтобы сделать их разными
-    dto1.setItemId(999);
+    dto1.itemId = 999;
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -240,10 +240,10 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     UserTodo dto;
 
-    dto.setItemId(42);
-    dto.setUserId(42);
-    dto.setStartDate(secondsToTimePoint(1640995200));
-    dto.setEndDate(secondsToTimePoint(1640995200));
+    dto.itemId = 42;
+    dto.userId = 42;
+    dto.startDate = secondsToTimePoint(1640995200);
+    dto.endDate = secondsToTimePoint(1640995200);
 
     std::stringstream ss;
     ss << dto;

@@ -20,29 +20,29 @@ nlohmann::json ItemHistory::toJson() const
     nlohmann::json result;
 
     // Уникальный идентификатор
-    if (m_id.has_value())
+    if (id.has_value())
     {
-        result["id"] = m_id.value();
+        result["id"] = id.value();
     }
     // Идентификатор элемента
-    if (m_itemId.has_value())
+    if (itemId.has_value())
     {
-        result["item_id"] = m_itemId.value();
+        result["item_id"] = itemId.value();
     }
     // Идентификатор пользователя
-    if (m_userId.has_value())
+    if (userId.has_value())
     {
-        result["user_id"] = m_userId.value();
+        result["user_id"] = userId.value();
     }
     // Время изменения
-    if (m_timestamp.has_value())
+    if (timestamp.has_value())
     {
-        result["timestamp"] = timePointToSeconds(m_timestamp.value());
+        result["timestamp"] = timePointToSeconds(timestamp.value());
     }
     // JSON с изменениями (diff)
-    if (m_diff.has_value())
+    if (diff.has_value())
     {
-        result["diff"] = m_diff.value();
+        result["diff"] = diff.value();
     }
 
     return result;
@@ -57,7 +57,7 @@ bool ItemHistory::fromJson(const nlohmann::json& json)
     {
         try
         {
-            m_id = json["id"].get<int64_t>();
+            id = json["id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -66,14 +66,14 @@ bool ItemHistory::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_id = std::nullopt;
+        id = std::nullopt;
     }
     // Идентификатор элемента
     if (json.contains("item_id") && !json["item_id"].is_null())
     {
         try
         {
-            m_itemId = json["item_id"].get<int64_t>();
+            itemId = json["item_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -82,14 +82,14 @@ bool ItemHistory::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_itemId = std::nullopt;
+        itemId = std::nullopt;
     }
     // Идентификатор пользователя
     if (json.contains("user_id") && !json["user_id"].is_null())
     {
         try
         {
-            m_userId = json["user_id"].get<int64_t>();
+            userId = json["user_id"].get<int64_t>();
         }
         catch (const std::exception& e)
         {
@@ -98,15 +98,15 @@ bool ItemHistory::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_userId = std::nullopt;
+        userId = std::nullopt;
     }
     // Время изменения
     if (json.contains("timestamp") && !json["timestamp"].is_null())
     {
         try
         {
-            auto timestamp = json["timestamp"].get<int64_t>();
-            m_timestamp = secondsToTimePoint(timestamp);
+            auto timestampValue = json["timestamp"].get<int64_t>();
+            timestamp = secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -115,14 +115,14 @@ bool ItemHistory::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_timestamp = std::nullopt;
+        timestamp = std::nullopt;
     }
     // JSON с изменениями (diff)
     if (json.contains("diff") && !json["diff"].is_null())
     {
         try
         {
-            m_diff = json["diff"].get<std::string>();
+            diff = json["diff"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -131,7 +131,7 @@ bool ItemHistory::fromJson(const nlohmann::json& json)
     }
     else
     {
-        m_diff = std::nullopt;
+        diff = std::nullopt;
     }
 
     return success;
@@ -139,15 +139,15 @@ bool ItemHistory::fromJson(const nlohmann::json& json)
 
 bool ItemHistory::isValid() const
 {
-    if (!m_itemId.has_value())
+    if (!itemId.has_value())
     {
         return false;
     }
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return false;
     }
-    if (!m_timestamp.has_value())
+    if (!timestamp.has_value())
     {
         return false;
     }
@@ -159,15 +159,15 @@ bool ItemHistory::isValid() const
 
 std::string ItemHistory::validationError() const
 {
-    if (!m_itemId.has_value())
+    if (!itemId.has_value())
     {
         return "Поле «item_id» является обязательным для заполнения";
     }
-    if (!m_userId.has_value())
+    if (!userId.has_value())
     {
         return "Поле «user_id» является обязательным для заполнения";
     }
-    if (!m_timestamp.has_value())
+    if (!timestamp.has_value())
     {
         return "Поле «timestamp» является обязательным для заполнения";
     }
@@ -179,11 +179,11 @@ std::string ItemHistory::validationError() const
 bool ItemHistory::operator==(const ItemHistory& other) const
 {
     return
-        m_id == other.m_id
-        && m_itemId == other.m_itemId
-        && m_userId == other.m_userId
-        && m_timestamp == other.m_timestamp
-        && m_diff == other.m_diff
+        id == other.id
+        && itemId == other.itemId
+        && userId == other.userId
+        && timestamp == other.timestamp
+        && diff == other.diff
 ;
 }
 
