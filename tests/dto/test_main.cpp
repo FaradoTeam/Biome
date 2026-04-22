@@ -1,7 +1,3 @@
-// Автоматически сгенерированный главный файл тестов DTO
-// Сгенерирован: 2026-04-22T10:16:14.394716
-// НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
-
 #define BOOST_TEST_MODULE FaradoDtoTests
 #include <boost/test/unit_test.hpp>
 

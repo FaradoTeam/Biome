@@ -12,6 +12,7 @@ class FaradoConanFile(ConanFile):
         self.options["qt/*"].qtdeclarative = True
         self.options["qt/*"].qtquickcontrols2 = True
         self.options["qt/*"].qtshadertools = True
+        self.options["libpq/*"].shared = True
 
     def requirements(self):
         self.requires("boost/1.83.0")
@@ -23,6 +24,7 @@ class FaradoConanFile(ConanFile):
         self.requires("websocketpp/0.8.2")
         self.requires("jwt-cpp/0.7.2")
         self.requires("qt/6.10.1")
+        self.requires("libpq/17.7")
 
     def layout(self):
         cmake_layout(self)
