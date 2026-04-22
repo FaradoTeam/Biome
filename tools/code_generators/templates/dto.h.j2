@@ -28,31 +28,6 @@ public:
     {{ dto.name }}() = default;
     explicit {{ dto.name }}(const nlohmann::json& json);
 
-    {% for field in dto.fields %}
-    // Поле: «{{ field.name_camel }}» {% if field.description %}{{ field.description }}{% endif %}
-
-    {% if field.const_value %}
-    const {{ field.cpp_type }}& {{ field.name_camel }}() const { return m_{{ field.name_camel }}; }
-    {% else %}
-    const std::optional<{{ field.cpp_type }}>& {{ field.name_camel }}() const { return m_{{ field.name_camel }}; }
-    bool has{{ field.name_pascal }}() const { return m_{{ field.name_camel }}.has_value(); }
-    {% endif %}
-    {% if not field.const_value %}
-    void set{{ field.name_pascal }}(const {{ field.cpp_type }}& value)
-    {
-        m_{{ field.name_camel }} = value;
-    }
-    void set{{ field.name_pascal }}({{ field.cpp_type }}&& value)
-    {
-        m_{{ field.name_camel }} = std::move(value);
-    }
-    void clear{{ field.name_pascal }}()
-    {
-        m_{{ field.name_camel }} = std::nullopt;
-    }
-    {% endif %}
-
-    {% endfor %}
     // Сериализация
     nlohmann::json toJson() const;
     bool fromJson(const nlohmann::json& json);
@@ -71,13 +46,17 @@ public:
     // Потоковый вывод для отладки
     friend std::ostream& operator<<(std::ostream& os, const {{ dto.name }}& dto);
 
-private:
+public:
     {% for field in dto.fields %}
-    {% if field.const_value %}
-    static inline const {{ field.cpp_type }} m_{{ field.name_camel }} = "{{ field.const_value }}";
-    {% else %}
-    std::optional<{{ field.cpp_type }}> m_{{ field.name_camel }};
+    {% if field.description %}
+    /// {{ field.description }}
     {% endif %}
+    {% if field.const_value %}
+    static inline const {{ field.cpp_type }} {{ field.name_camel }} = "{{ field.const_value }}";
+    {% else %}
+    std::optional<{{ field.cpp_type }}> {{ field.name_camel }};
+    {% endif %}
+
     {% endfor %}
 };
 

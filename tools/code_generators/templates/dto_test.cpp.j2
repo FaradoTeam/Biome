@@ -16,13 +16,13 @@ BOOST_AUTO_TEST_CASE(DefaultConstructor)
     // Все optional поля должны быть пустыми
     {% for field in dto.fields %}
     {% if not field.const_value %}
-    BOOST_TEST(!dto.has{{ field.name_pascal }}());
+    BOOST_TEST(!dto.{{ field.name_camel }}.has_value());
     {% endif %}
     {% endfor %}
 }
 
-// Тест: Геттеры и сеттеры
-BOOST_AUTO_TEST_CASE(GettersAndSetters)
+// Тест: Прямой доступ к полям
+BOOST_AUTO_TEST_CASE(FieldAccess)
 {
     {{ dto.name }} dto;
 
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(GettersAndSetters)
     // Проверка поля: {{ field.name_camel }}
     {
         {% if not field.const_value %}
-        BOOST_TEST(!dto.has{{ field.name_pascal }}());
+        BOOST_TEST(!dto.{{ field.name_camel }}.has_value());
 
         {{ field.cpp_type }} testValue = 
         {%- if field.cpp_type == 'bool' -%}
@@ -51,25 +51,25 @@ BOOST_AUTO_TEST_CASE(GettersAndSetters)
             {}
         {%- endif -%}
         ;
-        dto.set{{ field.name_pascal }}(testValue);
+        dto.{{ field.name_camel }} = testValue;
 
-        BOOST_TEST(dto.has{{ field.name_pascal }}());
+        BOOST_TEST(dto.{{ field.name_camel }}.has_value());
 
         {% if field.cpp_type == 'std::chrono::system_clock::time_point' %}
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.{{ field.name_camel }}().value()),
+            timePointToSeconds(dto.{{ field.name_camel }}.value()),
             timePointToSeconds(testValue)
         );
         {% elif field.cpp_type in dto_names %}
         // DTO объекты сравниваем через toJson()
-        BOOST_TEST(dto.{{ field.name_camel }}().value().toJson() == testValue.toJson());
+        BOOST_TEST(dto.{{ field.name_camel }}.value().toJson() == testValue.toJson());
         {% else %}
-        BOOST_TEST(dto.{{ field.name_camel }}().value() == testValue);
+        BOOST_TEST(dto.{{ field.name_camel }}.value() == testValue);
         {% endif %}
 
-        // Проверка clear
-        dto.clear{{ field.name_pascal }}();
-        BOOST_TEST(!dto.has{{ field.name_pascal }}());
+        // Проверка сброса значения
+        dto.{{ field.name_camel }} = std::nullopt;
+        BOOST_TEST(!dto.{{ field.name_camel }}.has_value());
         {% endif %}
     }
     {% endfor %}
@@ -84,19 +84,19 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: {{ field.name_camel }}
     {% if not field.const_value %}
         {% if field.cpp_type == 'std::string' %}
-    dto.set{{ field.name_pascal }}("test_{{ field.name_snake }}");
+    dto.{{ field.name_camel }} = "test_{{ field.name_snake }}";
         {% elif field.cpp_type in ['int64_t', 'int32_t'] %}
-    dto.set{{ field.name_pascal }}(42);
+    dto.{{ field.name_camel }} = 42;
         {% elif field.cpp_type == 'bool' %}
-    dto.set{{ field.name_pascal }}(true);
+    dto.{{ field.name_camel }} = true;
         {% elif field.cpp_type in ['double', 'float'] %}
-    dto.set{{ field.name_pascal }}(3.14);
+    dto.{{ field.name_camel }} = 3.14;
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto.set{{ field.name_pascal }}(secondsToTimePoint(1640995200));
+    dto.{{ field.name_camel }} = secondsToTimePoint(1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
-    dto.set{{ field.name_pascal }}({"item1", "item2"});
+    dto.{{ field.name_camel }} = {"item1", "item2"};
         {% elif field.cpp_type in dto_names %}
-    dto.set{{ field.name_pascal }}({{ field.cpp_type }}());
+    dto.{{ field.name_camel }} = {{ field.cpp_type }}();
     {% endif %}
     {% endif %}
     {% endfor %}
@@ -164,21 +164,21 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     {% for field in dto.fields %}
     {% if field.const_value %}
     // Константное поле должно иметь значение по умолчанию
-    BOOST_TEST(dto.{{ field.name_camel }}() == "{{ field.const_value }}");
+    BOOST_TEST(dto.{{ field.name_camel }} == "{{ field.const_value }}");
     {% else %}
-    BOOST_TEST(dto.has{{ field.name_pascal }}());
+    BOOST_TEST(dto.{{ field.name_camel }}.has_value());
         {% if field.cpp_type == 'std::string' %}
-    BOOST_TEST(dto.{{ field.name_camel }}().value() == "test_{{ field.name_snake }}");
+    BOOST_TEST(dto.{{ field.name_camel }}.value() == "test_{{ field.name_snake }}");
         {% elif field.cpp_type in ['int64_t', 'int32_t'] %}
-    BOOST_TEST(dto.{{ field.name_camel }}().value() == 42);
+    BOOST_TEST(dto.{{ field.name_camel }}.value() == 42);
         {% elif field.cpp_type == 'bool' %}
-    BOOST_TEST(dto.{{ field.name_camel }}().value() == true);
+    BOOST_TEST(dto.{{ field.name_camel }}.value() == true);
         {% elif field.cpp_type in ['double', 'float'] %}
-    BOOST_CHECK_CLOSE(dto.{{ field.name_camel }}().value(), 3.14, 0.001);
+    BOOST_CHECK_CLOSE(dto.{{ field.name_camel }}.value(), 3.14, 0.001);
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.{{ field.name_camel }}().value()), 1640995200);
+    BOOST_CHECK_EQUAL(timePointToSeconds(dto.{{ field.name_camel }}.value()), 1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
-    BOOST_TEST(dto.{{ field.name_camel }}().value().size() == 2);
+    BOOST_TEST(dto.{{ field.name_camel }}.value().size() == 2);
         {% endif %}
     {% endif %}
     {% endfor %}
@@ -193,19 +193,19 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: {{ field.name_camel }}
     {% if not field.const_value %}
         {% if field.cpp_type == 'std::string' %}
-    original.set{{ field.name_pascal }}("test_{{ field.name_snake }}");
+    original.{{ field.name_camel }} = "test_{{ field.name_snake }}";
         {% elif field.cpp_type in ['int64_t', 'int32_t'] %}
-    original.set{{ field.name_pascal }}(42);
+    original.{{ field.name_camel }} = 42;
         {% elif field.cpp_type == 'bool' %}
-    original.set{{ field.name_pascal }}(true);
+    original.{{ field.name_camel }} = true;
         {% elif field.cpp_type in ['double', 'float'] %}
-    original.set{{ field.name_pascal }}(3.14);
+    original.{{ field.name_camel }} = 3.14;
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    original.set{{ field.name_pascal }}(secondsToTimePoint(1640995200));
+    original.{{ field.name_camel }} = secondsToTimePoint(1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
-    original.set{{ field.name_pascal }}({"item1", "item2"});
+    original.{{ field.name_camel }} = {"item1", "item2"};
         {% elif field.cpp_type in dto_names %}
-    original.set{{ field.name_pascal }}({{ field.cpp_type }}());
+    original.{{ field.name_camel }} = {{ field.cpp_type }}();
         {% endif %}
     {% endif %}
     {% endfor %}
@@ -243,19 +243,19 @@ BOOST_AUTO_TEST_CASE(Validation)
     {% for field in dto.fields %}
     {% if field.required and not field.const_value %}
         {% if field.cpp_type == 'std::string' %}
-    dto.set{{ field.name_pascal }}("test_{{ field.name_snake }}");
+    dto.{{ field.name_camel }} = "test_{{ field.name_snake }}";
         {% elif field.cpp_type in ['int64_t', 'int32_t'] %}
-    dto.set{{ field.name_pascal }}(42);
+    dto.{{ field.name_camel }} = 42;
         {% elif field.cpp_type == 'bool' %}
-    dto.set{{ field.name_pascal }}(true);
+    dto.{{ field.name_camel }} = true;
         {% elif field.cpp_type in ['double', 'float'] %}
-    dto.set{{ field.name_pascal }}(3.14);
+    dto.{{ field.name_camel }} = 3.14;
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto.set{{ field.name_pascal }}(secondsToTimePoint(1640995200));
+    dto.{{ field.name_camel }} = secondsToTimePoint(1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
-    dto.set{{ field.name_pascal }}({"item1"});
+    dto.{{ field.name_camel }} = {"item1"};
         {% elif field.cpp_type in dto_names %}
-    dto.set{{ field.name_pascal }}({{ field.cpp_type }}());
+    dto.{{ field.name_camel }} = {{ field.cpp_type }}();
         {% endif %}
     {% endif %}
     {% endfor %}
@@ -286,20 +286,20 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
         {% set ns.found = true %}
     // Изменим поле {{ field.name_camel }}, чтобы сделать их разными
         {% if field.cpp_type == 'std::string' %}
-    dto1.set{{ field.name_pascal }}("different_value");
+    dto1.{{ field.name_camel }} = "different_value";
         {% elif field.cpp_type in ['int64_t', 'int32_t'] %}
-    dto1.set{{ field.name_pascal }}(999);
+    dto1.{{ field.name_camel }} = 999;
         {% elif field.cpp_type == 'bool' %}
-    dto1.set{{ field.name_pascal }}(false);
+    dto1.{{ field.name_camel }} = false;
         {% elif field.cpp_type in ['double', 'float'] %}
-    dto1.set{{ field.name_pascal }}(999.99);
+    dto1.{{ field.name_camel }} = 999.99;
         {% elif field.cpp_type.startswith('std::vector<') %}
-    dto1.set{{ field.name_pascal }}({"different"});
+    dto1.{{ field.name_camel }} = {"different"};
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto1.set{{ field.name_pascal }}(secondsToTimePoint(1735689600));
+    dto1.{{ field.name_camel }} = secondsToTimePoint(1735689600);
         {% else %}
     // Для других типов
-    dto1.set{{ field.name_pascal }}({});
+    dto1.{{ field.name_camel }} = {};
         {% endif %}
 
     BOOST_TEST(dto1 != dto2);
@@ -313,17 +313,17 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     {% if not field.const_value and not ns.found %}
         {% set ns.found = true %}
         {% if field.cpp_type == 'std::string' %}
-    dto1.set{{ field.name_pascal }}("different_value");
+    dto1.{{ field.name_camel }} = "different_value";
         {% elif field.cpp_type in ['int64_t', 'int32_t'] %}
-    dto1.set{{ field.name_pascal }}(999);
+    dto1.{{ field.name_camel }} = 999;
         {% elif field.cpp_type == 'bool' %}
-    dto1.set{{ field.name_pascal }}(true);
+    dto1.{{ field.name_camel }} = true;
         {% elif field.cpp_type in ['double', 'float'] %}
-    dto1.set{{ field.name_pascal }}(999.99);
+    dto1.{{ field.name_camel }} = 999.99;
         {% elif field.cpp_type.startswith('std::vector<') %}
-    dto1.set{{ field.name_pascal }}({"different"});
+    dto1.{{ field.name_camel }} = {"different"};
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto1.set{{ field.name_pascal }}(secondsToTimePoint(1735689600));
+    dto1.{{ field.name_camel }} = secondsToTimePoint(1735689600);
         {% endif %}
 
     BOOST_TEST(dto1 != dto2);
@@ -343,17 +343,17 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
         {% if field.required and not field.const_value and not has_required %}
             {% set has_required = true %}
             {% if field.cpp_type == 'std::string' %}
-    dto.set{{ field.name_pascal }}("test_value");
+    dto.{{ field.name_camel }} = "test_value";
             {% elif field.cpp_type in ['int64_t', 'int32_t'] %}
-    dto.set{{ field.name_pascal }}(42);
+    dto.{{ field.name_camel }} = 42;
             {% elif field.cpp_type == 'bool' %}
-    dto.set{{ field.name_pascal }}(true);
+    dto.{{ field.name_camel }} = true;
             {% elif field.cpp_type in ['double', 'float'] %}
-    dto.set{{ field.name_pascal }}(3.14);
+    dto.{{ field.name_camel }} = 3.14;
             {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto.set{{ field.name_pascal }}(secondsToTimePoint(1640995200));
+    dto.{{ field.name_camel }} = secondsToTimePoint(1640995200);
             {% elif field.cpp_type.startswith('std::vector<') %}
-    dto.set{{ field.name_pascal }}({"item1"});
+    dto.{{ field.name_camel }} = {"item1"};
             {% endif %}
         {% endif %}
     {% endfor %}
