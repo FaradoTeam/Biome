@@ -3,6 +3,7 @@ project(migrator)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(SQLite3 REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
@@ -45,6 +46,8 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     boost::boost
     SQLite::SQLite3
+    OpenSSL::SSL
+    OpenSSL::Crypto
 )
 
 set_target_properties(

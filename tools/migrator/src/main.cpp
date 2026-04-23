@@ -9,7 +9,9 @@
 #include "database_factory.h"
 
 #include "migration_manager.h"
+
 #include "migrations_sqlite/v1_initial_schema.h"
+#include "migrations_sqlite/v2_default_data.h"
 
 namespace po = boost::program_options;
 
@@ -22,8 +24,8 @@ void registerMigrations(db::MigrationManager& manager)
     // Регистрируем миграцию v1
     manager.registerMigration(std::make_unique<db::migrations::V1_InitialSchema>());
 
-    // TODO: Здесь будут регистрироваться последующие миграции
-    // manager.registerMigration(std::make_unique<db::migrations::V2_SomeChanges>());
+    // Регистрируем миграцию v2 - дефолтные данные
+    manager.registerMigration(std::make_unique<db::migrations::V2_DefaultData>());
 }
 
 /**
