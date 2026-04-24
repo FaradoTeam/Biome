@@ -3,8 +3,6 @@
 
 #include "config.h"
 
-#include "common/log/log.h"
-
 bool initConfig(const std::string& configFile)
 {
     return CONFIG.load(configFile);
@@ -25,7 +23,6 @@ bool Config::load(const std::string& configFile)
     }
     catch (const boost::property_tree::ini_parser_error& exception)
     {
-        LOG_ERROR << "Ошибка чтения файла конфигурации: " << exception.what();
         return false;
     }
 
@@ -76,8 +73,6 @@ bool Config::load(const std::string& configFile)
     if (auto value = configTree.get_optional<std::uint16_t>("Network.apiPort"))
         network.apiPort = *value;
 
-    LOG_INFO << "Файл конфигурации успешно загружен: " << configFile;
-
     return true;
 }
 
@@ -116,7 +111,6 @@ bool Config::save() const
     }
     catch (const boost::property_tree::ini_parser_error& exception)
     {
-        LOG_ERROR << "Ошибка записи файла конфигурации: " << exception.what();
         return false;
     }
     return true;

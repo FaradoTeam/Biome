@@ -44,8 +44,4 @@ target_link_libraries(${PROJECT_NAME}
     SQLite::SQLite3
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
-
 add_test(NAME TestBiomVaultServerRepo COMMAND ${PROJECT_NAME})

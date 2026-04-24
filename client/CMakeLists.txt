@@ -34,5 +34,5 @@ qt_import_qml_plugins(${PROJECT_NAME})
 
 set_target_properties(
     ${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/client
 )

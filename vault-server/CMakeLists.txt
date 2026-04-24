@@ -11,6 +11,7 @@ find_package(SQLite3 REQUIRED)
 set(SERVER_SOURCES
     # Application
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/application.cpp
     # API Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/rest_server.cpp
@@ -33,8 +34,6 @@ set(SERVER_SOURCES
 set(COMMON_SOURCES
     # Logger
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/log/log.cpp
-    # Config
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/config/config.cpp
     # DTO
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dto/auth_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dto/auth_response.cpp
@@ -106,7 +105,19 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/
 )
 
+set(TARGET_BINARY_DIR
+    ${CMAKE_BINARY_DIR}/bin/server
+)
+
 set_target_properties(
     ${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+    RUNTIME_OUTPUT_DIRECTORY ${TARGET_BINARY_DIR}
+)
+
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/config/vault-server.ini"
+        "${TARGET_BINARY_DIR}/vault-server.ini"
+    COMMENT "Копирование vault-server.ini в выходную директорию"
 )
