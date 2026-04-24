@@ -29,7 +29,7 @@ public:
      * @param authService Сервис аутентификации
      * @param authMiddleware Middleware для работы с JWT-токенами
      */
-    explicit AuthHandler(
+    AuthHandler(
         std::shared_ptr<services::IAuthService> authService,
         std::shared_ptr<IAuthMiddleware> authMiddleware
     );

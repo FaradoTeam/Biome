@@ -10,18 +10,18 @@ namespace services
 struct AuthResult
 {
     bool success = false;
+    int expiresIn = 3600;
+    int errorCode = 0;
     std::string accessToken;
     std::string tokenType = "Bearer";
-    int expiresIn = 3600;
     std::string errorMessage;
-    int errorCode = 0;
 };
 
 struct ChangePasswordResult
 {
     bool success = false;
-    std::string errorMessage;
     int errorCode = 0;
+    std::string errorMessage;
 };
 
 class IAuthService

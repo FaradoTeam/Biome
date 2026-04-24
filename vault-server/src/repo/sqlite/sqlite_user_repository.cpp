@@ -213,7 +213,11 @@ bool SqliteUserRepository::updateNeedChangePassword(int64_t userId, bool needCha
 int64_t SqliteUserRepository::create(const dto::User& user, const std::string& passwordHash)
 {
     // Проверка обязательных полей с учётом optional
-    if (!user.login.has_value() || user.login->empty() || !user.email.has_value() || user.email->empty() || passwordHash.empty())
+    if (!user.login.has_value()
+        || user.login->empty()
+        || !user.email.has_value()
+        || user.email->empty()
+        || passwordHash.empty())
     {
         LOG_WARN << "Создание пользователя: отсутствуют обязательные поля";
         return 0;
@@ -259,7 +263,7 @@ int64_t SqliteUserRepository::create(const dto::User& user, const std::string& p
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка создания пользователя: " << e.what();
-        throw; // Пробрасываем исключение для обработки в вызывающем коде
+        throw;
     }
 }
 

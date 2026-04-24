@@ -12,6 +12,7 @@ class FaradoConanFile(ConanFile):
         self.options["qt/*"].qtdeclarative = True
         self.options["qt/*"].qtquickcontrols2 = True
         self.options["qt/*"].qtshadertools = True
+        # TODO: Если применять не будем, лучше отключить использование флагом в Qt.
         self.options["libpq/*"].shared = True
 
     def requirements(self):

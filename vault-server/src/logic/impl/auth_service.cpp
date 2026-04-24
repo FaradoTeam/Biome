@@ -221,14 +221,14 @@ std::string AuthService::hashPassword(const std::string& password)
     EVP_DigestFinal_ex(ctx, hash, &hashLen);
     EVP_MD_CTX_free(ctx);
 
-    std::stringstream ss;
+    std::stringstream result;
     for (unsigned int i = 0; i < hashLen; ++i)
     {
-        ss
+        result
             << std::hex << std::setw(2) << std::setfill('0')
             << static_cast<int>(hash[i]);
     }
-    return ss.str();
+    return result.str();
 }
 
 bool AuthService::checkPassword(
