@@ -34,7 +34,7 @@ std::string configFilename(
     if (variables.count("config"))
         return variables["config"].as<std::string>();
 
-    return "config.ini";
+    return "vault-server.ini";
 }
 
 int main(int argc, char* argv[])

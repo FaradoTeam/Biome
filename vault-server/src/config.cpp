@@ -1,9 +1,9 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
-#include "config.h"
-
 #include "common/log/log.h"
+
+#include "config.h"
 
 bool initConfig(const std::string& configFile)
 {
