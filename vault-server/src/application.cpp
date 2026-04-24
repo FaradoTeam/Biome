@@ -2,9 +2,9 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/config/config.h"
 #include "common/log/log.h"
 
+#include "config.h"
 #include "application.h"
 
 #include "api/middleware/impl/auth_middleware.h"

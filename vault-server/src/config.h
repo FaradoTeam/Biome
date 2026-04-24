@@ -1,5 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -85,5 +84,3 @@ private:
 private:
     std::string m_configFile;
 };
-
-#endif // CONFIG_H

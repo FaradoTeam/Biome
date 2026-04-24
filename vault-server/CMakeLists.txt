@@ -11,6 +11,7 @@ find_package(SQLite3 REQUIRED)
 set(SERVER_SOURCES
     # Application
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/application.cpp
     # API Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/rest_server.cpp
@@ -33,8 +34,6 @@ set(SERVER_SOURCES
 set(COMMON_SOURCES
     # Logger
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/log/log.cpp
-    # Config
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/config/config.cpp
     # DTO
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dto/auth_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dto/auth_response.cpp

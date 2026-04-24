@@ -5,8 +5,8 @@
 #include <boost/program_options.hpp>
 
 #include "common/log/log.h"
-#include "common/config/config.h"
 
+#include "config.h"
 #include "application.h"
 
 std::atomic<server::Application*> applicationPtr { nullptr };
