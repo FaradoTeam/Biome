@@ -1,4 +1,4 @@
-project(kabanClient)
+project(biome-client)
 
 set(CMAKE_AUTOMOC ON)   # Включаем Meta-Object Compiler для сигналов/слотов
 set(CMAKE_AUTORCC ON)   # Включаем автоматическую компиляцию .qrc ресурсов
@@ -21,7 +21,6 @@ qt_add_resources(${PROJECT_NAME} "qml_resources"
         qml/components/ButtonGroup.qml
         qml/theme/Theme.qml
         qml/theme/qmldir
-
 )
 
 # 5. Явно указываем, что исполняемый файл должен быть связан с нашим QML модулем

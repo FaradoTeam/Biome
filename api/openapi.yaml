@@ -1,12 +1,12 @@
 openapi: 3.0.3
 
 info:
-  title: Farado API
-  description: Спецификация API для системы управления проектами Farado, задачами, рабочими процессами и правами доступа.
+  title: Biome API
+  description: Спецификация API для системы управления проектами «Биом».
   version: 1.0.0
 
 servers:
-  - url: https://farado.lan/api/v1
+  - url: https://biome.lan/api/v1
     description: Production server
   - url: http://localhost:8080/api/v1
     description: Development server

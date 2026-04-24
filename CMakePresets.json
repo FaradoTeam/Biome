@@ -19,7 +19,7 @@
         {
             "name": "default",
             "configurePreset": "default",
-            "jobs": 0
+            "jobs": 3
         }
     ],
     "testPresets": [

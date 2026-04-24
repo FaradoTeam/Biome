@@ -52,7 +52,7 @@ public:
             stmt->bindString("login", "admin");
             stmt->bindString("firstName", "Системный");
             stmt->bindString("lastName", "Администратор");
-            stmt->bindString("email", "admin@farado.local");
+            stmt->bindString("email", "admin@mail.local");
             stmt->bindString("passwordHash", passwordHash);
             stmt->bindInt64("needChangePassword", 1);
             stmt->bindInt64("isBlocked", 0);
