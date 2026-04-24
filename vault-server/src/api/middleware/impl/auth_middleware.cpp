@@ -91,37 +91,6 @@ std::string AuthMiddleware::generateToken(
         .sign(jwt::algorithm::hs256 { m_secretKey });
 }
 
-std::optional<JWTToken> AuthMiddleware::verifyToken(const std::string& token)
-{
-    try
-    {
-        // Декодируем токен (без проверки подписи)
-        auto decoded = jwt::decode(token);
-
-        // Настраиваем верификатор
-        auto verifier = jwt::verify()
-                            // Разрешаем только HS256
-                            .allow_algorithm(jwt::algorithm::hs256 { m_secretKey })
-                            // Проверяем issuer
-                            .with_issuer("farado-api");
-
-        // Выполняем верификацию (подпись, срок действия, issuer)
-        verifier.verify(decoded);
-
-        // Токен валиден — извлекаем информацию
-        JWTToken result;
-        result.token = token;
-        result.userId = decoded.get_payload_claim("user_id").as_string();
-        result.expiresAt = decoded.get_expires_at();
-        return result;
-    }
-    catch (const std::exception& e)
-    {
-        LOG_ERROR << "Не удалось выполнить проверку токена: " << e.what();
-    }
-    return std::nullopt; // Верификация не удалась
-}
-
 void AuthMiddleware::invalidateToken(const std::string& token)
 {
     // Сначала проверяем, что токен валиден
@@ -186,6 +155,37 @@ std::string AuthMiddleware::extractBearerToken(const std::string& authHeader)
     }
 
     return ""; // Неверный формат
+}
+
+std::optional<JWTToken> AuthMiddleware::verifyToken(const std::string& token)
+{
+    try
+    {
+        // Декодируем токен (без проверки подписи)
+        auto decoded = jwt::decode(token);
+
+        // Настраиваем верификатор
+        auto verifier = jwt::verify()
+                            // Разрешаем только HS256
+                            .allow_algorithm(jwt::algorithm::hs256 { m_secretKey })
+                            // Проверяем issuer
+                            .with_issuer("farado-api");
+
+        // Выполняем верификацию (подпись, срок действия, issuer)
+        verifier.verify(decoded);
+
+        // Токен валиден — извлекаем информацию
+        JWTToken result;
+        result.token = token;
+        result.userId = decoded.get_payload_claim("user_id").as_string();
+        result.expiresAt = decoded.get_expires_at();
+        return result;
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Не удалось выполнить проверку токена: " << e.what();
+    }
+    return std::nullopt; // Верификация не удалась
 }
 
 void AuthMiddleware::cleanBlacklist()

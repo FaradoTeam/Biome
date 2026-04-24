@@ -10,6 +10,10 @@ if(BUILD_STORAGE_TESTS)
     add_subdirectory(storage)
 endif()
 
+if(BUILD_REPO_TESTS)
+    add_subdirectory(repo)
+endif()
+
 if(BUILD_API_TESTS)
     add_subdirectory(rest_server)
 endif()

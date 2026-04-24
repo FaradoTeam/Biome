@@ -7,8 +7,10 @@
 
 #include "common/log/log.h"
 
-#include "handlers/auth_handler.h"
-#include "handlers/items_handler.h"
+#include "api/handlers/auth_handler.h"
+#include "api/handlers/items_handler.h"
+
+#include "logic/iauth_service.h"
 
 #include "rest_server.h"
 
@@ -90,22 +92,26 @@ void RestServer::stop()
     LOG_INFO << "Сервер REST остановлен";
 }
 
-void RestServer::setAuthMiddleware(std::shared_ptr<AuthMiddleware> middleware)
+void RestServer::setAuthMiddleware(std::shared_ptr<IAuthMiddleware> middleware)
 {
     m_authMiddleware = middleware;
 }
 
+void RestServer::setAuthService(std::shared_ptr<services::IAuthService> authService)
+{
+    m_authService = authService;
+}
+
 void RestServer::registerRoutes()
 {
-    // TODO: добавить все необходимые обработчики
-
-    // Создаем обработчики
+ // Создаем обработчики
     auto itemsHandler = std::make_shared<handlers::ItemsHandler>();
-    auto authHandler = std::make_shared<handlers::AuthHandler>(m_authMiddleware);
+    auto authHandler = std::make_shared<handlers::AuthHandler>(
+        m_authService,
+        m_authMiddleware
+    );
 
-    // Публичные маршруты (без аутентификации)
-
-    // Вход в систему
+    // Публичные маршруты
     addRoute(
         web::http::methods::POST,
         "/auth/login",
@@ -116,11 +122,9 @@ void RestServer::registerRoutes()
         {
             authHandler->handleLogin(request);
         },
-        true // isPublic
+        true
     );
 
-    // Выход из системы (требует токен, но сам маршрут публичный,
-    // так как токен извлекается внутри обработчика)
     addRoute(
         web::http::methods::POST,
         "/auth/logout",
@@ -131,7 +135,21 @@ void RestServer::registerRoutes()
         {
             authHandler->handleLogout(request);
         },
-        true // isPublic
+        true
+    );
+
+    // Защищенный маршрут для смены пароля
+    addRoute(
+        web::http::methods::POST,
+        "/auth/change-password",
+        [authHandler](
+            const web::http::http_request& request,
+            const std::string& userId
+        )
+        {
+            authHandler->handleChangePassword(request, userId);
+        },
+        false // требуется аутентификация
     );
 
     // Защищенные маршруты (требуют аутентификации)

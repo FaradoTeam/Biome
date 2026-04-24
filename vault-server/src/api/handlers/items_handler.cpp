@@ -1,5 +1,4 @@
 #include <regex>
-#include <sstream>
 
 #include <cpprest/http_msg.h>
 #include <cpprest/json.h>

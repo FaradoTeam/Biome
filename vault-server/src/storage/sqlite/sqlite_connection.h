@@ -1,11 +1,10 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
 #include <shared_mutex>
 #include <string>
 
-#include "idatabase.h"
+#include "storage/idatabase.h"
 
 #include "sqlite_result_set.h"
 

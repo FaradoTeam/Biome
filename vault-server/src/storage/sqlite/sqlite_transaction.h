@@ -1,6 +1,6 @@
 #pragma once
 
-#include "idatabase.h"
+#include "storage/idatabase.h"
 
 namespace db
 {

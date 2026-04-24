@@ -1,13 +1,20 @@
 #include <cstdlib>
-#include <fstream>
 
 #include <nlohmann/json.hpp>
 
+#include "common/config/config.h"
 #include "common/log/log.h"
 
 #include "application.h"
 
+#include "api/middleware/impl/auth_middleware.h"
 #include "api/rest_server.h"
+
+#include "logic/impl/auth_service.h"
+
+#include "repo/sqlite/sqlite_user_repository.h"
+
+#include "storage/database_factory.h"
 
 namespace server
 {
@@ -26,14 +33,47 @@ bool Application::initialize()
 {
     LOG_INFO << "Инициализация приложения...";
 
-    // TODO: Вынести в конфиг secret-key
-    auto authMiddleware = std::make_shared<AuthMiddleware>(
+    // 1. Инициализируем базу данных
+    try
+    {
+        // Создаем базу данных через фабрику
+        m_database = db::DatabaseFactory::create(db::DatabaseType::Sqlite);
+
+        db::DatabaseConfig dbConfig;
+        dbConfig["database"] = CONFIG.database.file;
+        m_database->initialize(dbConfig);
+
+        LOG_INFO << "База данных инициализирована: " << CONFIG.database.file;
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Не удалось инициализировать базу данных: " << e.what();
+        return false;
+    }
+
+    // 2. Создаем репозиторий пользователей
+    m_userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
+
+    // 3. Создаем middleware для аутентификации
+    // TODO: Вынести секретный ключ в конфиг
+    m_authMiddleware = std::make_shared<AuthMiddleware>(
         "your-very-long-secret-key-that-is-at-least-32-bytes-long!"
     );
 
-    // TODO: Вынести в конфиг хост и порт
-    m_restServer = std::make_unique<RestServer>("0.0.0.0", 8080);
-    m_restServer->setAuthMiddleware(authMiddleware);
+    // 4. Создаем сервис аутентификации
+    m_authService = std::make_shared<services::AuthService>(
+        m_userRepository,
+        m_authMiddleware
+    );
+
+    // 5. Создаем REST-сервер
+    m_restServer = std::make_unique<RestServer>(
+        CONFIG.network.apiHost,
+        CONFIG.network.apiPort
+    );
+
+    m_restServer->setAuthMiddleware(m_authMiddleware);
+    m_restServer->setAuthService(m_authService);
 
     if (!m_restServer->initialize())
     {
@@ -63,7 +103,10 @@ int Application::run()
         return EXIT_FAILURE;
     }
 
-    LOG_INFO << "Приложение запущено. Нажмите Ctrl+C для остановки.";
+    LOG_INFO
+        << "Приложение запущено на "
+        << CONFIG.network.apiHost << ":" << CONFIG.network.apiPort
+        << ". Нажмите Ctrl+C для остановки.";
 
     while (m_isRunning)
     {
@@ -93,6 +136,16 @@ void Application::cleanup()
     {
         m_restServer.reset();
     }
+
+    if (m_database)
+    {
+        m_database->shutdown();
+        m_database.reset();
+    }
+
+    m_userRepository.reset();
+    m_authService.reset();
+    m_authMiddleware.reset();
 }
 
 } // namespace server

@@ -16,7 +16,7 @@
 #include <cpprest/http_client.h>
 #include <cpprest/json.h>
 
-#include "vault-server/src/api/middleware/auth_middleware.h"
+#include "vault-server/src/api/middleware/impl/auth_middleware.h"
 #include "vault-server/src/api/rest_server.h"
 
 using namespace web;

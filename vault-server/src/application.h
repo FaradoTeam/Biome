@@ -1,12 +1,28 @@
 #pragma once
 
 #include <memory>
-#include <string>
+#include <atomic>
+
+namespace db
+{
+class IDatabase;
+}
 
 namespace server
 {
 
 class RestServer;
+class AuthMiddleware;
+
+namespace services
+{
+class AuthService;
+}
+
+namespace repositories
+{
+class IUserRepository;
+}
 
 class Application final
 {
@@ -28,8 +44,12 @@ private:
 
 private:
     std::unique_ptr<RestServer> m_restServer;
+    std::shared_ptr<db::IDatabase> m_database;
+    std::shared_ptr<repositories::IUserRepository> m_userRepository;
+    std::shared_ptr<AuthMiddleware> m_authMiddleware;
+    std::shared_ptr<services::AuthService> m_authService;
 
-    bool m_isRunning { false };
+    std::atomic<bool> m_isRunning { false };
 };
 
 } // namespace server

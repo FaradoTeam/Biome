@@ -8,7 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "vault-server/src/api/middleware/auth_middleware.h"
+#include "vault-server/src/api/middleware/impl/auth_middleware.h"
 
 #include "test_server_fixture.h"
 

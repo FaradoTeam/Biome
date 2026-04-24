@@ -4,7 +4,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "idatabase.h"
+#include "storage/idatabase.h"
 
 struct sqlite3_stmt; // Forward declaration для sqlite3_stmt (подготовленный запрос)
 

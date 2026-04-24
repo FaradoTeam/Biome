@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <mutex>
 #include <stdexcept>
 
 #include <sqlite3.h>

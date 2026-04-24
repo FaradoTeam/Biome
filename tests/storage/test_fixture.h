@@ -66,7 +66,7 @@ public:
     SqliteDatabase& getDatabase() { return m_db; }
 
     // Доступ к соединению с БД (удобно для выполнения запросов)
-    std::shared_ptr<IConnection> getConnection() { return m_db.connection(); }
+    std::shared_ptr<IConnection> connection() { return m_db.connection(); }
 
 protected:
     std::string m_dbName; ///< Имя файла базы данных (без пути)

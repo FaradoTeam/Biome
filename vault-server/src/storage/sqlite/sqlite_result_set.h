@@ -1,11 +1,10 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "idatabase.h"
+#include "storage/idatabase.h"
 
 struct sqlite3_stmt; // Forward declaration
 

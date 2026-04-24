@@ -1,5 +1,7 @@
-#include <sqlite3.h>
+#include <mutex>
 #include <stdexcept>
+
+#include <sqlite3.h>
 
 #include "sqlite_connection.h"
 #include "sqlite_result_set.h"

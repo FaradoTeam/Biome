@@ -12,14 +12,8 @@ option(BUILD_MIGRATOR "Build database migration tool" ON)
 option(ENABLE_TESTING "Enable testing" OFF)
 option(BUILD_DTO_TESTS "Build tests for data transfer objects" ON)
 option(BUILD_STORAGE_TESTS "Build tests for storage" ON)
+option(BUILD_REPO_TESTS "Build tests for repository" ON)
 option(BUILD_API_TESTS "Build tests for rest server" ON)
-# ---------------------------------------------------------------------------- #
-
-# Опции для генерации кода
-# ---------------------------------------------------------------------------- #
-option(GENERATE_DTO "Generate DTO classes from OpenAPI" ON)
-option(GENERATE_DTO_TESTS "Generate DTO tests from OpenAPI" ON)
-option(FORCE_REGENERATE_DTO "Force regeneration of DTO even if files exist" OFF)
 # ---------------------------------------------------------------------------- #
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -33,6 +27,7 @@ project(farado)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(BUILD_VAULT_SERVER)
     add_subdirectory(vault-server)

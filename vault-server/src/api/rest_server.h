@@ -4,18 +4,21 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <regex>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include <cpprest/http_listener.h>
 #include <cpprest/json.h>
 
-#include "middleware/auth_middleware.h"
+#include "api/middleware/iauth_middleware.h"
 
 namespace server
 {
+
+namespace services
+{
+class IAuthService;
+}
 
 /**
  * @brief Основной класс REST-сервера.
@@ -67,12 +70,8 @@ public:
      */
     bool isRunning() const { return m_isRunning; }
 
-    /**
-     * @brief Устанавливает middleware для аутентификации.
-     *
-     * @param middleware Указатель на объект AuthMiddleware
-     */
-    void setAuthMiddleware(std::shared_ptr<AuthMiddleware> middleware);
+    void setAuthMiddleware(std::shared_ptr<IAuthMiddleware> middleware);
+    void setAuthService(std::shared_ptr<services::IAuthService> authService);
 
 private:
     /**
@@ -170,13 +169,15 @@ private:
     std::unique_ptr<web::http::experimental::listener::http_listener> m_listener;
 
     /// Middleware для аутентификации
-    std::shared_ptr<AuthMiddleware> m_authMiddleware;
+    std::shared_ptr<IAuthMiddleware> m_authMiddleware;
 
     /// Флаг состояния сервера
     std::atomic<bool> m_isRunning { false };
 
     /// Список зарегистрированных маршрутов
     std::vector<RouteInfo> m_routes;
+
+    std::shared_ptr<services::IAuthService> m_authService;
 };
 
 } // namespace server
