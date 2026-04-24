@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     )(
         "config,c",
         po::value<std::string>(),
-        "задать альтернативный путь к файлу конфигурации"
+        "задать альтернативный файл конфигурации"
     );
 
     po::variables_map variables;
@@ -69,7 +69,8 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    initConfig(configFilename(variables));
+    const std::string configFile = configFilename(variables);
+    const bool isConfigLoaded = initConfig(configFile);
     initLog(
         "bvs",
         CONFIG.fileLog.logPath,
@@ -88,6 +89,16 @@ int main(int argc, char* argv[])
     std::signal(SIGTERM, signalHandler);
 
     LOG_INFO << "Запуск сервера «Биом»...";
+
+    if (isConfigLoaded)
+    {
+        LOG_INFO << "Файл конфигурации успешно загружен: " << configFile;
+    }
+    else
+    {
+        LOG_ERROR << "Ошибка чтения файла конфигурации: " << configFile;
+        return EXIT_FAILURE;
+    }
 
     int result = 0;
     {
