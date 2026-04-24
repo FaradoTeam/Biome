@@ -1,4 +1,4 @@
-project(farado_tests)
+project(biome_tests)
 
 enable_testing()
 

@@ -1,4 +1,4 @@
-project(farado_repo_tests)
+project(test_bvs_repo)
 
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 find_package(nlohmann_json REQUIRED)
@@ -48,4 +48,4 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-add_test(NAME RepoTests COMMAND ${PROJECT_NAME})
+add_test(NAME TestBiomVaultServerRepo COMMAND ${PROJECT_NAME})

@@ -80,7 +80,7 @@ std::string AuthMiddleware::generateToken(
         // Указываем тип токена
         .set_type("JWT")
         // Указываем издателя
-        .set_issuer("farado-api")
+        .set_issuer("biome-api")
         // Пользовательский claim с ID пользователя
         .set_payload_claim("user_id", jwt::claim(userId))
         // Время выдачи
@@ -169,7 +169,7 @@ std::optional<JWTToken> AuthMiddleware::verifyToken(const std::string& token)
                             // Разрешаем только HS256
                             .allow_algorithm(jwt::algorithm::hs256 { m_secretKey })
                             // Проверяем issuer
-                            .with_issuer("farado-api");
+                            .with_issuer("biome-api");
 
         // Выполняем верификацию (подпись, срок действия, issuer)
         verifier.verify(decoded);

@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE FaradoRepoTests
+#define BOOST_TEST_MODULE BiomeRepoTests
 #include <boost/test/unit_test.hpp>
 
 // Тестовые случаи находятся в отдельных файлах

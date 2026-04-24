@@ -18,7 +18,7 @@ struct UserRepositoryFixture
     UserRepositoryFixture()
     {
         // Создаем временный файл для тестовой БД
-        m_tempDbPath = std::filesystem::temp_directory_path() / "farado_test_repo.db";
+        m_tempDbPath = std::filesystem::temp_directory_path() / "test_repo.db";
 
         // Удаляем файл если он существует от предыдущего запуска
         std::remove(m_tempDbPath.c_str());

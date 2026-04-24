@@ -1,4 +1,4 @@
-project(farado-vault-server VERSION 1.0.0)
+project(biome-vault-server VERSION 0.0.1)
 
 find_package(Boost REQUIRED)
 find_package(nlohmann_json REQUIRED)

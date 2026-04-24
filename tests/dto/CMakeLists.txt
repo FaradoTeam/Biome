@@ -1,4 +1,4 @@
-project(farado_dto_tests)
+project(test_dto)
 
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 find_package(nlohmann_json REQUIRED)
@@ -20,24 +20,21 @@ file(GLOB DTO_TEST_SOURCES
 )
 
 add_executable(
-    dto_tests
+    ${PROJECT_NAME}
     ${DTO_SOURCES}
     ${DTO_TEST_SOURCES}
 )
 
-target_link_libraries(dto_tests
+target_link_libraries(${PROJECT_NAME}
     Boost::unit_test_framework
     nlohmann_json::nlohmann_json
     Threads::Threads
 )
 
-set_target_properties(dto_tests PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-add_test(NAME DtoTests COMMAND dto_tests)
-
-message(STATUS "DTO tests found: ${DTO_TEST_SOURCES}")
-message(STATUS "DTO test executable: dto_tests")
+add_test(NAME TestDto COMMAND ${PROJECT_NAME})

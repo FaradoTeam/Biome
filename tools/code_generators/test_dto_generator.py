@@ -362,11 +362,8 @@ class DTOTestGenerator:
         Аргументы:
             dtos: Список DTO
         """
-        runner_content = f"""// Автоматически сгенерированный главный файл тестов DTO
-// Сгенерирован: {datetime.now().isoformat()}
-// НЕ РЕДАКТИРОВАТЬ ВРУЧНУЮ
-
-#define BOOST_TEST_MODULE FaradoDtoTests
+        runner_content = f"""
+#define BOOST_TEST_MODULE BiomeDtoTests
 #include <boost/test/unit_test.hpp>
 
 // Тестовые случаи находятся в отдельных файлах

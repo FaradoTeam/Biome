@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.15.7)
 
 # Опции сборки проекта
 # ---------------------------------------------------------------------------- #
-option(BUILD_VAULT_SERVER "Build Farado Vault Server" ON)
-option(BUILD_CLIENT "Build Client" ON)
+option(BUILD_VAULT_SERVER "Build Biome Vault Server" ON)
+option(BUILD_CLIENT "Build Biome Client" ON)
 option(BUILD_MIGRATOR "Build database migration tool" ON)
 # ---------------------------------------------------------------------------- #
 
@@ -22,7 +22,7 @@ set(CMAKE_PROJECT_TOP_LEVEL_INCLUDES
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/conan_provider.cmake
 )
 
-project(farado)
+project(biome)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -48,9 +48,13 @@ endif()
 
 # Вывод информации о конфигурации
 # ---------------------------------------------------------------------------- #
-message(STATUS "=== Farado Project Configuration ===")
-message(STATUS "Build Vault Server: ${BUILD_VAULT_SERVER}")
+message(STATUS "=== Biome Project Configuration ===")
+message(STATUS "Build Biome Vault Server: ${BUILD_VAULT_SERVER}")
+message(STATUS "Build Biome Client: ${BUILD_CLIENT}")
+message(STATUS "Build database migration tool: ${BUILD_MIGRATOR}")
 message(STATUS "Enable testing: ${ENABLE_TESTING}")
-message(STATUS "Generate DTO: ${GENERATE_DTO}")
-message(STATUS "Generate DTO Tests: ${GENERATE_DTO_TESTS}")
-message(STATUS "====================================")
+message(STATUS "Build tests for data transfer objects: ${BUILD_DTO_TESTS}")
+message(STATUS "Build tests for storage: ${BUILD_STORAGE_TESTS}")
+message(STATUS "Build tests for repository: ${BUILD_REPO_TESTS}")
+message(STATUS "Build tests for rest server: ${BUILD_API_TESTS}")
+message(STATUS "==================================")

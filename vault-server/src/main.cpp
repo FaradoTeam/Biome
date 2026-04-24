@@ -21,9 +21,9 @@ void signalHandler(int signal)
 void printHelp(const boost::program_options::options_description& options)
 {
     std::cout
-        << "Использование: farado-vault-server [ПАРАМЕТР]…" << std::endl
-        << "Предоставляет доступ к данным системы farado." << std::endl
-        << std::endl;
+        << "Использование: biome-vault-server [ПАРАМЕТР]…" << std::endl
+        << "Предоставляет доступ к данным системы управления проектами «Биом»."
+        << std::endl << std::endl;
     std::cout << options << std::endl;
 }
 
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
 
     initConfig(configFilename(variables));
     initLog(
-        "farado-vault-server",
+        "bvs",
         CONFIG.fileLog.logPath,
         CONFIG.fileLog.rotationSize,
         CONFIG.fileLog.needSourceLocation,
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
-    LOG_INFO << "Запуск сервера Farado...";
+    LOG_INFO << "Запуск сервера «Биом»...";
 
     int result = 0;
     {
@@ -96,6 +96,6 @@ int main(int argc, char* argv[])
         result = application.run();
     }
 
-    LOG_INFO << "Сервер Farado был остановлен. Код: " << result;
+    LOG_INFO << "Сервер «Биом» был остановлен. Код: " << result;
     return result;
 }
