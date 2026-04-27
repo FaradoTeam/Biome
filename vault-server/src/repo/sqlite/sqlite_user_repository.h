@@ -35,6 +35,9 @@ public:
     bool updateNeedChangePassword(int64_t userId, bool needChange) override;
     int64_t create(const dto::User& user, const std::string& passwordHash) override;
     bool existsByLogin(const std::string& login) override;
+    std::pair<std::vector<dto::User>, int64_t> findAll(int page, int pageSize) override;
+    bool update(const dto::User& user) override;
+    bool remove(int64_t id) override;
 
     std::shared_ptr<db::IConnection> connection() const;
 

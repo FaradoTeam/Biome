@@ -9,8 +9,10 @@
 
 #include "api/handlers/auth_handler.h"
 #include "api/handlers/items_handler.h"
+#include "api/handlers/users_handler.h"
 
 #include "logic/iauth_service.h"
+#include "logic/iuser_service.h"
 
 #include "rest_server.h"
 
@@ -102,14 +104,30 @@ void RestServer::setAuthService(std::shared_ptr<services::IAuthService> authServ
     m_authService = authService;
 }
 
+void RestServer::setUserService(std::shared_ptr<services::IUserService> userService)
+{
+    m_userService = userService;
+}
+
 void RestServer::registerRoutes()
 {
- // Создаем обработчики
+    if (!m_authService
+        || !m_authMiddleware
+        || !m_userService)
+    {
+        LOG_ERROR
+            << "Ошибка создания обработчиков для REST-сервера! "
+            << "Нет необходимых экземпляров сервисов бизнес логики.";
+        return;
+    }
+
+    // Создаем обработчики
     auto itemsHandler = std::make_shared<handlers::ItemsHandler>();
     auto authHandler = std::make_shared<handlers::AuthHandler>(
         m_authService,
         m_authMiddleware
     );
+    auto usersHandler = std::make_shared<handlers::UsersHandler>(m_userService);
 
     // Публичные маршруты
     addRoute(
@@ -242,6 +260,47 @@ void RestServer::registerRoutes()
             request.reply(web::http::status_codes::OK, response);
         },
         true // публичный эндпоинт
+    );
+
+    addRoute(
+        web::http::methods::GET,
+        "/api/users",
+        [usersHandler](auto& req, auto& userId)
+        {
+            usersHandler->handleGetUsers(req, userId);
+        }
+    );
+    addRoute(
+        web::http::methods::POST,
+        "/api/users",
+        [usersHandler](auto& req, auto& userId)
+        {
+            usersHandler->handleCreateUser(req, userId);
+        }
+    );
+    addRoute(
+        web::http::methods::GET,
+        R"(/api/users/(\d+))",
+        [usersHandler](auto& req, auto& userId)
+        {
+            usersHandler->handleGetUser(req, userId);
+        }
+    );
+    addRoute(
+        web::http::methods::PUT,
+        R"(/api/users/(\d+))",
+        [usersHandler](auto& req, auto& userId)
+        {
+            usersHandler->handleUpdateUser(req, userId);
+        }
+    );
+    addRoute(
+        web::http::methods::DEL,
+        R"(/api/users/(\d+))",
+        [usersHandler](auto& req, auto& userId)
+        {
+            usersHandler->handleDeleteUser(req, userId);
+        }
     );
 
     LOG_DEBUG

@@ -6,6 +6,8 @@
 
 #include "common/log/log.h"
 
+#include "common/helpers/crypto_helper.hpp"
+
 #include "auth_service.h"
 
 namespace
@@ -168,7 +170,7 @@ ChangePasswordResult AuthService::changePassword(
     }
 
     // 6. Хешируем и сохраняем новый пароль
-    const std::string newHash = hashPassword(newPassword);
+    const std::string newHash = crypto::sha256(newPassword);
     if (!m_userRepo->updatePassword(userId, newHash))
     {
         result.errorMessage = "Failed to update password";
@@ -204,39 +206,12 @@ std::string AuthService::passwordHash(int64_t userId)
     return m_userRepo->passwordHash(userId);
 }
 
-std::string AuthService::hashPassword(const std::string& password)
-{
-    // Используем современный EVP API вместо устаревшего SHA256_*
-    unsigned char hash[EVP_MAX_MD_SIZE];
-    unsigned int hashLen = 0;
-
-    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
-    if (!ctx)
-    {
-        throw std::runtime_error("Failed to create EVP_MD_CTX");
-    }
-
-    EVP_DigestInit_ex(ctx, EVP_sha256(), nullptr);
-    EVP_DigestUpdate(ctx, password.c_str(), password.length());
-    EVP_DigestFinal_ex(ctx, hash, &hashLen);
-    EVP_MD_CTX_free(ctx);
-
-    std::stringstream result;
-    for (unsigned int i = 0; i < hashLen; ++i)
-    {
-        result
-            << std::hex << std::setw(2) << std::setfill('0')
-            << static_cast<int>(hash[i]);
-    }
-    return result.str();
-}
-
 bool AuthService::checkPassword(
     const std::string& password,
     const std::string& hash
 )
 {
-    return hashPassword(password) == hash;
+    return crypto::sha256(password) == hash;
 }
 
 bool AuthService::validatePasswordStrength(const std::string& password)

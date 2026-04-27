@@ -69,6 +69,28 @@ public:
      * @return true если пользователь существует
      */
     virtual bool existsByLogin(const std::string& login) = 0;
+
+    /**
+     * @brief Получает список пользователей с пагинацией.
+     * @param page Номер страницы (начиная с 1)
+     * @param pageSize Количество записей на странице
+     * @return Пара: вектор DTO пользователей и общее количество пользователей.
+     */
+    virtual std::pair<std::vector<dto::User>, int64_t> findAll(int page, int pageSize) = 0;
+
+    /**
+     * @brief Обновляет данные пользователя.
+     * @param user DTO пользователя с новыми данными. Поле id обязательно.
+     * @return true если обновление успешно
+     */
+    virtual bool update(const dto::User& user) = 0;
+
+    /**
+     * @brief Удаляет пользователя по ID.
+     * @param id Идентификатор пользователя
+     * @return true если удаление успешно
+     */
+    virtual bool remove(int64_t id) = 0;
 };
 
 } // namespace repositories

@@ -18,6 +18,7 @@ namespace server
 namespace services
 {
 class IAuthService;
+class IUserService;
 }
 
 /**
@@ -72,6 +73,7 @@ public:
 
     void setAuthMiddleware(std::shared_ptr<IAuthMiddleware> middleware);
     void setAuthService(std::shared_ptr<services::IAuthService> authService);
+    void setUserService(std::shared_ptr<services::IUserService> userService);
 
 private:
     /**
@@ -178,6 +180,7 @@ private:
     std::vector<RouteInfo> m_routes;
 
     std::shared_ptr<services::IAuthService> m_authService;
+    std::shared_ptr<services::IUserService> m_userService;
 };
 
 } // namespace server

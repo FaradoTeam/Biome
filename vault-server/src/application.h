@@ -17,6 +17,7 @@ class AuthMiddleware;
 namespace services
 {
 class AuthService;
+class IUserService;
 }
 
 namespace repositories
@@ -48,6 +49,7 @@ private:
     std::shared_ptr<repositories::IUserRepository> m_userRepository;
     std::shared_ptr<AuthMiddleware> m_authMiddleware;
     std::shared_ptr<services::AuthService> m_authService;
+    std::shared_ptr<services::IUserService> m_userService;
 
     std::atomic<bool> m_isRunning { false };
 };

@@ -51,7 +51,6 @@ public:
 
 private:
     std::string passwordHash(int64_t userId);
-    std::string hashPassword(const std::string& password);
     bool checkPassword(const std::string& password, const std::string& hash);
     bool validatePasswordStrength(const std::string& password);
 
