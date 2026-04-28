@@ -246,8 +246,8 @@ BOOST_AUTO_TEST_CASE(test_change_password_endpoint)
     request.headers().add(U("Authorization"), U("Bearer valid_token"));
 
     web::json::value body;
-    body[U("old_password")] = web::json::value::string(U("oldpass"));
-    body[U("new_password")] = web::json::value::string(U("newpass"));
+    body[U("oldPassword")] = web::json::value::string(U("oldpass"));
+    body[U("newPassword")] = web::json::value::string(U("newpass"));
     request.set_body(body);
 
     auto response = client.request(request).get();

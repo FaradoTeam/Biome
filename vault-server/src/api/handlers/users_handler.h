@@ -29,6 +29,7 @@ private:
     std::map<std::string, std::string> extractQueryParams(const web::http::http_request& request);
     void sendErrorResponse(web::http::http_response& response, int code, const std::string& message);
 
+private:
     std::shared_ptr<services::IUserService> m_userService;
 };
 
