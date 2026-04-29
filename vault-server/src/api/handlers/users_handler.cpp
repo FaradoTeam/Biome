@@ -37,7 +37,7 @@ void UsersHandler::handleGetUsers(
     if (params.count("pageSize"))
         pageSize = std::stoi(params["pageSize"]);
 
-    auto [users, total] = m_userService->getUsers(page, pageSize);
+    auto [users, total] = m_userService->users(page, pageSize);
 
     web::json::value response;
     web::json::value items = web::json::value::array();
@@ -69,7 +69,7 @@ void UsersHandler::handleGetUser(
         return;
     }
 
-    auto user = m_userService->getUser(id);
+    auto user = m_userService->user(id);
     if (!user)
     {
         web::http::http_response resp(web::http::status_codes::NotFound);

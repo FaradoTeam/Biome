@@ -23,7 +23,7 @@ UserService::UserService(std::shared_ptr<repositories::IUserRepository> userRepo
     }
 }
 
-UsersPage UserService::getUsers(int page, int pageSize)
+UsersPage UserService::users(int page, int pageSize)
 {
     if (page < 1)
         page = 1;
@@ -35,7 +35,7 @@ UsersPage UserService::getUsers(int page, int pageSize)
     return { users, total };
 }
 
-std::optional<dto::User> UserService::getUser(int64_t id)
+std::optional<dto::User> UserService::user(int64_t id)
 {
     return m_userRepo->findById(id);
 }

@@ -47,7 +47,7 @@ public:
     }
 
     // Реализация интерфейса
-    UsersPage getUsers(int page, int pageSize) override
+    UsersPage users(int page, int pageSize) override
     {
         m_lastGetUsersPage = page;
         m_lastGetUsersPageSize = pageSize;
@@ -55,7 +55,7 @@ public:
         return m_getUsersResult;
     }
 
-    std::optional<dto::User> getUser(int64_t id) override
+    std::optional<dto::User> user(int64_t id) override
     {
         m_lastGetUserId = id;
         m_getUserCallCount++;
