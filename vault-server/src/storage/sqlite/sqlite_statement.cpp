@@ -1,4 +1,3 @@
-#include <mutex>
 #include <stdexcept>
 
 #include <sqlite3.h>
@@ -14,7 +13,7 @@ SqliteStatement::SqliteStatement(SqliteConnection& conn, const std::string& sql)
     : m_connection(conn)
 {
     // Для подготовки запроса достаточно shared_lock (чтение)
-    std::shared_lock<std::shared_mutex> lock(m_connection.m_mutex);
+    SqliteConnection::SharedLock lock(m_connection);
 
     // Подготавливаем запрос - SQLite парсит SQL и создаёт внутреннее представление
     const int rc = sqlite3_prepare_v2(
@@ -32,6 +31,7 @@ SqliteStatement::~SqliteStatement()
 {
     if (m_stmt)
     {
+        SqliteConnection::ExclusiveLock lock(m_connection);
         // Финализируем запрос - освобождаем все ресурсы
         // Это необходимо делать для каждого подготовленного запроса
         sqlite3_finalize(m_stmt);
@@ -41,7 +41,7 @@ SqliteStatement::~SqliteStatement()
 int64_t SqliteStatement::execute()
 {
     // Для выполнения нужна эксклюзивная блокировка (запись)
-    std::unique_lock<std::shared_mutex> lock(m_connection.m_mutex);
+    SqliteConnection::ExclusiveLock lock(m_connection);
 
     // Выполняем запрос
     const int rc = sqlite3_step(m_stmt);
@@ -51,7 +51,7 @@ int64_t SqliteStatement::execute()
     const int64_t changes = sqlite3_changes(m_connection.m_db);
 
     // Сбрасываем состояние запроса для возможности повторного использования
-    reset();
+    unsafeReset();
 
     return changes;
 }
@@ -65,6 +65,8 @@ std::unique_ptr<IResultSet> SqliteStatement::executeQuery()
 
 void SqliteStatement::reset()
 {
+    SqliteConnection::ExclusiveLock lock(m_connection);
+
     // Сбрасываем запрос в состояние "готов к выполнению"
     int rc = sqlite3_reset(m_stmt);
     checkError(rc, "Reset statement");
@@ -132,6 +134,18 @@ void SqliteStatement::bindDateTime(
     // SQLite не имеет встроенного типа DateTime, поэтому храним как TEXT
     bindString(name, dateTimeToString(value));
 }
+
+void SqliteStatement::unsafeReset()
+{
+    // Сбрасываем запрос в состояние "готов к выполнению"
+    int rc = sqlite3_reset(m_stmt);
+    checkError(rc, "Reset statement");
+
+    // Очищаем все привязки параметров
+    rc = sqlite3_clear_bindings(m_stmt);
+    checkError(rc, "Clear bindings");
+}
+
 
 int SqliteStatement::getParamIndex(const std::string& name)
 {

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <mutex>
+#include <shared_mutex>
+
 #include "storage/idatabase.h"
 
 namespace db
@@ -42,6 +45,7 @@ public:
 
 private:
     SqliteConnection& m_connection; ///< Ссылка на соединение
+    std::unique_lock<std::shared_mutex> m_exclusiveLock; ///< Блокировка на запись
     bool m_active = true; ///< Активна ли транзакция (не завершена)
 };
 

@@ -8,10 +8,20 @@ namespace db
 
 SqliteTransaction::SqliteTransaction(SqliteConnection& conn)
     : m_connection(conn)
+    , m_exclusiveLock(conn.mutex())
 {
     // Начинаем транзакцию при создании объекта
     // SQLite автоматически выходит из autocommit-режима
-    m_connection.execute("BEGIN TRANSACTION");
+    m_connection.isInTransaction = true;
+    try
+    {
+        m_connection.execute("BEGIN TRANSACTION");
+    }
+    catch (...)
+    {
+        m_connection.isInTransaction = false;
+        throw;
+    }
 }
 
 SqliteTransaction::~SqliteTransaction()
@@ -29,6 +39,7 @@ SqliteTransaction::~SqliteTransaction()
             // Подавляем все исключения, так как мы в деструкторе
         }
     }
+    m_connection.isInTransaction = false;
 }
 
 void SqliteTransaction::commit()

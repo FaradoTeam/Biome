@@ -56,6 +56,8 @@ public:
     void bindDateTime(const std::string& name, const DateTime& value) override;
 
 private:
+    void unsafeReset();
+
     /**
      * @brief Получает индекс параметра по имени.
      * @param name Имя параметра (без префикса ':')

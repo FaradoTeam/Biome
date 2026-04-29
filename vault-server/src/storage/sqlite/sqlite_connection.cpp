@@ -94,7 +94,7 @@ std::unique_ptr<IStatement> SqliteConnection::prepareStatement(
 int64_t SqliteConnection::execute(const std::string& sql)
 {
     // Блокируем мьютекс на время выполнения (эксклюзивная блокировка для записи)
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    ExclusiveLock lock(*this);
 
     char* errMsg = nullptr;
     // sqlite3_exec - удобная функция для выполнения SQL без обработки результатов
@@ -120,7 +120,7 @@ std::unique_ptr<ITransaction> SqliteConnection::beginTransaction()
 int64_t SqliteConnection::lastInsertId()
 {
     // Для чтения достаточно shared_lock (разделяемая блокировка)
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    SharedLock lock(*this);
     // Возвращаем ROWID последней вставленной записи
     return sqlite3_last_insert_rowid(m_db);
 }

@@ -1,6 +1,4 @@
 #include <cstring>
-#include <mutex>
-#include <shared_mutex>
 #include <stdexcept>
 
 #include <sqlite3.h>
@@ -40,7 +38,7 @@ bool SqliteResultSet::next()
 {
     // Блокируем на чтение - несколько потоков могут читать одновременно,
     // но не должны писать (изменять состояние statement'а)
-    std::shared_lock<std::shared_mutex> lock(m_connection.mutex());
+    SqliteConnection::SharedLock lock(m_connection);
 
     // Перемещаемся на следующую строку результата
     const int rc = sqlite3_step(m_stmt);

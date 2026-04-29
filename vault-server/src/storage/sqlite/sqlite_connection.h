@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <shared_mutex>
 #include <string>
 
@@ -20,6 +21,41 @@ class SqliteStatement;
  */
 class SqliteConnection final : public IConnection
 {
+public:
+    /**
+     * @brief RAII-обёртка для блокировки соединения.
+     *
+     * Если текущий поток уже находится в транзакции (isInTransaction == true),
+     * блокировка не захватывается, так как транзакция уже эксклюзивно владеет
+     * мьютексом.
+     *
+     * @tparam LockType Тип блокировки (std::unique_lock или std::shared_lock)
+     */
+    template <typename LockType>
+    class [[nodiscard]] ScopedLock
+    {
+    public:
+        explicit ScopedLock(const SqliteConnection& connection)
+            : m_shouldLock(!connection.isInTransaction)
+        {
+            if (m_shouldLock)
+            {
+                m_lock.emplace(connection.m_mutex);
+            }
+        }
+
+        ScopedLock(const ScopedLock&) = delete;
+        ScopedLock& operator=(const ScopedLock&) = delete;
+        ScopedLock(ScopedLock&&) = delete;
+        ScopedLock& operator=(ScopedLock&&) = delete;
+
+    private:
+        bool m_shouldLock;
+        std::optional<LockType> m_lock;
+    };
+    using ExclusiveLock = ScopedLock<std::unique_lock<std::shared_mutex>>;
+    using SharedLock = ScopedLock<std::shared_lock<std::shared_mutex>>;
+
 public:
     /**
      * @brief Конструктор. Открывает соединение с SQLite БД.
@@ -55,6 +91,10 @@ private:
     friend class SqliteResultSet;
 
 private:
+    /// thread_local флаг: этот поток внутри транзакции?
+    inline static thread_local bool isInTransaction = false;
+
+private:
     /**
      * @brief Проверяет код ошибки SQLite и бросает исключение при необходимости.
      * @param rc Код возврата SQLite
@@ -72,6 +112,7 @@ private:
 private:
     sqlite3* m_db = { nullptr }; ///< Указатель на объект SQLite3
     mutable std::shared_mutex m_mutex; ///< Мьютекс для потокобезопасности
+
 };
 
 } // namespace db
