@@ -17,34 +17,58 @@ set(SERVER_SOURCES
     # API Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/rest_server.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/middleware/impl/auth_middleware.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/items_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/auth_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/edges_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_types_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/edges_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/items_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/phases_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/projects_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/users_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/role_menu_items_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/roles_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rule_item_types_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rule_projects_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rule_states_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rules_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/states_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/teams_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_team_roles_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/users_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/workflows_handler.cpp
     # Logic Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/auth_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/edge_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_type_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/edge_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/phase_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/project_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/role_menu_item_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/role_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_item_type_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_project_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_state_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/state_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_team_role_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/workflow_service.cpp
     # Repo Layer
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_edge_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_type_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_edge_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_phase_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_role_menu_item_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_role_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_item_type_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_project_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_state_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_team_role_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_workflow_repository.cpp
     # Storage Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/storage/database_factory.cpp

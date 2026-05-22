@@ -26,6 +26,14 @@ class IProjectService;
 class IUserService;
 class IStateService;
 class IWorkflowService;
+class ITeamService;
+class IRoleService;
+class IRuleService;
+class IRuleProjectService;
+class IRuleItemTypeService;
+class IRuleStateService;
+class IRoleMenuItemService;
+class IUserTeamRoleService;
 }
 
 /**
@@ -88,6 +96,14 @@ public:
     void setUserService(std::shared_ptr<services::IUserService> userService);
     void setStateService(std::shared_ptr<services::IStateService> stateService);
     void setWorkflowService(std::shared_ptr<services::IWorkflowService> workflowService);
+    void setTeamService(std::shared_ptr<services::ITeamService> service);
+    void setRoleService(std::shared_ptr<services::IRoleService> service);
+    void setRuleService(std::shared_ptr<services::IRuleService> service);
+    void setRuleProjectService(std::shared_ptr<services::IRuleProjectService> service);
+    void setRuleItemTypeService(std::shared_ptr<services::IRuleItemTypeService> service);
+    void setRuleStateService(std::shared_ptr<services::IRuleStateService> service);
+    void setRoleMenuItemService(std::shared_ptr<services::IRoleMenuItemService> service);
+    void setUserTeamRoleService(std::shared_ptr<services::IUserTeamRoleService> service);
 
 private:
     /**
@@ -235,6 +251,14 @@ private:
     std::shared_ptr<services::IUserService> m_userService;
     std::shared_ptr<services::IStateService> m_stateService;
     std::shared_ptr<services::IWorkflowService> m_workflowService;
+    std::shared_ptr<services::ITeamService> m_teamService;
+    std::shared_ptr<services::IRoleService> m_roleService;
+    std::shared_ptr<services::IRuleService> m_ruleService;
+    std::shared_ptr<services::IRuleProjectService> m_ruleProjectService;
+    std::shared_ptr<services::IRuleItemTypeService> m_ruleItemTypeService;
+    std::shared_ptr<services::IRuleStateService> m_ruleStateService;
+    std::shared_ptr<services::IRoleMenuItemService> m_roleMenuItemService;
+    std::shared_ptr<services::IUserTeamRoleService> m_userTeamRoleService;
 };
 
 } // namespace server
