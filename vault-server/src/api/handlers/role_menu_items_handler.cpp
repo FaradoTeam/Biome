@@ -1,9 +1,11 @@
-#include <cpprest/uri.h>
 #include <regex>
+
+#include <cpprest/uri.h>
 
 #include "common/dto/role_menu_item.h"
 #include "common/helpers/json_helper.hpp"
 #include "common/log/log.h"
+
 #include "role_menu_items_handler.h"
 
 namespace server::handlers
@@ -105,30 +107,42 @@ void RoleMenuItemsHandler::handleUpdateItem(const web::http::http_request& reque
         request.reply(resp);
         return;
     }
-    request.extract_json().then([this, request, id](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            auto nl = dto::toNlohmannJson(json);
-            nl["id"] = id;
-            dto::RoleMenuItem item(nl);
-            auto updated = m_service->updateRoleMenuItem(item);
-            if (!updated) {
-                web::http::http_response resp(web::http::status_codes::NotFound);
-                sendErrorResponse(resp, 404, "RoleMenuItem not found or update failed");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request, id](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    auto nl = dto::toNlohmannJson(json);
+                    nl["id"] = id;
+                    dto::RoleMenuItem item(nl);
+                    auto updated = m_service->updateRoleMenuItem(item);
+                    if (!updated)
+                    {
+                        web::http::http_response resp(web::http::status_codes::NotFound);
+                        sendErrorResponse(resp, 404, "RoleMenuItem not found or update failed");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 
-void RoleMenuItemsHandler::handleDeleteItem(const web::http::http_request& request, const std::string& /*userId*/)
+void RoleMenuItemsHandler::handleDeleteItem(
+    const web::http::http_request& request,
+    const std::string& /*userId*/
+)
 {
     int64_t id = extractId(request);
     if (id <= 0)
@@ -139,7 +153,9 @@ void RoleMenuItemsHandler::handleDeleteItem(const web::http::http_request& reque
         return;
     }
     if (m_service->deleteRoleMenuItem(id))
+    {
         request.reply(web::http::status_codes::NoContent);
+    }
     else
     {
         web::http::http_response resp(web::http::status_codes::NotFound);
@@ -158,7 +174,9 @@ int64_t RoleMenuItemsHandler::extractId(const web::http::http_request& request)
     return -1;
 }
 
-std::map<std::string, std::string> RoleMenuItemsHandler::extractQueryParams(const web::http::http_request& request)
+std::map<std::string, std::string> RoleMenuItemsHandler::extractQueryParams(
+    const web::http::http_request& request
+)
 {
     std::map<std::string, std::string> params;
     auto query = web::uri::split_query(request.request_uri().query());
@@ -167,7 +185,11 @@ std::map<std::string, std::string> RoleMenuItemsHandler::extractQueryParams(cons
     return params;
 }
 
-void RoleMenuItemsHandler::sendErrorResponse(web::http::http_response& response, int code, const std::string& message)
+void RoleMenuItemsHandler::sendErrorResponse(
+    web::http::http_response& response,
+    int code,
+    const std::string& message
+)
 {
     web::json::value error;
     error["code"] = web::json::value::number(code);
