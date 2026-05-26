@@ -58,30 +58,40 @@ void RoleMenuItemsHandler::handleGetItem(const web::http::http_request& request,
 
 void RoleMenuItemsHandler::handleCreateItem(const web::http::http_request& request, const std::string& /*userId*/)
 {
-    request.extract_json().then([this, request](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            dto::RoleMenuItem item(dto::toNlohmannJson(json));
-            if (!item.roleId || !item.caption || item.caption->empty() || !item.link || item.link->empty()) {
-                web::http::http_response resp(web::http::status_codes::BadRequest);
-                sendErrorResponse(resp, 400, "roleId, caption and link are required");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    dto::RoleMenuItem item(dto::toNlohmannJson(json));
+                    if (!item.roleId || !item.caption || item.caption->empty() || !item.link || item.link->empty())
+                    {
+                        web::http::http_response resp(web::http::status_codes::BadRequest);
+                        sendErrorResponse(resp, 400, "roleId, caption and link are required");
+                        request.reply(resp);
+                        return;
+                    }
+                    auto created = m_service->createRoleMenuItem(item);
+                    if (!created)
+                    {
+                        web::http::http_response resp(web::http::status_codes::Conflict);
+                        sendErrorResponse(resp, 409, "Failed to create RoleMenuItem");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            auto created = m_service->createRoleMenuItem(item);
-            if (!created) {
-                web::http::http_response resp(web::http::status_codes::Conflict);
-                sendErrorResponse(resp, 409, "Failed to create RoleMenuItem");
-                request.reply(resp);
-                return;
-            }
-            request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 

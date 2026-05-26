@@ -1,9 +1,11 @@
-#include <cpprest/uri.h>
 #include <regex>
+
+#include <cpprest/uri.h>
 
 #include "common/dto/rule_state.h"
 #include "common/helpers/json_helper.hpp"
 #include "common/log/log.h"
+
 #include "rule_states_handler.h"
 
 namespace server::handlers
@@ -60,30 +62,40 @@ void RuleStatesHandler::handleGetItem(const web::http::http_request& request, co
 
 void RuleStatesHandler::handleCreateItem(const web::http::http_request& request, const std::string& /*userId*/)
 {
-    request.extract_json().then([this, request](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            dto::RuleState rs(dto::toNlohmannJson(json));
-            if (!rs.ruleId || !rs.stateId) {
-                web::http::http_response resp(web::http::status_codes::BadRequest);
-                sendErrorResponse(resp, 400, "ruleId and stateId are required");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    dto::RuleState rs(dto::toNlohmannJson(json));
+                    if (!rs.ruleId || !rs.stateId)
+                    {
+                        web::http::http_response resp(web::http::status_codes::BadRequest);
+                        sendErrorResponse(resp, 400, "ruleId and stateId are required");
+                        request.reply(resp);
+                        return;
+                    }
+                    auto created = m_service->createRuleState(rs);
+                    if (!created)
+                    {
+                        web::http::http_response resp(web::http::status_codes::Conflict);
+                        sendErrorResponse(resp, 409, "RuleState already exists or invalid references");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            auto created = m_service->createRuleState(rs);
-            if (!created) {
-                web::http::http_response resp(web::http::status_codes::Conflict);
-                sendErrorResponse(resp, 409, "RuleState already exists or invalid references");
-                request.reply(resp);
-                return;
-            }
-            request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 
@@ -97,26 +109,35 @@ void RuleStatesHandler::handleUpdateItem(const web::http::http_request& request,
         request.reply(resp);
         return;
     }
-    request.extract_json().then([this, request, id](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            auto nl = dto::toNlohmannJson(json);
-            nl["id"] = id;
-            dto::RuleState rs(nl);
-            auto updated = m_service->updateRuleState(rs);
-            if (!updated) {
-                web::http::http_response resp(web::http::status_codes::NotFound);
-                sendErrorResponse(resp, 404, "RuleState not found or update failed");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request, id](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    auto nl = dto::toNlohmannJson(json);
+                    nl["id"] = id;
+                    dto::RuleState rs(nl);
+                    auto updated = m_service->updateRuleState(rs);
+                    if (!updated)
+                    {
+                        web::http::http_response resp(web::http::status_codes::NotFound);
+                        sendErrorResponse(resp, 404, "RuleState not found or update failed");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 
@@ -131,7 +152,9 @@ void RuleStatesHandler::handleDeleteItem(const web::http::http_request& request,
         return;
     }
     if (m_service->deleteRuleState(id))
+    {
         request.reply(web::http::status_codes::NoContent);
+    }
     else
     {
         web::http::http_response resp(web::http::status_codes::NotFound);

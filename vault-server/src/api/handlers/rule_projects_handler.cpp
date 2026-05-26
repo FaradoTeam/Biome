@@ -1,9 +1,11 @@
-#include <cpprest/uri.h>
 #include <regex>
+
+#include <cpprest/uri.h>
 
 #include "common/dto/rule_project.h"
 #include "common/helpers/json_helper.hpp"
 #include "common/log/log.h"
+
 #include "rule_projects_handler.h"
 
 namespace server::handlers
@@ -60,30 +62,40 @@ void RuleProjectsHandler::handleGetItem(const web::http::http_request& request, 
 
 void RuleProjectsHandler::handleCreateItem(const web::http::http_request& request, const std::string& /*userId*/)
 {
-    request.extract_json().then([this, request](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            dto::RuleProject rp(dto::toNlohmannJson(json));
-            if (!rp.ruleId || !rp.projectId) {
-                web::http::http_response resp(web::http::status_codes::BadRequest);
-                sendErrorResponse(resp, 400, "ruleId and projectId are required");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    dto::RuleProject rp(dto::toNlohmannJson(json));
+                    if (!rp.ruleId || !rp.projectId)
+                    {
+                        web::http::http_response resp(web::http::status_codes::BadRequest);
+                        sendErrorResponse(resp, 400, "ruleId and projectId are required");
+                        request.reply(resp);
+                        return;
+                    }
+                    auto created = m_service->createRuleProject(rp);
+                    if (!created)
+                    {
+                        web::http::http_response resp(web::http::status_codes::Conflict);
+                        sendErrorResponse(resp, 409, "RuleProject already exists or invalid references");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            auto created = m_service->createRuleProject(rp);
-            if (!created) {
-                web::http::http_response resp(web::http::status_codes::Conflict);
-                sendErrorResponse(resp, 409, "RuleProject already exists or invalid references");
-                request.reply(resp);
-                return;
-            }
-            request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 
@@ -97,26 +109,35 @@ void RuleProjectsHandler::handleUpdateItem(const web::http::http_request& reques
         request.reply(resp);
         return;
     }
-    request.extract_json().then([this, request, id](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            auto nl = dto::toNlohmannJson(json);
-            nl["id"] = id;
-            dto::RuleProject rp(nl);
-            auto updated = m_service->updateRuleProject(rp);
-            if (!updated) {
-                web::http::http_response resp(web::http::status_codes::NotFound);
-                sendErrorResponse(resp, 404, "RuleProject not found or update failed");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request, id](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    auto nl = dto::toNlohmannJson(json);
+                    nl["id"] = id;
+                    dto::RuleProject rp(nl);
+                    auto updated = m_service->updateRuleProject(rp);
+                    if (!updated)
+                    {
+                        web::http::http_response resp(web::http::status_codes::NotFound);
+                        sendErrorResponse(resp, 404, "RuleProject not found or update failed");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 

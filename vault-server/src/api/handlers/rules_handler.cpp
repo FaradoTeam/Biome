@@ -1,9 +1,11 @@
-#include <cpprest/uri.h>
 #include <regex>
+
+#include <cpprest/uri.h>
 
 #include "common/dto/rule.h"
 #include "common/helpers/json_helper.hpp"
 #include "common/log/log.h"
+
 #include "rules_handler.h"
 
 namespace server::handlers
@@ -60,30 +62,40 @@ void RulesHandler::handleGetRule(const web::http::http_request& request, const s
 
 void RulesHandler::handleCreateRule(const web::http::http_request& request, const std::string& /*userId*/)
 {
-    request.extract_json().then([this, request](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            dto::Rule rule(dto::toNlohmannJson(json));
-            if (!rule.roleId.has_value()) {
-                web::http::http_response resp(web::http::status_codes::BadRequest);
-                sendErrorResponse(resp, 400, "roleId is required");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    dto::Rule rule(dto::toNlohmannJson(json));
+                    if (!rule.roleId.has_value())
+                    {
+                        web::http::http_response resp(web::http::status_codes::BadRequest);
+                        sendErrorResponse(resp, 400, "roleId is required");
+                        request.reply(resp);
+                        return;
+                    }
+                    auto created = m_ruleService->createRule(rule);
+                    if (!created)
+                    {
+                        web::http::http_response resp(web::http::status_codes::Conflict);
+                        sendErrorResponse(resp, 409, "Rule for this role already exists or invalid data");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            auto created = m_ruleService->createRule(rule);
-            if (!created) {
-                web::http::http_response resp(web::http::status_codes::Conflict);
-                sendErrorResponse(resp, 409, "Rule for this role already exists or invalid data");
-                request.reply(resp);
-                return;
-            }
-            request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 
@@ -97,26 +109,35 @@ void RulesHandler::handleUpdateRule(const web::http::http_request& request, cons
         request.reply(resp);
         return;
     }
-    request.extract_json().then([this, request, id](pplx::task<web::json::value> task)
-                                {
-        try {
-            auto json = task.get();
-            auto nlohmannJson = dto::toNlohmannJson(json);
-            nlohmannJson["id"] = id;
-            dto::Rule rule(nlohmannJson);
-            auto updated = m_ruleService->updateRule(rule);
-            if (!updated) {
-                web::http::http_response resp(web::http::status_codes::NotFound);
-                sendErrorResponse(resp, 404, "Rule not found or update failed");
-                request.reply(resp);
-                return;
+    request
+        .extract_json()
+        .then(
+            [this, request, id](pplx::task<web::json::value> task)
+            {
+                try
+                {
+                    auto json = task.get();
+                    auto nlohmannJson = dto::toNlohmannJson(json);
+                    nlohmannJson["id"] = id;
+                    dto::Rule rule(nlohmannJson);
+                    auto updated = m_ruleService->updateRule(rule);
+                    if (!updated)
+                    {
+                        web::http::http_response resp(web::http::status_codes::NotFound);
+                        sendErrorResponse(resp, 404, "Rule not found or update failed");
+                        request.reply(resp);
+                        return;
+                    }
+                    request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
+                }
+                catch (const std::exception& e)
+                {
+                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    request.reply(resp);
+                }
             }
-            request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
-        } catch (const std::exception& e) {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-            request.reply(resp);
-        } })
+        )
         .wait();
 }
 
@@ -131,7 +152,9 @@ void RulesHandler::handleDeleteRule(const web::http::http_request& request, cons
         return;
     }
     if (m_ruleService->deleteRule(id))
+    {
         request.reply(web::http::status_codes::NoContent);
+    }
     else
     {
         web::http::http_response resp(web::http::status_codes::NotFound);
