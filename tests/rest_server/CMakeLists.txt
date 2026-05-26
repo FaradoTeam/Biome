@@ -77,15 +77,23 @@ set(COMMON_SOURCES
 )
 
 set(TEST_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_rest_server.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_token_expiration.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_edges_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_field_types_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_item_types_crud.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_edges_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_phases_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_projects_crud.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_users_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_rest_server.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_role_menu_items_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_roles_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_rule_item_types_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_rule_projects_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_rule_states_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_rules_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_states_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_teams_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_token_expiration.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_user_team_roles_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_users_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_workflows_crud.cpp
 )
 
