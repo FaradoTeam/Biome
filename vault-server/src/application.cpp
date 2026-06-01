@@ -115,7 +115,10 @@ bool Application::initialize()
     auto fieldTypeService = std::make_shared<services::FieldTypeService>(fieldTypeRepository);
     auto itemTypeService = std::make_shared<services::ItemTypeService>(itemTypeRepository);
     auto userService = std::make_shared<services::UserService>(userRepository);
-    auto phaseService = std::make_shared<services::PhaseService>(phaseRepository);
+    auto phaseService = std::make_shared<services::PhaseService>(
+        phaseRepository,
+        authorizationService
+    );
     auto projectService = std::make_shared<services::ProjectService>(
         projectRepository,
         authorizationService
