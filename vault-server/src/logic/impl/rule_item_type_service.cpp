@@ -18,11 +18,15 @@ RuleItemTypeService::RuleItemTypeService(
 {
     if (!m_ritRepo || !m_ruleRepo || !m_itemTypeRepo)
     {
-        throw std::runtime_error("RuleItemTypeService: repositories are null");
+        throw std::runtime_error(
+            "RuleItemTypeService: репозитории не инициализированы"
+        );
     }
     if (!m_authzService)
     {
-        throw std::runtime_error("RuleItemTypeService: authorizationService is null");
+        throw std::runtime_error(
+            "RuleItemTypeService: сервис авторизации не инициализирован"
+        );
     }
 }
 
@@ -51,41 +55,45 @@ std::optional<dto::RuleItemType> RuleItemTypeService::createRuleItemType(const d
     // Проверка обязательных полей
     if (!rit.ruleId.has_value() || !rit.itemTypeId.has_value())
     {
-        LOG_WARN << "createRuleItemType: ruleId and itemTypeId are required";
+        LOG_WARN << "createRuleItemType: обязательны ruleId и itemTypeId";
         return std::nullopt;
     }
 
     // Проверка существования правила
     if (!m_ruleRepo->exists(*rit.ruleId))
     {
-        LOG_WARN << "createRuleItemType: rule with id=" << *rit.ruleId << " not found";
+        LOG_WARN
+            << "createRuleItemType: правило с id=" << *rit.ruleId << " не найдено";
         return std::nullopt;
     }
 
     // Проверка существования типа элемента
     if (!m_itemTypeRepo->exists(*rit.itemTypeId))
     {
-        LOG_WARN << "createRuleItemType: itemType with id=" << *rit.itemTypeId << " not found";
+        LOG_WARN
+            << "createRuleItemType: тип элемента с id=" << *rit.itemTypeId
+            << " не найден";
         return std::nullopt;
     }
 
     // Проверка уникальности пары (ruleId, itemTypeId)
     if (m_ritRepo->exists(*rit.ruleId, *rit.itemTypeId))
     {
-        LOG_WARN << "createRuleItemType: pair (ruleId,itemTypeId) already exists";
+        LOG_WARN << "createRuleItemType: пара (ruleId,itemTypeId) уже существует";
         return std::nullopt;
     }
 
     int64_t newId = m_ritRepo->create(rit);
     if (newId <= 0)
     {
-        LOG_ERROR << "createRuleItemType: failed to create RuleItemType";
+        LOG_ERROR << "createRuleItemType: не удалось создать RuleItemType";
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleItemType created: id=" << newId
-             << ", ruleId=" << *rit.ruleId
-             << ", itemTypeId=" << *rit.itemTypeId;
+    LOG_INFO
+        << "RuleItemType создан: id=" << newId
+        << ", ruleId=" << *rit.ruleId
+        << ", itemTypeId=" << *rit.itemTypeId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRuleId(*rit.ruleId);
@@ -97,14 +105,14 @@ std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(const d
 {
     if (!rit.id.has_value())
     {
-        LOG_WARN << "updateRuleItemType: missing id";
+        LOG_WARN << "updateRuleItemType: отсутствует id";
         return std::nullopt;
     }
 
     auto existing = m_ritRepo->findById(*rit.id);
     if (!existing)
     {
-        LOG_WARN << "updateRuleItemType: RuleItemType with id=" << *rit.id << " not found";
+        LOG_WARN << "updateRuleItemType: RuleItemType с id=" << *rit.id << " не найден";
         return std::nullopt;
     }
 
@@ -118,7 +126,7 @@ std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(const d
     {
         if (!m_ruleRepo->exists(*rit.ruleId))
         {
-            LOG_WARN << "updateRuleItemType: new ruleId=" << *rit.ruleId << " not found";
+            LOG_WARN << "updateRuleItemType: новая ruleId=" << *rit.ruleId << " не найдена";
             return std::nullopt;
         }
         newRuleId = *rit.ruleId;
@@ -129,7 +137,7 @@ std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(const d
     {
         if (!m_itemTypeRepo->exists(*rit.itemTypeId))
         {
-            LOG_WARN << "updateRuleItemType: new itemTypeId=" << *rit.itemTypeId << " not found";
+            LOG_WARN << "updateRuleItemType: новая itemTypeId=" << *rit.itemTypeId << " не найдена";
             return std::nullopt;
         }
         newItemTypeId = *rit.itemTypeId;
@@ -138,17 +146,17 @@ std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(const d
 
     if (needUniquenessCheck && m_ritRepo->exists(newRuleId, newItemTypeId))
     {
-        LOG_WARN << "updateRuleItemType: pair (ruleId,itemTypeId) already exists";
+        LOG_WARN << "updateRuleItemType: пара (ruleId,itemTypeId) уже существует";
         return std::nullopt;
     }
 
     if (!m_ritRepo->update(rit))
     {
-        LOG_ERROR << "updateRuleItemType: failed to update RuleItemType id=" << *rit.id;
+        LOG_ERROR << "updateRuleItemType: не удалось обновить RuleItemType id=" << *rit.id;
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleItemType updated: id=" << *rit.id;
+    LOG_INFO << "RuleItemType обновлен: id=" << *rit.id;
 
     // Инвалидируем кэш по старому и новому ruleId
     invalidateUsersByRuleId(oldRuleId);
@@ -165,7 +173,7 @@ bool RuleItemTypeService::deleteRuleItemType(int64_t id)
     auto existing = m_ritRepo->findById(id);
     if (!existing)
     {
-        LOG_WARN << "deleteRuleItemType: RuleItemType with id=" << id << " not found";
+        LOG_WARN << "deleteRuleItemType: RuleItemType с id=" << id << " не найден";
         return false;
     }
 
@@ -173,11 +181,11 @@ bool RuleItemTypeService::deleteRuleItemType(int64_t id)
 
     if (!m_ritRepo->remove(id))
     {
-        LOG_ERROR << "deleteRuleItemType: failed to delete RuleItemType id=" << id;
+        LOG_ERROR << "deleteRuleItemType: не удалось удалить RuleItemType id=" << id;
         return false;
     }
 
-    LOG_INFO << "RuleItemType deleted: id=" << id;
+    LOG_INFO << "RuleItemType удален: id=" << id;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRuleId(ruleId);
@@ -190,12 +198,15 @@ void RuleItemTypeService::invalidateUsersByRuleId(int64_t ruleId)
     auto rule = m_ruleRepo->findById(ruleId);
     if (!rule || !rule->roleId.has_value())
     {
-        LOG_DEBUG << "invalidateUsersByRuleId: rule " << ruleId << " has no roleId";
+        LOG_DEBUG
+            << "invalidateUsersByRuleId: правило " << ruleId << " не имеет roleId";
         return;
     }
 
     auto users = m_authzService->getUserIdsByRoleId(*rule->roleId);
-    LOG_DEBUG << "Инвалидация кэша для " << users.size() << " пользователей с ролью " << *rule->roleId;
+    LOG_DEBUG
+        << "Инвалидация кэша для " << users.size()
+        << " пользователей с ролью " << *rule->roleId;
 
     for (int64_t userId : users)
     {

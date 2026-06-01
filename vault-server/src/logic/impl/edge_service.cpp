@@ -16,11 +16,11 @@ EdgeService::EdgeService(
 {
     if (!m_edgeRepo)
     {
-        throw std::runtime_error("EdgeRepository cannot be null");
+        throw std::runtime_error("EdgeRepository не может быть пустым");
     }
     if (!m_stateRepo)
     {
-        throw std::runtime_error("StateRepository cannot be null");
+        throw std::runtime_error("StateRepository не может быть пустым");
     }
 }
 

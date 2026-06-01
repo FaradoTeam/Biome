@@ -14,7 +14,7 @@ ItemTypeService::ItemTypeService(
 {
     if (!m_itemTypeRepo)
     {
-        throw std::runtime_error("ItemTypeRepository cannot be null");
+        throw std::runtime_error("ItemTypeRepository не может быть пустым");
     }
 }
 
@@ -102,7 +102,8 @@ std::optional<dto::ItemType> ItemTypeService::updateItemType(
 
     if (!m_itemTypeRepo->update(itemType))
     {
-        LOG_ERROR << "updateItemType: ошибка при обновлении типа элемента в репозитории";
+        LOG_ERROR
+            << "updateItemType: ошибка при обновлении типа элемента в репозитории";
         return std::nullopt;
     }
 

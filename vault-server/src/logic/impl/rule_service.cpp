@@ -16,11 +16,11 @@ RuleService::RuleService(
 {
     if (!m_ruleRepo || !m_roleRepo)
     {
-        throw std::runtime_error("RuleService: repositories are null");
+        throw std::runtime_error("RuleService: репозитории не инициализированы");
     }
     if (!m_authzService)
     {
-        throw std::runtime_error("RuleService: authorizationService is null");
+        throw std::runtime_error("RuleService: сервис авторизации не инициализирован");
     }
 }
 
@@ -52,32 +52,33 @@ std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule)
 {
     if (!rule.roleId.has_value())
     {
-        LOG_WARN << "createRule: roleId is required";
+        LOG_WARN << "createRule: roleId обязателен";
         return std::nullopt;
     }
 
     // Проверяем существование роли
     if (!m_roleRepo->exists(*rule.roleId))
     {
-        LOG_WARN << "createRule: role not found, roleId=" << *rule.roleId;
+        LOG_WARN << "createRule: роль не найдена, roleId=" << *rule.roleId;
         return std::nullopt;
     }
 
     // У одной роли не может быть нескольких правил
     if (m_ruleRepo->findByRoleId(*rule.roleId).has_value())
     {
-        LOG_WARN << "createRule: rule already exists for roleId=" << *rule.roleId;
+        LOG_WARN
+            << "createRule: правило для roleId=" << *rule.roleId << " уже существует";
         return std::nullopt;
     }
 
     int64_t newId = m_ruleRepo->create(rule);
     if (newId <= 0)
     {
-        LOG_ERROR << "createRule: failed to create rule";
+        LOG_ERROR << "createRule: не удалось создать правило";
         return std::nullopt;
     }
 
-    LOG_INFO << "Rule created: id=" << newId << ", roleId=" << *rule.roleId;
+    LOG_INFO << "Правило создано: id=" << newId << ", roleId=" << *rule.roleId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRoleId(*rule.roleId);
@@ -89,14 +90,14 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
 {
     if (!rule.id.has_value())
     {
-        LOG_WARN << "updateRule: missing id";
+        LOG_WARN << "updateRule: отсутствует id";
         return std::nullopt;
     }
 
     auto existing = m_ruleRepo->findById(*rule.id);
     if (!existing)
     {
-        LOG_WARN << "updateRule: rule not found, id=" << *rule.id;
+        LOG_WARN << "updateRule: правило не найдено, id=" << *rule.id;
         return std::nullopt;
     }
 
@@ -108,12 +109,14 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
     {
         if (!m_roleRepo->exists(*rule.roleId))
         {
-            LOG_WARN << "updateRule: new roleId not found, roleId=" << *rule.roleId;
+            LOG_WARN << "updateRule: новая roleId не найдена, roleId=" << *rule.roleId;
             return std::nullopt;
         }
         if (m_ruleRepo->findByRoleId(*rule.roleId).has_value())
         {
-            LOG_WARN << "updateRule: rule already exists for new roleId=" << *rule.roleId;
+            LOG_WARN
+                << "updateRule: правило для новой roleId=" << *rule.roleId
+                << " уже существует";
             return std::nullopt;
         }
         newRoleId = *rule.roleId;
@@ -121,11 +124,11 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
 
     if (!m_ruleRepo->update(rule))
     {
-        LOG_ERROR << "updateRule: failed to update rule id=" << *rule.id;
+        LOG_ERROR << "updateRule: не удалось обновить правило id=" << *rule.id;
         return std::nullopt;
     }
 
-    LOG_INFO << "Rule updated: id=" << *rule.id;
+    LOG_INFO << "Правило обновлено: id=" << *rule.id;
 
     // Инвалидируем кэш по старой и новой роли
     invalidateUsersByRoleId(oldRoleId);
@@ -142,7 +145,7 @@ bool RuleService::deleteRule(int64_t id)
     auto existing = m_ruleRepo->findById(id);
     if (!existing)
     {
-        LOG_WARN << "deleteRule: rule not found, id=" << id;
+        LOG_WARN << "deleteRule: правило не найдено, id=" << id;
         return false;
     }
 
@@ -150,14 +153,13 @@ bool RuleService::deleteRule(int64_t id)
 
     // TODO: проверить, что правило не используется в RuleProject, RuleItemType, RuleState
     // Это можно сделать через соответствующие репозитории
-
     if (!m_ruleRepo->remove(id))
     {
-        LOG_ERROR << "deleteRule: failed to delete rule id=" << id;
+        LOG_ERROR << "deleteRule: не удалось удалить правило id=" << id;
         return false;
     }
 
-    LOG_INFO << "Rule deleted: id=" << id;
+    LOG_INFO << "Правило удалено: id=" << id;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRoleId(roleId);
@@ -168,7 +170,9 @@ bool RuleService::deleteRule(int64_t id)
 void RuleService::invalidateUsersByRoleId(int64_t roleId)
 {
     auto users = m_authzService->getUserIdsByRoleId(roleId);
-    LOG_DEBUG << "Инвалидация кэша для " << users.size() << " пользователей с ролью " << roleId;
+    LOG_DEBUG
+        << "Инвалидация кэша для " << users.size()
+        << " пользователей с ролью " << roleId;
 
     for (int64_t userId : users)
     {

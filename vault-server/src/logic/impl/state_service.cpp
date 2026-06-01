@@ -18,15 +18,15 @@ StateService::StateService(
 {
     if (!m_stateRepo)
     {
-        throw std::runtime_error("StateRepository cannot be null");
+        throw std::runtime_error("StateRepository не может быть пустым");
     }
     if (!m_edgeRepo)
     {
-        throw std::runtime_error("EdgeRepository cannot be null");
+        throw std::runtime_error("EdgeRepository не может быть пустым");
     }
     if (!m_workflowRepo)
     {
-        throw std::runtime_error("WorkflowRepository cannot be null");
+        throw std::runtime_error("WorkflowRepository не может быть пустым");
     }
 }
 
@@ -54,7 +54,7 @@ std::optional<dto::State> StateService::createState(const dto::State& state)
     std::string errorMessage;
     if (!validateState(state, errorMessage))
     {
-        LOG_WARN << "createState: валидация не пройдена - " << errorMessage;
+        LOG_WARN << "createState: проверка не пройдена - " << errorMessage;
         return std::nullopt;
     }
 
@@ -77,7 +77,7 @@ std::optional<dto::State> StateService::createState(const dto::State& state)
 
     LOG_INFO
         << "Состояние создано: id=" << newId
-        << ", caption='" << *state.caption << "'"
+        << ", название='" << *state.caption << "'"
         << ", workflowId=" << *state.workflowId;
 
     return m_stateRepo->findById(newId);

@@ -44,7 +44,9 @@ AuthorizationService::AuthorizationService(
         || !m_teamRepo
         || !m_roleRepo)
     {
-        throw std::runtime_error("AuthorizationService: one or more repositories are null");
+        throw std::runtime_error(
+            "AuthorizationService: один или несколько репозиториев не инициализированы"
+        );
     }
 }
 
@@ -314,7 +316,7 @@ AuthorizationService::UserPermissions& AuthorizationService::getPermissions(int6
     LOG_DEBUG
         << "Права для пользователя " << userId
         << " загружены. Проектов: " << result.readableProjects.size()
-        << ", SuperAdmin: " << result.isSuperAdmin;
+        << ", СуперАдмин: " << result.isSuperAdmin;
 
     return result;
 }

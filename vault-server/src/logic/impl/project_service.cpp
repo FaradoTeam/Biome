@@ -2,7 +2,6 @@
 
 #include "project_service.h"
 
-
 namespace server
 {
 namespace services
@@ -17,11 +16,11 @@ ProjectService::ProjectService(
 {
     if (!m_projectRepo)
     {
-        throw std::runtime_error("ProjectRepository cannot be null");
+        throw std::runtime_error("ProjectRepository не может быть пустым");
     }
     if (!m_authzService)
     {
-        throw std::runtime_error("AuthorizationService cannot be null");
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 

@@ -62,11 +62,11 @@ PhaseService::PhaseService(
 {
     if (!m_phaseRepo)
     {
-        throw std::runtime_error("PhaseRepository cannot be null");
+        throw std::runtime_error("PhaseRepository не может быть пустым");
     }
     if (!m_authzService)
     {
-        throw std::runtime_error("AuthorizationService cannot be null");
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 
@@ -89,8 +89,9 @@ PhasesPage PhaseService::phases(
         auto authz = m_authzService->canReadProject(userId, *projectId);
         if (!authz.granted)
         {
-            LOG_WARN << "User " << userId
-                     << " denied read access to project " << *projectId;
+            LOG_WARN
+                << "Пользователь " << userId
+                << " не имеет доступа на чтение к проекту " << *projectId;
             return { {}, 0 };
         }
     }
@@ -131,7 +132,7 @@ std::optional<dto::Phase> PhaseService::phase(
 {
     if (id <= 0)
     {
-        LOG_WARN << "phase: invalid id " << id;
+        LOG_WARN << "phase: неверный id " << id;
         return std::nullopt;
     }
 
@@ -139,14 +140,14 @@ std::optional<dto::Phase> PhaseService::phase(
     auto phase = m_phaseRepo->findById(id);
     if (!phase.has_value())
     {
-        LOG_DEBUG << "phase: phase " << id << " not found";
+        LOG_DEBUG << "phase: фаза " << id << " не найдена";
         return std::nullopt;
     }
 
     // Проверяем права на чтение проекта
     if (!phase->projectId.has_value())
     {
-        LOG_WARN << "phase: phase " << id << " has no projectId";
+        LOG_WARN << "phase: фаза " << id << " не имеет projectId";
         return std::nullopt;
     }
 
@@ -154,8 +155,8 @@ std::optional<dto::Phase> PhaseService::phase(
     if (!authz.granted)
     {
         LOG_WARN
-            << "User " << userId
-            << " denied read access to phase " << id;
+            << "Пользователь " << userId
+            << " не имеет доступа на чтение к фазе " << id;
         return std::nullopt;
     }
 
@@ -171,7 +172,7 @@ std::optional<dto::Phase> PhaseService::createPhase(
     std::string errorMessage;
     if (!validatePhase(phase, errorMessage))
     {
-        LOG_WARN << "createPhase: validation failed - " << errorMessage;
+        LOG_WARN << "createPhase: проверка не пройдена - " << errorMessage;
         return std::nullopt;
     }
 
@@ -180,8 +181,8 @@ std::optional<dto::Phase> PhaseService::createPhase(
     if (!authz.granted)
     {
         LOG_WARN
-            << "User " << userId
-            << " denied create phase in project " << *phase.projectId;
+            << "Пользователь " << userId
+            << " не имеет прав на создание фазы в проекте " << *phase.projectId;
         return std::nullopt;
     }
 
@@ -189,14 +190,14 @@ std::optional<dto::Phase> PhaseService::createPhase(
     const int64_t newId = m_phaseRepo->create(phase);
     if (newId <= 0)
     {
-        LOG_ERROR << "createPhase: failed to create phase";
+        LOG_ERROR << "createPhase: не удалось создать фазу";
         return std::nullopt;
     }
 
     LOG_INFO
-        << "User " << userId
-        << " created phase id=" << newId
-        << " in project " << *phase.projectId;
+        << "Пользователь " << userId
+        << " создал фазу id=" << newId
+        << " в проекте " << *phase.projectId;
 
     return m_phaseRepo->findById(newId);
 }
@@ -208,7 +209,7 @@ std::optional<dto::Phase> PhaseService::updatePhase(
 {
     if (!phase.id.has_value())
     {
-        LOG_WARN << "updatePhase: missing phase ID";
+        LOG_WARN << "updatePhase: отсутствует ID фазы";
         return std::nullopt;
     }
 
@@ -216,13 +217,13 @@ std::optional<dto::Phase> PhaseService::updatePhase(
     auto existing = m_phaseRepo->findById(*phase.id);
     if (!existing.has_value())
     {
-        LOG_WARN << "updatePhase: phase " << *phase.id << " not found";
+        LOG_WARN << "updatePhase: фаза " << *phase.id << " не найдена";
         return std::nullopt;
     }
 
     if (!existing->projectId.has_value())
     {
-        LOG_WARN << "updatePhase: phase " << *phase.id << " has no projectId";
+        LOG_WARN << "updatePhase: фаза " << *phase.id << " не имеет projectId";
         return std::nullopt;
     }
 
@@ -230,8 +231,9 @@ std::optional<dto::Phase> PhaseService::updatePhase(
     auto authz = m_authzService->canEditPhases(userId, *existing->projectId);
     if (!authz.granted)
     {
-        LOG_WARN << "User " << userId
-                 << " denied update phase " << *phase.id;
+        LOG_WARN
+            << "Пользователь " << userId
+            << " не имеет прав на обновление фазы " << *phase.id;
         return std::nullopt;
     }
 
@@ -242,8 +244,8 @@ std::optional<dto::Phase> PhaseService::updatePhase(
         if (!newProjectAuthz.granted)
         {
             LOG_WARN
-                << "User " << userId
-                << " denied move phase to project " << *phase.projectId;
+                << "Пользователь " << userId
+                << " не имеет прав на перемещение фазы в проект " << *phase.projectId;
             return std::nullopt;
         }
     }
@@ -251,13 +253,13 @@ std::optional<dto::Phase> PhaseService::updatePhase(
     // Выполняем обновление
     if (!m_phaseRepo->update(phase))
     {
-        LOG_ERROR << "updatePhase: failed to update phase " << *phase.id;
+        LOG_ERROR << "updatePhase: не удалось обновить фазу " << *phase.id;
         return std::nullopt;
     }
 
     LOG_INFO
-        << "User " << userId
-        << " updated phase " << *phase.id;
+        << "Пользователь " << userId
+        << " обновил фазу " << *phase.id;
 
     return m_phaseRepo->findById(*phase.id);
 }
@@ -269,7 +271,7 @@ bool PhaseService::archivePhase(
 {
     if (id <= 0)
     {
-        LOG_WARN << "archivePhase: invalid id " << id;
+        LOG_WARN << "archivePhase: неверный id " << id;
         return false;
     }
 
@@ -277,13 +279,13 @@ bool PhaseService::archivePhase(
     auto phase = m_phaseRepo->findById(id);
     if (!phase.has_value())
     {
-        LOG_WARN << "archivePhase: phase " << id << " not found";
+        LOG_WARN << "archivePhase: фаза " << id << " не найдена";
         return false;
     }
 
     if (!phase->projectId.has_value())
     {
-        LOG_WARN << "archivePhase: phase " << id << " has no projectId";
+        LOG_WARN << "archivePhase: фаза " << id << " не имеет projectId";
         return false;
     }
 
@@ -292,21 +294,21 @@ bool PhaseService::archivePhase(
     if (!authz.granted)
     {
         LOG_WARN
-            << "User " << userId
-            << " denied archive phase " << id;
+            << "Пользователь " << userId
+            << " не имеет прав на архивацию фазы " << id;
         return false;
     }
 
     // Архивируем
     if (!m_phaseRepo->archive(id))
     {
-        LOG_ERROR << "archivePhase: failed to archive phase " << id;
+        LOG_ERROR << "archivePhase: не удалось архивировать фазу " << id;
         return false;
     }
 
     LOG_INFO
-        << "User " << userId
-        << " archived phase " << id;
+        << "Пользователь " << userId
+        << " архивировал фазу " << id;
     return true;
 }
 
@@ -317,7 +319,7 @@ bool PhaseService::restorePhase(
 {
     if (id <= 0)
     {
-        LOG_WARN << "restorePhase: invalid id " << id;
+        LOG_WARN << "restorePhase: неверный id " << id;
         return false;
     }
 
@@ -325,13 +327,13 @@ bool PhaseService::restorePhase(
     auto phase = m_phaseRepo->findById(id);
     if (!phase.has_value())
     {
-        LOG_WARN << "restorePhase: phase " << id << " not found";
+        LOG_WARN << "restorePhase: фаза " << id << " не найдена";
         return false;
     }
 
     if (!phase->projectId.has_value())
     {
-        LOG_WARN << "restorePhase: phase " << id << " has no projectId";
+        LOG_WARN << "restorePhase: фаза " << id << " не имеет projectId";
         return false;
     }
 
@@ -340,21 +342,21 @@ bool PhaseService::restorePhase(
     if (!authz.granted)
     {
         LOG_WARN
-            << "User " << userId
-            << " denied restore phase " << id;
+            << "Пользователь " << userId
+            << " не имеет прав на восстановление фазы " << id;
         return false;
     }
 
     // Восстанавливаем
     if (!m_phaseRepo->restore(id))
     {
-        LOG_ERROR << "restorePhase: failed to restore phase " << id;
+        LOG_ERROR << "restorePhase: не удалось восстановить фазу " << id;
         return false;
     }
 
     LOG_INFO
-        << "User " << userId
-        << " restored phase " << id;
+        << "Пользователь " << userId
+        << " восстановил фазу " << id;
     return true;
 }
 

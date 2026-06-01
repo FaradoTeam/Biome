@@ -1,6 +1,3 @@
-#include <iomanip>
-#include <sstream>
-
 #include <openssl/evp.h>
 
 #include "common/helpers/crypto_helper.hpp"
@@ -20,11 +17,15 @@ UserService::UserService(
 {
     if (!m_userRepo)
     {
-        throw std::runtime_error("UserService: userRepository is null");
+        throw std::runtime_error(
+            "UserService: репозиторий пользователей не инициализирован"
+        );
     }
     if (!m_authzService)
     {
-        throw std::runtime_error("UserService: authorizationService is null");
+        throw std::runtime_error(
+            "UserService: сервис авторизации не инициализирован"
+        );
     }
 }
 
@@ -73,11 +74,11 @@ std::optional<dto::User> UserService::createUser(
 
     if (newId <= 0)
     {
-        LOG_ERROR << "createUser: failed to create user";
+        LOG_ERROR << "createUser: не удалось создать пользователя";
         return std::nullopt;
     }
 
-    LOG_INFO << "User created: id=" << newId << ", login=" << *user.login;
+    LOG_INFO << "Пользователь создан: id=" << newId << ", логин=" << *user.login;
 
     return m_userRepo->findById(newId);
 }
@@ -86,14 +87,14 @@ std::optional<dto::User> UserService::updateUser(const dto::User& user)
 {
     if (!user.id.has_value())
     {
-        LOG_WARN << "updateUser: missing id";
+        LOG_WARN << "updateUser: отсутствует id";
         return std::nullopt;
     }
 
     auto existing = m_userRepo->findById(*user.id);
     if (!existing)
     {
-        LOG_WARN << "updateUser: user not found, id=" << *user.id;
+        LOG_WARN << "updateUser: пользователь не найден, id=" << *user.id;
         return std::nullopt;
     }
 
@@ -104,11 +105,11 @@ std::optional<dto::User> UserService::updateUser(const dto::User& user)
 
     if (!m_userRepo->update(user))
     {
-        LOG_ERROR << "updateUser: failed to update user id=" << *user.id;
+        LOG_ERROR << "updateUser: не удалось обновить пользователя id=" << *user.id;
         return std::nullopt;
     }
 
-    LOG_INFO << "User updated: id=" << *user.id;
+    LOG_INFO << "Пользователь обновлен: id=" << *user.id;
 
     // Проверяем, изменились ли права доступа
     const bool isSuperAdminChanged = user.isSuperAdmin.has_value() && *user.isSuperAdmin != wasSuperAdmin;
@@ -132,17 +133,17 @@ bool UserService::deleteUser(int64_t id)
     auto existing = m_userRepo->findById(id);
     if (!existing)
     {
-        LOG_WARN << "deleteUser: user not found, id=" << id;
+        LOG_WARN << "deleteUser: пользователь не найден, id=" << id;
         return false;
     }
 
     if (!m_userRepo->remove(id))
     {
-        LOG_ERROR << "deleteUser: failed to delete user id=" << id;
+        LOG_ERROR << "deleteUser: не удалось удалить пользователя id=" << id;
         return false;
     }
 
-    LOG_INFO << "User deleted: id=" << id;
+    LOG_INFO << "Пользователь удален: id=" << id;
 
     // Инвалидируем кэш удалённого пользователя
     m_authzService->invalidateCache(id);

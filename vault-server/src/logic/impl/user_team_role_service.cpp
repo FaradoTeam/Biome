@@ -20,11 +20,15 @@ UserTeamRoleService::UserTeamRoleService(
 {
     if (!m_utrRepo || !m_userRepo || !m_teamRepo || !m_roleRepo)
     {
-        throw std::runtime_error("UserTeamRoleService: repositories are null");
+        throw std::runtime_error(
+            "UserTeamRoleService: репозитории не инициализированы"
+        );
     }
     if (!m_authzService)
     {
-        throw std::runtime_error("UserTeamRoleService: authorizationService is null");
+        throw std::runtime_error(
+            "UserTeamRoleService: сервис авторизации не инициализирован"
+        );
     }
 }
 
@@ -53,47 +57,47 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::createUserTeamRole(const d
 {
     if (!utr.userId.has_value() || !utr.teamId.has_value() || !utr.roleId.has_value())
     {
-        LOG_WARN << "createUserTeamRole: userId, teamId and roleId are required";
+        LOG_WARN << "createUserTeamRole: обязательны userId, teamId и roleId";
         return std::nullopt;
     }
 
     // Проверяем существование пользователя
     if (!m_userRepo->findById(*utr.userId).has_value())
     {
-        LOG_WARN << "createUserTeamRole: user not found, userId=" << *utr.userId;
+        LOG_WARN << "createUserTeamRole: пользователь не найден, userId=" << *utr.userId;
         return std::nullopt;
     }
 
     // Проверяем существование команды
     if (!m_teamRepo->exists(*utr.teamId))
     {
-        LOG_WARN << "createUserTeamRole: team not found, teamId=" << *utr.teamId;
+        LOG_WARN << "createUserTeamRole: команда не найдена, teamId=" << *utr.teamId;
         return std::nullopt;
     }
 
     // Проверяем существование роли
     if (!m_roleRepo->exists(*utr.roleId))
     {
-        LOG_WARN << "createUserTeamRole: role not found, roleId=" << *utr.roleId;
+        LOG_WARN << "createUserTeamRole: роль не найдена, roleId=" << *utr.roleId;
         return std::nullopt;
     }
 
     // Проверяем, что пользователь ещё не имеет роли в этой команде
     if (m_utrRepo->exists(*utr.userId, *utr.teamId))
     {
-        LOG_WARN << "createUserTeamRole: user already has a role in this team";
+        LOG_WARN << "createUserTeamRole: пользователь уже имеет роль в этой команде";
         return std::nullopt;
     }
 
     const int64_t newId = m_utrRepo->create(utr);
     if (newId <= 0)
     {
-        LOG_ERROR << "createUserTeamRole: failed to create";
+        LOG_ERROR << "createUserTeamRole: не удалось создать запись";
         return std::nullopt;
     }
 
     LOG_INFO
-        << "UserTeamRole created: id=" << newId
+        << "UserTeamRole создан: id=" << newId
         << ", userId=" << *utr.userId
         << ", teamId=" << *utr.teamId
         << ", roleId=" << *utr.roleId;
@@ -108,14 +112,14 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::updateUserTeamRole(const d
 {
     if (!utr.id.has_value())
     {
-        LOG_WARN << "updateUserTeamRole: missing id";
+        LOG_WARN << "updateUserTeamRole: отсутствует id";
         return std::nullopt;
     }
 
     auto existing = m_utrRepo->findById(*utr.id);
     if (!existing)
     {
-        LOG_WARN << "updateUserTeamRole: UserTeamRole not found, id=" << *utr.id;
+        LOG_WARN << "updateUserTeamRole: UserTeamRole не найден, id=" << *utr.id;
         return std::nullopt;
     }
 
@@ -124,17 +128,17 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::updateUserTeamRole(const d
     // Проверяем корректность новых внешних ключей
     if (utr.userId.has_value() && !m_userRepo->findById(*utr.userId).has_value())
     {
-        LOG_WARN << "updateUserTeamRole: new userId not found";
+        LOG_WARN << "updateUserTeamRole: новый userId не найден";
         return std::nullopt;
     }
     if (utr.teamId.has_value() && !m_teamRepo->exists(*utr.teamId))
     {
-        LOG_WARN << "updateUserTeamRole: new teamId not found";
+        LOG_WARN << "updateUserTeamRole: новый teamId не найден";
         return std::nullopt;
     }
     if (utr.roleId.has_value() && !m_roleRepo->exists(*utr.roleId))
     {
-        LOG_WARN << "updateUserTeamRole: new roleId not found";
+        LOG_WARN << "updateUserTeamRole: новый roleId не найден";
         return std::nullopt;
     }
 
@@ -156,17 +160,17 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::updateUserTeamRole(const d
 
     if (needCheck && m_utrRepo->exists(newUserId, newTeamId))
     {
-        LOG_WARN << "updateUserTeamRole: pair (userId,teamId) already exists";
+        LOG_WARN << "updateUserTeamRole: пара (userId,teamId) уже существует";
         return std::nullopt;
     }
 
     if (!m_utrRepo->update(utr))
     {
-        LOG_ERROR << "updateUserTeamRole: failed to update id=" << *utr.id;
+        LOG_ERROR << "updateUserTeamRole: не удалось обновить id=" << *utr.id;
         return std::nullopt;
     }
 
-    LOG_INFO << "UserTeamRole updated: id=" << *utr.id;
+    LOG_INFO << "UserTeamRole обновлен: id=" << *utr.id;
 
     // Инвалидируем кэш для пользователя
     invalidateUserCache(userId);
@@ -183,7 +187,7 @@ bool UserTeamRoleService::deleteUserTeamRole(int64_t id)
     auto existing = m_utrRepo->findById(id);
     if (!existing)
     {
-        LOG_WARN << "deleteUserTeamRole: UserTeamRole not found, id=" << id;
+        LOG_WARN << "deleteUserTeamRole: UserTeamRole не найден, id=" << id;
         return false;
     }
 
@@ -191,11 +195,11 @@ bool UserTeamRoleService::deleteUserTeamRole(int64_t id)
 
     if (!m_utrRepo->remove(id))
     {
-        LOG_ERROR << "deleteUserTeamRole: failed to delete id=" << id;
+        LOG_ERROR << "deleteUserTeamRole: не удалось удалить id=" << id;
         return false;
     }
 
-    LOG_INFO << "UserTeamRole deleted: id=" << id;
+    LOG_INFO << "UserTeamRole удален: id=" << id;
 
     // Инвалидируем кэш для этого пользователя
     invalidateUserCache(userId);

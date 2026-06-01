@@ -18,11 +18,11 @@ RuleProjectService::RuleProjectService(
 {
     if (!m_ruleProjectRepo || !m_ruleRepo || !m_projectRepo)
     {
-        throw std::runtime_error("RuleProjectService: repositories are null");
+        throw std::runtime_error("RuleProjectService: репозитории не инициализированы");
     }
     if (!m_authzService)
     {
-        throw std::runtime_error("AuthorizationService cannot be null");
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 
@@ -50,38 +50,38 @@ std::optional<dto::RuleProject> RuleProjectService::createRuleProject(const dto:
 {
     if (!rp.ruleId.has_value() || !rp.projectId.has_value())
     {
-        LOG_WARN << "createRuleProject: ruleId and projectId are required";
+        LOG_WARN << "createRuleProject: обязательны ruleId и projectId";
         return std::nullopt;
     }
 
     // Проверяем существование правила и проекта
     if (!m_ruleRepo->exists(*rp.ruleId))
     {
-        LOG_WARN << "createRuleProject: rule not found, ruleId=" << *rp.ruleId;
+        LOG_WARN << "createRuleProject: правило не найдено, ruleId=" << *rp.ruleId;
         return std::nullopt;
     }
     if (!m_projectRepo->exists(*rp.projectId))
     {
-        LOG_WARN << "createRuleProject: project not found, projectId=" << *rp.projectId;
+        LOG_WARN << "createRuleProject: проект не найден, projectId=" << *rp.projectId;
         return std::nullopt;
     }
 
     // Проверяем уникальность пары
     if (m_ruleProjectRepo->exists(*rp.ruleId, *rp.projectId))
     {
-        LOG_WARN << "createRuleProject: rule-project pair already exists";
+        LOG_WARN << "createRuleProject: пара rule-project уже существует";
         return std::nullopt;
     }
 
     int64_t newId = m_ruleProjectRepo->create(rp);
     if (newId <= 0)
     {
-        LOG_ERROR << "createRuleProject: failed to create";
+        LOG_ERROR << "createRuleProject: не удалось создать запись";
         return std::nullopt;
     }
 
     LOG_INFO
-        << "RuleProject created: id=" << newId
+        << "RuleProject создан: id=" << newId
         << ", ruleId=" << *rp.ruleId << ", projectId=" << *rp.projectId;
 
     invalidateUsersByRuleId(*rp.ruleId);
@@ -93,14 +93,14 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
 {
     if (!rp.id.has_value())
     {
-        LOG_WARN << "updateRuleProject: missing id";
+        LOG_WARN << "updateRuleProject: отсутствует id";
         return std::nullopt;
     }
 
     auto existing = m_ruleProjectRepo->findById(*rp.id);
     if (!existing)
     {
-        LOG_WARN << "updateRuleProject: not found, id=" << *rp.id;
+        LOG_WARN << "updateRuleProject: запись не найдена, id=" << *rp.id;
         return std::nullopt;
     }
 
@@ -111,7 +111,7 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
     {
         if (!m_ruleRepo->exists(*rp.ruleId))
         {
-            LOG_WARN << "updateRuleProject: new ruleId not found";
+            LOG_WARN << "updateRuleProject: новая ruleId не найдена";
             return std::nullopt;
         }
         needCheckUnique = true;
@@ -120,7 +120,7 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
     {
         if (!m_projectRepo->exists(*rp.projectId))
         {
-            LOG_WARN << "updateRuleProject: new projectId not found";
+            LOG_WARN << "updateRuleProject: новый projectId не найден";
             return std::nullopt;
         }
         needCheckUnique = true;
@@ -131,18 +131,18 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
         int64_t newProjectId = rp.projectId.has_value() ? *rp.projectId : *existing->projectId;
         if (m_ruleProjectRepo->exists(newRuleId, newProjectId))
         {
-            LOG_WARN << "updateRuleProject: pair (ruleId,projectId) already exists";
+            LOG_WARN << "updateRuleProject: пара (ruleId,projectId) уже существует";
             return std::nullopt;
         }
     }
 
     if (!m_ruleProjectRepo->update(rp))
     {
-        LOG_ERROR << "updateRuleProject: failed to update id=" << *rp.id;
+        LOG_ERROR << "updateRuleProject: не удалось обновить id=" << *rp.id;
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleProject updated: id=" << *rp.id;
+    LOG_INFO << "RuleProject обновлен: id=" << *rp.id;
 
     // Инвалидируем по старому и новому ruleId
     invalidateUsersByRuleId(oldRuleId);
@@ -159,7 +159,7 @@ bool RuleProjectService::deleteRuleProject(int64_t id)
     auto existing = m_ruleProjectRepo->findById(id);
     if (!existing)
     {
-        LOG_WARN << "deleteRuleProject: not found, id=" << id;
+        LOG_WARN << "deleteRuleProject: запись не найдена, id=" << id;
         return false;
     }
 
@@ -167,11 +167,11 @@ bool RuleProjectService::deleteRuleProject(int64_t id)
 
     if (!m_ruleProjectRepo->remove(id))
     {
-        LOG_ERROR << "deleteRuleProject: failed to delete id=" << id;
+        LOG_ERROR << "deleteRuleProject: не удалось удалить id=" << id;
         return false;
     }
 
-    LOG_INFO << "RuleProject deleted: id=" << id;
+    LOG_INFO << "RuleProject удален: id=" << id;
 
     invalidateUsersByRuleId(ruleId);
 
