@@ -175,6 +175,37 @@ std::vector<dto::UserTeamRole> SqliteUserTeamRoleRepository::findByTeamId(int64_
     return result;
 }
 
+std::vector<dto::UserTeamRole> SqliteUserTeamRoleRepository::findByRoleId(int64_t roleId)
+{
+    std::vector<dto::UserTeamRole> result;
+    if (roleId <= 0)
+    {
+        return result;
+    }
+
+    try
+    {
+        auto conn = connection();
+        auto stmt = conn->prepareStatement(
+            "SELECT id, userId, teamId, roleId FROM UserTeamRole "
+            "WHERE roleId = :roleId ORDER BY userId"
+        );
+        stmt->bindInt64("roleId", roleId);
+        auto rs = stmt->executeQuery();
+
+        while (rs->next())
+        {
+            result.push_back(mapRowToUserTeamRole(*rs));
+        }
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка получения UserTeamRole по roleId: " << e.what();
+        throw;
+    }
+    return result;
+}
+
 std::optional<dto::UserTeamRole> SqliteUserTeamRoleRepository::findByUserAndTeam(int64_t userId, int64_t teamId)
 {
     if (userId <= 0 || teamId <= 0)
@@ -184,7 +215,8 @@ std::optional<dto::UserTeamRole> SqliteUserTeamRoleRepository::findByUserAndTeam
     {
         auto conn = connection();
         auto stmt = conn->prepareStatement(
-            "SELECT id, userId, teamId, roleId FROM UserTeamRole WHERE userId = :userId AND teamId = :teamId LIMIT 1"
+            "SELECT id, userId, teamId, roleId FROM UserTeamRole"
+            " WHERE userId = :userId AND teamId = :teamId LIMIT 1"
         );
         stmt->bindInt64("userId", userId);
         stmt->bindInt64("teamId", teamId);
