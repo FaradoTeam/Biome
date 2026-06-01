@@ -3,6 +3,7 @@
 #include <concepts>
 #include <memory>
 #include <ranges>
+#include <vector>
 #include <span>
 #include <string>
 
