@@ -35,6 +35,17 @@ AuthorizationService::AuthorizationService(
     , m_teamRepo(std::move(teamRepo))
     , m_roleRepo(std::move(roleRepo))
 {
+    if (!m_userRepo
+        || !m_ruleRepo
+        || !m_ruleProjectRepo
+        || !m_ruleItemTypeRepo
+        || !m_ruleStateRepo
+        || !m_userTeamRoleRepo
+        || !m_teamRepo
+        || !m_roleRepo)
+    {
+        throw std::runtime_error("AuthorizationService: one or more repositories are null");
+    }
 }
 
 bool AuthorizationService::isSuperAdmin(int64_t userId)
@@ -253,12 +264,35 @@ std::vector<int64_t> AuthorizationService::getReadableProjectIds(int64_t userId)
 void AuthorizationService::invalidateCache(int64_t userId)
 {
     std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
-    m_cache.erase(userId);
-    LOG_DEBUG << "Очищен кэш прав для пользователя " << userId;
+    auto it = m_cache.find(userId);
+    if (it != m_cache.end())
+    {
+        m_cache.erase(it);
+        LOG_INFO << "Инвалидирован кэш прав для пользователя " << userId;
+    }
+    else
+    {
+        LOG_DEBUG << "Пользователь " << userId << " не найден в кэше прав";
+    }
+}
+
+std::vector<int64_t> AuthorizationService::getUserIdsByRoleId(int64_t roleId)
+{
+    std::vector<int64_t> userIds;
+    auto userTeamRoles = m_userTeamRoleRepo->findByRoleId(roleId);
+    for (const auto& utr : userTeamRoles)
+    {
+        if (utr.userId.has_value())
+        {
+            userIds.push_back(*utr.userId);
+        }
+    }
+    return userIds;
 }
 
 AuthorizationService::UserPermissions& AuthorizationService::getPermissions(int64_t userId)
 {
+    // Сначала проверяем кэш
     {
         std::shared_lock<std::shared_mutex> lock(m_cacheMutex);
         auto it = m_cache.find(userId);
@@ -269,10 +303,20 @@ AuthorizationService::UserPermissions& AuthorizationService::getPermissions(int6
     }
 
     // Загружаем из БД
+    LOG_DEBUG << "Загрузка прав для пользователя " << userId << " из БД";
     auto perms = loadPermissions(userId);
 
+    // Сохраняем в кэш
     std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
-    return m_cache[userId] = std::move(perms);
+    auto& result = m_cache[userId];
+    result = std::move(perms);
+
+    LOG_DEBUG
+        << "Права для пользователя " << userId
+        << " загружены. Проектов: " << result.readableProjects.size()
+        << ", SuperAdmin: " << result.isSuperAdmin;
+
+    return result;
 }
 
 AuthorizationService::UserPermissions AuthorizationService::loadPermissions(int64_t userId)
@@ -290,7 +334,8 @@ AuthorizationService::UserPermissions AuthorizationService::loadPermissions(int6
     perms.isSuperAdmin = user->isSuperAdmin.value_or(false);
     if (perms.isSuperAdmin)
     {
-        // Супер-администратору не нужно загружать остальные права
+        LOG_DEBUG
+            << "Пользователь " << userId << " является супер-администратором";
         return perms;
     }
 
@@ -303,16 +348,24 @@ AuthorizationService::UserPermissions AuthorizationService::loadPermissions(int6
     // Загружаем права на состояния
     loadStatePermissions(userId, perms);
 
-    // Загружаем право на создание корневых проектов
-    int64_t roleId = getUserRoleId(userId);
-    if (roleId > 0)
+    // Загружаем право на создание корневых проектов (через правило)
+    auto roleIds = getUserRoleIds(userId);
+    for (int64_t roleId : roleIds)
     {
         auto rule = m_ruleRepo->findByRoleId(roleId);
-        if (rule)
+        if (rule && rule->isRootProjectCreator.has_value() && *rule->isRootProjectCreator)
         {
-            perms.canCreateRootProject = rule->isRootProjectCreator.value_or(false);
+            perms.canCreateRootProject = true;
+            LOG_DEBUG
+                << "Пользователь " << userId
+                << " получил право на создание корневых проектов через роль " << roleId;
+            break;
         }
     }
+
+    LOG_DEBUG
+        << "Загрузка прав для пользователя " << userId << " завершена. "
+        << "Доступно проектов: " << perms.readableProjects.size();
 
     return perms;
 }
@@ -322,19 +375,43 @@ void AuthorizationService::loadProjectPermissions(int64_t userId, UserPermission
     // Получаем все команды пользователя
     auto userTeamRoles = m_userTeamRoleRepo->findByUserId(userId);
 
+    LOG_DEBUG
+        << "Пользователь " << userId
+        << " состоит в " << userTeamRoles.size() << " командах";
+
     for (const auto& utr : userTeamRoles)
     {
+        if (!utr.roleId.has_value())
+        {
+            LOG_WARN
+                << "UserTeamRole " << utr.id.value_or(0) << " не имеет roleId";
+            continue;
+        }
+
         // Получаем правило для роли пользователя в этой команде
         auto rule = m_ruleRepo->findByRoleId(*utr.roleId);
-        if (!rule)
+        if (!rule || !rule->id.has_value())
         {
+            LOG_DEBUG << "Нет правила для роли " << *utr.roleId;
             continue;
         }
 
         // Получаем все права на проекты для этого правила
         auto projectRules = m_ruleProjectRepo->findByRuleId(*rule->id);
+
+        LOG_DEBUG
+            << "Для правила " << *rule->id
+            << " найдено " << projectRules.size() << " записей RuleProject";
+
         for (const auto& pr : projectRules)
         {
+            if (!pr.projectId.has_value())
+            {
+                LOG_WARN
+                    << "RuleProject " << pr.id.value_or(0) << " не имеет projectId";
+                continue;
+            }
+
             int64_t projectId = *pr.projectId;
 
             // Мержим права: если уже есть, объединяем (OR)
@@ -345,6 +422,15 @@ void AuthorizationService::loadProjectPermissions(int64_t userId, UserPermission
                 if (pr.isReader.value_or(false))
                 {
                     perms.readableProjects.push_back(projectId);
+                    LOG_DEBUG
+                        << "Пользователь " << userId
+                        << " получил доступ на чтение к проекту " << projectId;
+                }
+                if (pr.isPhaseEditor.value_or(false))
+                {
+                    LOG_DEBUG
+                        << "Пользователь " << userId
+                        << " получил право isPhaseEditor для проекта " << projectId;
                 }
             }
             else
@@ -352,15 +438,28 @@ void AuthorizationService::loadProjectPermissions(int64_t userId, UserPermission
                 // Объединяем права (логическое ИЛИ)
                 dto::RuleProject& existing = it->second;
                 if (pr.isReader.value_or(false))
+                {
                     existing.isReader = true;
+                }
                 if (pr.isWriter.value_or(false))
+                {
                     existing.isWriter = true;
+                }
                 if (pr.isProjectEditor.value_or(false))
+                {
                     existing.isProjectEditor = true;
+                }
                 if (pr.isPhaseEditor.value_or(false))
+                {
                     existing.isPhaseEditor = true;
+                }
                 if (pr.isBoardEditor.value_or(false))
+                {
                     existing.isBoardEditor = true;
+                }
+                LOG_DEBUG
+                    << "Объединены права для пользователя " << userId
+                    << " на проект " << projectId;
             }
         }
     }
@@ -372,15 +471,19 @@ void AuthorizationService::loadItemTypePermissions(int64_t userId, UserPermissio
 
     for (const auto& utr : userTeamRoles)
     {
-        auto rule = m_ruleRepo->findByRoleId(*utr.roleId);
-        if (!rule)
-        {
+        if (!utr.roleId.has_value())
             continue;
-        }
+
+        auto rule = m_ruleRepo->findByRoleId(*utr.roleId);
+        if (!rule || !rule->id.has_value())
+            continue;
 
         auto itemTypeRules = m_ruleItemTypeRepo->findByRuleId(*rule->id);
         for (const auto& itr : itemTypeRules)
         {
+            if (!itr.itemTypeId.has_value())
+                continue;
+
             int64_t itemTypeId = *itr.itemTypeId;
             auto existingIt = perms.itemTypeRules.find(itemTypeId);
             if (existingIt == perms.itemTypeRules.end())
@@ -405,15 +508,19 @@ void AuthorizationService::loadStatePermissions(int64_t userId, UserPermissions&
 
     for (const auto& utr : userTeamRoles)
     {
-        auto rule = m_ruleRepo->findByRoleId(*utr.roleId);
-        if (!rule)
-        {
+        if (!utr.roleId.has_value())
             continue;
-        }
+
+        auto rule = m_ruleRepo->findByRoleId(*utr.roleId);
+        if (!rule || !rule->id.has_value())
+            continue;
 
         auto stateRules = m_ruleStateRepo->findByRuleId(*rule->id);
         for (const auto& sr : stateRules)
         {
+            if (!sr.stateId.has_value())
+                continue;
+
             int64_t stateId = *sr.stateId;
             auto existingIt = perms.stateRules.find(stateId);
             if (existingIt == perms.stateRules.end())
@@ -431,15 +538,20 @@ void AuthorizationService::loadStatePermissions(int64_t userId, UserPermissions&
     }
 }
 
-int64_t AuthorizationService::getUserRoleId(int64_t userId)
+std::vector<int64_t> AuthorizationService::getUserRoleIds(int64_t userId)
 {
-    // Упрощенная логика: берем первую роль пользователя в первой команде
+    std::vector<int64_t> roleIds;
     auto userTeamRoles = m_userTeamRoleRepo->findByUserId(userId);
-    if (!userTeamRoles.empty())
+
+    for (const auto& utr : userTeamRoles)
     {
-        return *userTeamRoles[0].roleId;
+        if (utr.roleId.has_value())
+        {
+            roleIds.push_back(*utr.roleId);
+        }
     }
-    return 0;
+
+    return roleIds;
 }
 
 AuthzResult AuthorizationService::checkProjectRule(
@@ -452,12 +564,13 @@ AuthzResult AuthorizationService::checkProjectRule(
     auto it = perms.projectRules.find(projectId);
     if (it != perms.projectRules.end() && checker(it->second))
     {
+        LOG_DEBUG << "Проверка прав на проект " << projectId << " успешна";
         return AuthzResult { true };
     }
 
-    // TODO: Проверяем рекурсивно родительские проекты
-    // Для этого нужно загрузить информацию о родителе проекта
-
+    LOG_DEBUG
+        << "Проверка прав на проект " << projectId
+        << " не пройдена: " << errorMessage;
     return AuthzResult { false, 403, errorMessage };
 }
 

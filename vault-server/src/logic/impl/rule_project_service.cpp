@@ -8,15 +8,21 @@ namespace server::services
 RuleProjectService::RuleProjectService(
     std::shared_ptr<repositories::IRuleProjectRepository> ruleProjectRepo,
     std::shared_ptr<repositories::IRuleRepository> ruleRepo,
-    std::shared_ptr<repositories::IProjectRepository> projectRepo
+    std::shared_ptr<repositories::IProjectRepository> projectRepo,
+    std::shared_ptr<IAuthorizationService> authzService
 )
     : m_ruleProjectRepo(std::move(ruleProjectRepo))
     , m_ruleRepo(std::move(ruleRepo))
     , m_projectRepo(std::move(projectRepo))
+    , m_authzService(std::move(authzService))
 {
     if (!m_ruleProjectRepo || !m_ruleRepo || !m_projectRepo)
     {
         throw std::runtime_error("RuleProjectService: repositories are null");
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error("AuthorizationService cannot be null");
     }
 }
 
@@ -74,8 +80,12 @@ std::optional<dto::RuleProject> RuleProjectService::createRuleProject(const dto:
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleProject created: id=" << newId
-             << ", ruleId=" << *rp.ruleId << ", projectId=" << *rp.projectId;
+    LOG_INFO
+        << "RuleProject created: id=" << newId
+        << ", ruleId=" << *rp.ruleId << ", projectId=" << *rp.projectId;
+
+    invalidateUsersByRuleId(*rp.ruleId);
+
     return m_ruleProjectRepo->findById(newId);
 }
 
@@ -94,9 +104,10 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
         return std::nullopt;
     }
 
-    // Если меняется ruleId или projectId, проверяем существование и уникальность
     bool needCheckUnique = false;
-    if (rp.ruleId.has_value() && *rp.ruleId != *existing->ruleId)
+    int64_t oldRuleId = *existing->ruleId;
+
+    if (rp.ruleId.has_value() && *rp.ruleId != oldRuleId)
     {
         if (!m_ruleRepo->exists(*rp.ruleId))
         {
@@ -116,7 +127,7 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
     }
     if (needCheckUnique)
     {
-        int64_t newRuleId = rp.ruleId.has_value() ? *rp.ruleId : *existing->ruleId;
+        int64_t newRuleId = rp.ruleId.has_value() ? *rp.ruleId : oldRuleId;
         int64_t newProjectId = rp.projectId.has_value() ? *rp.projectId : *existing->projectId;
         if (m_ruleProjectRepo->exists(newRuleId, newProjectId))
         {
@@ -132,16 +143,27 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
     }
 
     LOG_INFO << "RuleProject updated: id=" << *rp.id;
+
+    // Инвалидируем по старому и новому ruleId
+    invalidateUsersByRuleId(oldRuleId);
+    if (rp.ruleId.has_value() && *rp.ruleId != oldRuleId)
+    {
+        invalidateUsersByRuleId(*rp.ruleId);
+    }
+
     return m_ruleProjectRepo->findById(*rp.id);
 }
 
 bool RuleProjectService::deleteRuleProject(int64_t id)
 {
-    if (!m_ruleProjectRepo->findById(id).has_value())
+    auto existing = m_ruleProjectRepo->findById(id);
+    if (!existing)
     {
         LOG_WARN << "deleteRuleProject: not found, id=" << id;
         return false;
     }
+
+    int64_t ruleId = *existing->ruleId;
 
     if (!m_ruleProjectRepo->remove(id))
     {
@@ -150,7 +172,26 @@ bool RuleProjectService::deleteRuleProject(int64_t id)
     }
 
     LOG_INFO << "RuleProject deleted: id=" << id;
+
+    invalidateUsersByRuleId(ruleId);
+
     return true;
+}
+
+void RuleProjectService::invalidateUsersByRuleId(int64_t ruleId)
+{
+    auto rule = m_ruleRepo->findById(ruleId);
+    if (!rule || !rule->roleId.has_value())
+    {
+        return;
+    }
+
+    auto users = m_authzService->getUserIdsByRoleId(*rule->roleId);
+    for (int64_t userId : users)
+    {
+        m_authzService->invalidateCache(userId);
+        LOG_DEBUG << "Инвалидирован кэш для пользователя " << userId;
+    }
 }
 
 } // namespace server::services

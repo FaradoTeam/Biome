@@ -138,7 +138,8 @@ bool Application::initialize()
         ruleRepository, roleRepository
     );
     auto ruleProjectService = std::make_shared<services::RuleProjectService>(
-        ruleProjectRepository, ruleRepository, projectRepository
+        ruleProjectRepository, ruleRepository, projectRepository,
+        authorizationService
     );
     auto ruleItemTypeService = std::make_shared<services::RuleItemTypeService>(
         ruleItemTypeRepository, ruleRepository, itemTypeRepository

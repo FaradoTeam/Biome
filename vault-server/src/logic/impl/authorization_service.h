@@ -64,10 +64,9 @@ public:
 
     std::vector<int64_t> getReadableProjectIds(int64_t userId) override;
 
-    /**
-     * @brief Очищает кэш прав для пользователя.
-     */
-    void invalidateCache(int64_t userId);
+    void invalidateCache(int64_t userId) override;
+
+    std::vector<int64_t> getUserIdsByRoleId(int64_t roleId) override;
 
 private:
     // Структура для хранения прав пользователя
@@ -115,9 +114,9 @@ private:
     void loadStatePermissions(int64_t userId, UserPermissions& perms);
 
     /**
-     * @brief Получает ID роли пользователя (упрощенная логика).
+     * @brief Получает ID роли пользователя.
      */
-    int64_t getUserRoleId(int64_t userId);
+    std::vector<int64_t> getUserRoleIds(int64_t userId);
 
     /**
      * @brief Проверяет проектное право.
