@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "logic/iauthorization_service.h"
 #include "logic/iuser_team_role_service.h"
 
 #include "repo/role_repository.h"
@@ -15,11 +16,12 @@ namespace server::services
 class UserTeamRoleService final : public IUserTeamRoleService
 {
 public:
-    explicit UserTeamRoleService(
+    UserTeamRoleService(
         std::shared_ptr<repositories::IUserTeamRoleRepository> utrRepo,
         std::shared_ptr<repositories::IUserRepository> userRepo,
         std::shared_ptr<repositories::ITeamRepository> teamRepo,
-        std::shared_ptr<repositories::IRoleRepository> roleRepo
+        std::shared_ptr<repositories::IRoleRepository> roleRepo,
+        std::shared_ptr<IAuthorizationService> authzService
     );
 
     UserTeamRolesPage getUserTeamRoles(
@@ -35,10 +37,14 @@ public:
     bool deleteUserTeamRole(int64_t id) override;
 
 private:
+    void invalidateUserCache(int64_t userId);
+
+private:
     std::shared_ptr<repositories::IUserTeamRoleRepository> m_utrRepo;
     std::shared_ptr<repositories::IUserRepository> m_userRepo;
     std::shared_ptr<repositories::ITeamRepository> m_teamRepo;
     std::shared_ptr<repositories::IRoleRepository> m_roleRepo;
+    std::shared_ptr<IAuthorizationService> m_authzService;
 };
 
 } // namespace server::services

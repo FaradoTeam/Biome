@@ -5,12 +5,20 @@
 namespace server::services
 {
 
-RoleService::RoleService(std::shared_ptr<repositories::IRoleRepository> roleRepo)
+RoleService::RoleService(
+    std::shared_ptr<repositories::IRoleRepository> roleRepo,
+    std::shared_ptr<IAuthorizationService> authzService
+)
     : m_roleRepo(std::move(roleRepo))
+    , m_authzService(std::move(authzService))
 {
     if (!m_roleRepo)
     {
         throw std::runtime_error("RoleService: roleRepository is null");
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error("RoleService: authorizationService is null");
     }
 }
 
@@ -46,6 +54,8 @@ std::optional<dto::Role> RoleService::createRole(const dto::Role& role)
     }
 
     LOG_INFO << "Role created: id=" << newId << ", caption=" << *role.caption;
+
+    // Роль новая, пользователей с ней ещё нет, поэтому инвалидация не требуется
     return m_roleRepo->findById(newId);
 }
 
@@ -71,17 +81,26 @@ std::optional<dto::Role> RoleService::updateRole(const dto::Role& role)
     }
 
     LOG_INFO << "Role updated: id=" << *role.id;
+
+    // Изменение роли может повлиять на права (например, изменилось название - не влияет)
+    // Но для консистентности инвалидируем кэш пользователей с этой ролью
+    // Если caption не меняется, можно пропустить, но для простоты инвалидируем всегда
+    invalidateUsersByRoleId(*role.id);
+
     return m_roleRepo->findById(*role.id);
 }
 
 bool RoleService::deleteRole(int64_t id)
 {
-    // TODO: проверить, что роль не используется в UserTeamRole и Rule
-    if (!m_roleRepo->exists(id))
+    auto existing = m_roleRepo->findById(id);
+    if (!existing)
     {
         LOG_WARN << "deleteRole: role not found, id=" << id;
         return false;
     }
+
+    // TODO: проверить, что роль не используется в UserTeamRole, Rule и других таблицах
+    // Это можно сделать через соответствующие репозитории
 
     if (!m_roleRepo->remove(id))
     {
@@ -90,7 +109,23 @@ bool RoleService::deleteRole(int64_t id)
     }
 
     LOG_INFO << "Role deleted: id=" << id;
+
+    // Инвалидируем кэш для всех пользователей, у которых была эта роль
+    invalidateUsersByRoleId(id);
+
     return true;
+}
+
+void RoleService::invalidateUsersByRoleId(int64_t roleId)
+{
+    auto users = m_authzService->getUserIdsByRoleId(roleId);
+    LOG_DEBUG << "Инвалидация кэша для " << users.size() << " пользователей с ролью " << roleId;
+
+    for (int64_t userId : users)
+    {
+        m_authzService->invalidateCache(userId);
+        LOG_DEBUG << "Инвалидирован кэш для пользователя " << userId;
+    }
 }
 
 } // namespace server::services

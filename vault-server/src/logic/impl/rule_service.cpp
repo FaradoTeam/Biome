@@ -5,17 +5,29 @@
 namespace server::services
 {
 
-RuleService::RuleService(std::shared_ptr<repositories::IRuleRepository> ruleRepo, std::shared_ptr<repositories::IRoleRepository> roleRepo)
+RuleService::RuleService(
+    std::shared_ptr<repositories::IRuleRepository> ruleRepo,
+    std::shared_ptr<repositories::IRoleRepository> roleRepo,
+    std::shared_ptr<IAuthorizationService> authzService
+)
     : m_ruleRepo(std::move(ruleRepo))
     , m_roleRepo(std::move(roleRepo))
+    , m_authzService(std::move(authzService))
 {
     if (!m_ruleRepo || !m_roleRepo)
     {
         throw std::runtime_error("RuleService: repositories are null");
     }
+    if (!m_authzService)
+    {
+        throw std::runtime_error("RuleService: authorizationService is null");
+    }
 }
 
-RulesPage RuleService::getRules(int page, int pageSize, std::optional<int64_t> roleId)
+RulesPage RuleService::getRules(
+    int page, int pageSize,
+    std::optional<int64_t> roleId
+)
 {
     if (page < 1)
         page = 1;
@@ -51,7 +63,7 @@ std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule)
         return std::nullopt;
     }
 
-    // У одной роли не может быть нескольких правил (business rule)
+    // У одной роли не может быть нескольких правил
     if (m_ruleRepo->findByRoleId(*rule.roleId).has_value())
     {
         LOG_WARN << "createRule: rule already exists for roleId=" << *rule.roleId;
@@ -66,6 +78,10 @@ std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule)
     }
 
     LOG_INFO << "Rule created: id=" << newId << ", roleId=" << *rule.roleId;
+
+    // Инвалидируем кэш для всех пользователей с этой ролью
+    invalidateUsersByRoleId(*rule.roleId);
+
     return m_ruleRepo->findById(newId);
 }
 
@@ -84,8 +100,11 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
         return std::nullopt;
     }
 
+    const int64_t oldRoleId = *existing->roleId;
+    int64_t newRoleId = oldRoleId;
+
     // Если меняется roleId, проверяем существование новой роли и уникальность
-    if (rule.roleId.has_value() && *rule.roleId != *existing->roleId)
+    if (rule.roleId.has_value() && *rule.roleId != oldRoleId)
     {
         if (!m_roleRepo->exists(*rule.roleId))
         {
@@ -97,6 +116,7 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
             LOG_WARN << "updateRule: rule already exists for new roleId=" << *rule.roleId;
             return std::nullopt;
         }
+        newRoleId = *rule.roleId;
     }
 
     if (!m_ruleRepo->update(rule))
@@ -106,17 +126,30 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
     }
 
     LOG_INFO << "Rule updated: id=" << *rule.id;
+
+    // Инвалидируем кэш по старой и новой роли
+    invalidateUsersByRoleId(oldRoleId);
+    if (newRoleId != oldRoleId)
+    {
+        invalidateUsersByRoleId(newRoleId);
+    }
+
     return m_ruleRepo->findById(*rule.id);
 }
 
 bool RuleService::deleteRule(int64_t id)
 {
-    // TODO: проверить, что правило не используется в RuleProject, RuleItemType, RuleState
-    if (!m_ruleRepo->exists(id))
+    auto existing = m_ruleRepo->findById(id);
+    if (!existing)
     {
         LOG_WARN << "deleteRule: rule not found, id=" << id;
         return false;
     }
+
+    const int64_t roleId = *existing->roleId;
+
+    // TODO: проверить, что правило не используется в RuleProject, RuleItemType, RuleState
+    // Это можно сделать через соответствующие репозитории
 
     if (!m_ruleRepo->remove(id))
     {
@@ -125,7 +158,23 @@ bool RuleService::deleteRule(int64_t id)
     }
 
     LOG_INFO << "Rule deleted: id=" << id;
+
+    // Инвалидируем кэш для всех пользователей с этой ролью
+    invalidateUsersByRoleId(roleId);
+
     return true;
+}
+
+void RuleService::invalidateUsersByRoleId(int64_t roleId)
+{
+    auto users = m_authzService->getUserIdsByRoleId(roleId);
+    LOG_DEBUG << "Инвалидация кэша для " << users.size() << " пользователей с ролью " << roleId;
+
+    for (int64_t userId : users)
+    {
+        m_authzService->invalidateCache(userId);
+        LOG_DEBUG << "Инвалидирован кэш для пользователя " << userId;
+    }
 }
 
 } // namespace server::services

@@ -114,7 +114,10 @@ bool Application::initialize()
     );
     auto fieldTypeService = std::make_shared<services::FieldTypeService>(fieldTypeRepository);
     auto itemTypeService = std::make_shared<services::ItemTypeService>(itemTypeRepository);
-    auto userService = std::make_shared<services::UserService>(userRepository);
+    auto userService = std::make_shared<services::UserService>(
+        userRepository,
+        authorizationService
+    );
     auto phaseService = std::make_shared<services::PhaseService>(
         phaseRepository,
         authorizationService
@@ -132,26 +135,36 @@ bool Application::initialize()
     auto edgeService = std::make_shared<services::EdgeService>(
         edgeRepository, stateRepository
     );
-    auto teamService = std::make_shared<services::TeamService>(teamRepository);
-    auto roleService = std::make_shared<services::RoleService>(roleRepository);
+    auto teamService = std::make_shared<services::TeamService>(
+        teamRepository,
+        authorizationService
+    );
+    auto roleService = std::make_shared<services::RoleService>(
+        roleRepository,
+        authorizationService
+    );
     auto ruleService = std::make_shared<services::RuleService>(
-        ruleRepository, roleRepository
+        ruleRepository, roleRepository,
+        authorizationService
     );
     auto ruleProjectService = std::make_shared<services::RuleProjectService>(
         ruleProjectRepository, ruleRepository, projectRepository,
         authorizationService
     );
     auto ruleItemTypeService = std::make_shared<services::RuleItemTypeService>(
-        ruleItemTypeRepository, ruleRepository, itemTypeRepository
+        ruleItemTypeRepository, ruleRepository, itemTypeRepository,
+        authorizationService
     );
     auto ruleStateService = std::make_shared<services::RuleStateService>(
-        ruleStateRepository, ruleRepository, stateRepository
+        ruleStateRepository, ruleRepository, stateRepository,
+        authorizationService
     );
     auto roleMenuItemService = std::make_shared<services::RoleMenuItemService>(
         roleMenuItemRepository, roleRepository
     );
     auto userTeamRoleService = std::make_shared<services::UserTeamRoleService>(
-        userTeamRoleRepository, userRepository, teamRepository, roleRepository
+        userTeamRoleRepository, userRepository, teamRepository, roleRepository,
+        authorizationService
     );
     // TODO: Вынести секретный ключ в конфиг
     auto authMiddleware = std::make_shared<AuthMiddleware>(
