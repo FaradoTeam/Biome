@@ -11,6 +11,7 @@
 #include "api/rest_server.h"
 
 #include "logic/impl/auth_service.h"
+#include "logic/impl/authorization_service.h"
 #include "logic/impl/edge_service.h"
 #include "logic/impl/field_type_service.h"
 #include "logic/impl/item_type_service.h"
@@ -64,7 +65,7 @@ bool Application::initialize()
 {
     LOG_INFO << "Инициализация приложения...";
 
-    // 1. Инициализируем базу данных
+    // === Инициализируем базу данных ===
     try
     {
         // Создаем базу данных через фабрику
@@ -82,20 +83,43 @@ bool Application::initialize()
         return false;
     }
 
-    // 2. Создаем репозитории и сервисы
-    auto userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
-    auto userService = std::make_shared<services::UserService>(userRepository);
-
-    auto phaseRepository = std::make_shared<repositories::SqlitePhaseRepository>(m_database);
-    auto phaseService = std::make_shared<services::PhaseService>(phaseRepository);
-
-    auto projectRepository = std::make_shared<repositories::SqliteProjectRepository>(m_database);
-    auto projectService = std::make_shared<services::ProjectService>(projectRepository);
-
-    auto workflowRepository = std::make_shared<repositories::SqliteWorkflowRepository>(m_database);
-    auto stateRepository = std::make_shared<repositories::SqliteStateRepository>(m_database);
+    // === Создаем репозитории ===
     auto edgeRepository = std::make_shared<repositories::SqliteEdgeRepository>(m_database);
+    auto fieldTypeRepository = std::make_shared<repositories::SqliteFieldTypeRepository>(m_database);
+    auto itemTypeRepository = std::make_shared<repositories::SqliteItemTypeRepository>(m_database);
+    auto phaseRepository = std::make_shared<repositories::SqlitePhaseRepository>(m_database);
+    auto projectRepository = std::make_shared<repositories::SqliteProjectRepository>(m_database);
+    auto roleMenuItemRepository = std::make_shared<repositories::SqliteRoleMenuItemRepository>(m_database);
+    auto roleRepository = std::make_shared<repositories::SqliteRoleRepository>(m_database);
+    auto ruleItemTypeRepository = std::make_shared<repositories::SqliteRuleItemTypeRepository>(m_database);
+    auto ruleRepository = std::make_shared<repositories::SqliteRuleRepository>(m_database);
+    auto ruleProjectRepository = std::make_shared<repositories::SqliteRuleProjectRepository>(m_database);
+    auto ruleStateRepository = std::make_shared<repositories::SqliteRuleStateRepository>(m_database);
+    auto stateRepository = std::make_shared<repositories::SqliteStateRepository>(m_database);
+    auto teamRepository = std::make_shared<repositories::SqliteTeamRepository>(m_database);
+    auto userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
+    auto userTeamRoleRepository = std::make_shared<repositories::SqliteUserTeamRoleRepository>(m_database);
+    auto workflowRepository = std::make_shared<repositories::SqliteWorkflowRepository>(m_database);
 
+    // === Создаем сервисы ===
+    auto authorizationService = std::make_shared<services::AuthorizationService>(
+        userRepository,
+        ruleRepository,
+        ruleProjectRepository,
+        ruleItemTypeRepository,
+        ruleStateRepository,
+        userTeamRoleRepository,
+        teamRepository,
+        roleRepository
+    );
+    auto fieldTypeService = std::make_shared<services::FieldTypeService>(fieldTypeRepository);
+    auto itemTypeService = std::make_shared<services::ItemTypeService>(itemTypeRepository);
+    auto userService = std::make_shared<services::UserService>(userRepository);
+    auto phaseService = std::make_shared<services::PhaseService>(phaseRepository);
+    auto projectService = std::make_shared<services::ProjectService>(
+        projectRepository,
+        authorizationService
+    );
     auto workflowService = std::make_shared<services::WorkflowService>(
         workflowRepository, stateRepository, edgeRepository
     );
@@ -105,19 +129,6 @@ bool Application::initialize()
     auto edgeService = std::make_shared<services::EdgeService>(
         edgeRepository, stateRepository
     );
-
-    auto itemTypeRepository = std::make_shared<repositories::SqliteItemTypeRepository>(m_database);
-    auto fieldTypeRepository = std::make_shared<repositories::SqliteFieldTypeRepository>(m_database);
-
-    auto teamRepository = std::make_shared<repositories::SqliteTeamRepository>(m_database);
-    auto roleRepository = std::make_shared<repositories::SqliteRoleRepository>(m_database);
-    auto ruleRepository = std::make_shared<repositories::SqliteRuleRepository>(m_database);
-    auto ruleProjectRepository = std::make_shared<repositories::SqliteRuleProjectRepository>(m_database);
-    auto ruleItemTypeRepository = std::make_shared<repositories::SqliteRuleItemTypeRepository>(m_database);
-    auto ruleStateRepository = std::make_shared<repositories::SqliteRuleStateRepository>(m_database);
-    auto roleMenuItemRepository = std::make_shared<repositories::SqliteRoleMenuItemRepository>(m_database);
-    auto userTeamRoleRepository = std::make_shared<repositories::SqliteUserTeamRoleRepository>(m_database);
-
     auto teamService = std::make_shared<services::TeamService>(teamRepository);
     auto roleService = std::make_shared<services::RoleService>(roleRepository);
     auto ruleService = std::make_shared<services::RuleService>(
@@ -136,22 +147,18 @@ bool Application::initialize()
         roleMenuItemRepository, roleRepository
     );
     auto userTeamRoleService = std::make_shared<services::UserTeamRoleService>(
-        userTeamRoleRepository, userRepository,teamRepository, roleRepository
+        userTeamRoleRepository, userRepository, teamRepository, roleRepository
     );
-
-    // 3. Создаем middleware для аутентификации
     // TODO: Вынести секретный ключ в конфиг
     auto authMiddleware = std::make_shared<AuthMiddleware>(
         "your-very-long-secret-key-that-is-at-least-32-bytes-long!"
     );
-
-    // 4. Создаем сервис аутентификации
     auto authService = std::make_shared<services::AuthService>(
         userRepository,
         authMiddleware
     );
 
-    // 5. Создаем REST-сервер
+    // === Создаем REST-сервер ===
     m_restServer = std::make_unique<RestServer>(
         CONFIG.network.apiHost,
         CONFIG.network.apiPort
@@ -160,25 +167,21 @@ bool Application::initialize()
     m_restServer->setAuthMiddleware(authMiddleware);
     m_restServer->setAuthService(authService);
     m_restServer->setEdgeService(edgeService);
-    m_restServer->setFieldTypeService(
-        std::make_shared<services::FieldTypeService>(fieldTypeRepository)
-    );
-    m_restServer->setItemTypeService(
-        std::make_shared<services::ItemTypeService>(itemTypeRepository)
-    );
+    m_restServer->setFieldTypeService(fieldTypeService);
+    m_restServer->setItemTypeService(itemTypeService);
     m_restServer->setPhaseService(phaseService);
     m_restServer->setProjectService(projectService);
-    m_restServer->setUserService(userService);
-    m_restServer->setStateService(stateService);
-    m_restServer->setWorkflowService(workflowService);
-    m_restServer->setTeamService(teamService);
     m_restServer->setRoleService(roleService);
-    m_restServer->setRuleService(ruleService);
-    m_restServer->setRuleProjectService(ruleProjectService);
-    m_restServer->setRuleItemTypeService(ruleItemTypeService);
-    m_restServer->setRuleStateService(ruleStateService);
     m_restServer->setRoleMenuItemService(roleMenuItemService);
+    m_restServer->setRuleService(ruleService);
+    m_restServer->setRuleItemTypeService(ruleItemTypeService);
+    m_restServer->setRuleProjectService(ruleProjectService);
+    m_restServer->setRuleStateService(ruleStateService);
+    m_restServer->setStateService(stateService);
+    m_restServer->setTeamService(teamService);
+    m_restServer->setUserService(userService);
     m_restServer->setUserTeamRoleService(userTeamRoleService);
+    m_restServer->setWorkflowService(workflowService);
 
     if (!m_restServer->initialize())
     {

@@ -37,6 +37,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/workflows_handler.cpp
     # Logic Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/auth_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/authorization_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/edge_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_type_service.cpp

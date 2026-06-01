@@ -1,3 +1,4 @@
+#include <cctype>
 #include <regex>
 
 #include <cpprest/uri.h>
@@ -26,62 +27,132 @@ ProjectsHandler::ProjectsHandler(
 
 void ProjectsHandler::handleGetProjects(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     auto params = extractQueryParams(request);
 
+    // Параметры пагинации
     int page = 1;
     if (params.count("page"))
-        page = std::stoi(params["page"]);
+    {
+        try
+        {
+            page = std::stoi(params["page"]);
+            if (page < 1)
+                page = 1;
+        }
+        catch (...)
+        {
+            page = 1;
+        }
+    }
 
     int pageSize = 20;
     if (params.count("pageSize"))
-        pageSize = std::stoi(params["pageSize"]);
+    {
+        try
+        {
+            pageSize = std::stoi(params["pageSize"]);
+            if (pageSize < 1)
+                pageSize = 20;
+            if (pageSize > 100)
+                pageSize = 100; // Максимум 100 записей
+        }
+        catch (...)
+        {
+            pageSize = 20;
+        }
+    }
 
+    // Фильтры
     std::optional<int64_t> parentId = std::nullopt;
     if (params.count("parentId"))
-        parentId = std::stoll(params["parentId"]);
+    {
+        try
+        {
+            parentId = std::stoll(params["parentId"]);
+        }
+        catch (...)
+        {
+            parentId = std::nullopt;
+        }
+    }
 
     std::optional<bool> isArchive = std::nullopt;
     if (params.count("isArchive"))
-        isArchive = params["isArchive"] == "true";
+    {
+        std::string val = params["isArchive"];
+        std::transform(val.begin(), val.end(), val.begin(), ::tolower);
+        isArchive = (val == "true" || val == "1");
+    }
 
     std::string searchCaption = "";
     if (params.count("searchCaption"))
-        searchCaption = params["searchCaption"];
-
-    auto projectsPage = m_projectService->projects(
-        page,
-        pageSize,
-        parentId,
-        isArchive,
-        searchCaption
-    );
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < projectsPage.projects.size(); ++i)
     {
-        items[i] = dto::toWebJson(projectsPage.projects[i].toJson());
+        searchCaption = params["searchCaption"];
     }
 
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(projectsPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
+    LOG_DEBUG << "GET /api/projects: user=" << userId
+              << ", page=" << page << ", pageSize=" << pageSize
+              << ", parentId=" << (parentId.has_value() ? std::to_string(*parentId) : "none")
+              << ", isArchive=" << (isArchive.has_value() ? (*isArchive ? "true" : "false") : "none");
 
-    request.reply(web::http::status_codes::OK, response);
+    try
+    {
+        auto projectsPage = m_projectService->projects(
+            page, pageSize, userId, parentId, isArchive, searchCaption
+        );
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < projectsPage.projects.size(); ++i)
+        {
+            items[i] = dto::toWebJson(projectsPage.projects[i].toJson());
+        }
+
+        response["items"] = items;
+        response["totalCount"] = web::json::value::number(projectsPage.totalCount);
+        response["page"] = web::json::value::number(page);
+        response["pageSize"] = web::json::value::number(pageSize);
+
+        request.reply(web::http::status_codes::OK, response);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка проектов: " << e.what();
+        web::http::http_response resp(web::http::status_codes::InternalError);
+        sendErrorResponse(resp, 500, "Internal server error");
+        request.reply(resp);
+    }
 }
 
 void ProjectsHandler::handleGetProject(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
-    int64_t id = extractProjectIdFromPath(request);
-    if (id <= 0)
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
+    int64_t projectId = extractProjectIdFromPath(request);
+    if (projectId <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
         sendErrorResponse(resp, 400, "Invalid project ID");
@@ -89,30 +160,54 @@ void ProjectsHandler::handleGetProject(
         return;
     }
 
-    auto project = m_projectService->project(id);
-    if (!project)
-    {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Project not found");
-        request.reply(resp);
-        return;
-    }
+    LOG_DEBUG << "GET /api/projects/" << projectId << " from user " << userId;
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(project->toJson())
-    );
+    try
+    {
+        auto project = m_projectService->project(projectId, userId);
+        if (!project)
+        {
+            // Возвращаем 404, чтобы не раскрывать существование проекта
+            web::http::http_response resp(web::http::status_codes::NotFound);
+            sendErrorResponse(resp, 404, "Project not found");
+            request.reply(resp);
+            return;
+        }
+
+        request.reply(
+            web::http::status_codes::OK,
+            dto::toWebJson(project->toJson())
+        );
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении проекта " << projectId << ": " << e.what();
+        web::http::http_response resp(web::http::status_codes::InternalError);
+        sendErrorResponse(resp, 500, "Internal server error");
+        request.reply(resp);
+    }
 }
 
 void ProjectsHandler::handleCreateProject(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
+    LOG_DEBUG << "POST /api/projects from user " << userId;
+
     request
         .extract_json()
         .then(
-            [this, request](pplx::task<web::json::value> task)
+            [this, request, userId](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -120,20 +215,27 @@ void ProjectsHandler::handleCreateProject(
                     auto nlohmannJson = dto::toNlohmannJson(jsonBody);
                     dto::Project project(nlohmannJson);
 
-                    auto created = m_projectService->createProject(project);
-                    if (!created)
+                    // Валидация обязательных полей
+                    if (!project.caption.has_value() || project.caption->empty())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
-                        );
-                        sendErrorResponse(
-                            resp,
-                            400,
-                            "Invalid project data or could not create project"
-                        );
+                        web::http::http_response resp(web::http::status_codes::BadRequest);
+                        sendErrorResponse(resp, 400, "Project caption is required");
                         request.reply(resp);
                         return;
                     }
+
+                    auto created = m_projectService->createProject(project, userId);
+                    if (!created)
+                    {
+                        // Не уточняем причину (может быть 403 или 400)
+                        web::http::http_response resp(web::http::status_codes::Forbidden);
+                        sendErrorResponse(resp, 403, "Cannot create project: insufficient permissions or invalid data");
+                        request.reply(resp);
+                        return;
+                    }
+
+                    LOG_INFO << "Пользователь " << userId
+                             << " создал проект с id=" << *created->id;
 
                     request.reply(
                         web::http::status_codes::Created,
@@ -142,12 +244,9 @@ void ProjectsHandler::handleCreateProject(
                 }
                 catch (const std::exception& e)
                 {
+                    LOG_ERROR << "Ошибка при создании проекта: " << e.what();
                     web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(
-                        resp,
-                        400,
-                        std::string("Invalid request: ") + e.what()
-                    );
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
                     request.reply(resp);
                 }
             }
@@ -157,11 +256,20 @@ void ProjectsHandler::handleCreateProject(
 
 void ProjectsHandler::handleUpdateProject(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
-    const int64_t id = extractProjectIdFromPath(request);
-    if (id <= 0)
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
+    int64_t projectId = extractProjectIdFromPath(request);
+    if (projectId <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
         sendErrorResponse(resp, 400, "Invalid project ID");
@@ -169,32 +277,48 @@ void ProjectsHandler::handleUpdateProject(
         return;
     }
 
+    LOG_DEBUG << "PUT /api/projects/" << projectId << " from user " << userId;
+
     request
         .extract_json()
         .then(
-            [this, request, id](pplx::task<web::json::value> task)
+            [this, request, userId, projectId](pplx::task<web::json::value> task)
             {
                 try
                 {
                     auto jsonBody = task.get();
                     auto nlohmannJson = dto::toNlohmannJson(jsonBody);
-                    nlohmannJson["id"] = id; // Гарантируем, что ID в пути и в теле совпадают
+
+                    // Убеждаемся, что ID в пути и в теле совпадают
+                    nlohmannJson["id"] = projectId;
                     dto::Project project(nlohmannJson);
 
-                    auto updated = m_projectService->updateProject(project);
-                    if (!updated)
+                    // Сначала проверяем, существует ли проект
+                    auto existingProject = m_projectService->project(projectId, userId);
+                    if (!existingProject)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::NotFound
-                        );
-                        sendErrorResponse(
-                            resp,
-                            404,
-                            "Project not found or update failed"
-                        );
+                        // Проект не существует или нет прав на чтение
+                        // Не раскрываем причину
+                        web::http::http_response resp(web::http::status_codes::NotFound);
+                        sendErrorResponse(resp, 404, "Project not found");
                         request.reply(resp);
                         return;
                     }
+
+                    // Проект существует, пробуем обновить
+                    auto updated = m_projectService->updateProject(project, userId);
+                    if (!updated)
+                    {
+                        // Проект существует, но нет прав на обновление
+                        web::http::http_response resp(web::http::status_codes::Forbidden);
+                        sendErrorResponse(resp, 403, "Insufficient permissions to update this project");
+                        request.reply(resp);
+                        return;
+                    }
+
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил проект с id=" << projectId;
 
                     request.reply(
                         web::http::status_codes::OK,
@@ -203,12 +327,9 @@ void ProjectsHandler::handleUpdateProject(
                 }
                 catch (const std::exception& e)
                 {
+                    LOG_ERROR << "Ошибка при обновлении проекта " << projectId << ": " << e.what();
                     web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(
-                        resp,
-                        400,
-                        std::string("Invalid request: ") + e.what()
-                    );
+                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
                     request.reply(resp);
                 }
             }
@@ -218,11 +339,20 @@ void ProjectsHandler::handleUpdateProject(
 
 void ProjectsHandler::handleDeleteProject(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
-    const int64_t id = extractProjectIdFromPath(request);
-    if (id <= 0)
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
+    const int64_t projectId = extractProjectIdFromPath(request);
+    if (projectId <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
         sendErrorResponse(resp, 400, "Invalid project ID");
@@ -230,15 +360,41 @@ void ProjectsHandler::handleDeleteProject(
         return;
     }
 
-    // Архивация вместо полного удаления
-    if (m_projectService->archiveProject(id))
+    LOG_DEBUG << "DELETE /api/projects/" << projectId << " from user " << userId;
+
+    try
     {
+        // Сначала проверяем, существует ли проект
+        auto existingProject = m_projectService->project(projectId, userId);
+        if (!existingProject)
+        {
+            web::http::http_response resp(web::http::status_codes::NotFound);
+            sendErrorResponse(resp, 404, "Project not found");
+            request.reply(resp);
+            return;
+        }
+
+        // Проект существует, пробуем архивировать
+        const bool success = m_projectService->archiveProject(projectId, userId);
+        if (!success)
+        {
+            web::http::http_response resp(web::http::status_codes::Forbidden);
+            sendErrorResponse(resp, 403, "Insufficient permissions to archive this project");
+            request.reply(resp);
+            return;
+        }
+
+        LOG_INFO
+            << "Пользователь " << userId
+            << " архивировал проект с id=" << projectId;
+
         request.reply(web::http::status_codes::NoContent);
     }
-    else
+    catch (const std::exception& e)
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Project not found");
+        LOG_ERROR << "Ошибка при архивации проекта " << projectId << ": " << e.what();
+        web::http::http_response resp(web::http::status_codes::InternalError);
+        sendErrorResponse(resp, 500, "Internal server error");
         request.reply(resp);
     }
 }
@@ -252,9 +408,44 @@ int64_t ProjectsHandler::extractProjectIdFromPath(
     std::smatch matches;
     if (std::regex_match(path, matches, pattern) && matches.size() > 1)
     {
-        return std::stoll(matches[1].str());
+        try
+        {
+            return std::stoll(matches[1].str());
+        }
+        catch (const std::exception&)
+        {
+            return -1;
+        }
     }
     return -1;
+}
+
+std::optional<int64_t> ProjectsHandler::parseUserId(
+    const std::string& userIdStr,
+    web::http::http_response& response
+)
+{
+    if (userIdStr.empty())
+    {
+        sendErrorResponse(response, 401, "User not authenticated");
+        return std::nullopt;
+    }
+
+    try
+    {
+        int64_t userId = std::stoll(userIdStr);
+        if (userId <= 0)
+        {
+            sendErrorResponse(response, 400, "Invalid user ID");
+            return std::nullopt;
+        }
+        return userId;
+    }
+    catch (const std::exception&)
+    {
+        sendErrorResponse(response, 400, "Invalid user ID format");
+        return std::nullopt;
+    }
 }
 
 std::map<std::string, std::string> ProjectsHandler::extractQueryParams(

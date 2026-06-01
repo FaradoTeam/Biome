@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -70,8 +71,21 @@ public:
 private:
     /**
      * @brief Извлекает ID проекта из пути запроса.
+     * @param request HTTP-запрос
+     * @return ID проекта или -1 при ошибке
      */
     int64_t extractProjectIdFromPath(const web::http::http_request& request);
+
+    /**
+     * @brief Извлекает userId из строки и конвертирует в число.
+     * @param userIdStr Строковый ID пользователя
+     * @param response HTTP-ответ для отправки ошибки
+     * @return ID пользователя или std::nullopt при ошибке
+     */
+    std::optional<int64_t> parseUserId(
+        const std::string& userIdStr,
+        web::http::http_response& response
+    );
 
     /**
      * @brief Извлекает query-параметры из запроса.
