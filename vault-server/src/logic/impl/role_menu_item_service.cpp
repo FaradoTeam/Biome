@@ -14,7 +14,7 @@ RoleMenuItemService::RoleMenuItemService(
 {
     if (!m_menuItemRepo || !m_roleRepo)
     {
-        throw std::runtime_error("RoleMenuItemService: repositories are null");
+        throw std::runtime_error("RoleMenuItemService: репозитории не инициализированы");
     }
 }
 
@@ -36,17 +36,23 @@ std::optional<dto::RoleMenuItem> RoleMenuItemService::getRoleMenuItem(int64_t id
     return m_menuItemRepo->findById(id);
 }
 
-std::optional<dto::RoleMenuItem> RoleMenuItemService::createRoleMenuItem(const dto::RoleMenuItem& item)
+std::optional<dto::RoleMenuItem> RoleMenuItemService::createRoleMenuItem(
+    const dto::RoleMenuItem& item
+)
 {
-    if (!item.roleId.has_value() || !item.caption.has_value() || item.caption->empty() || !item.link.has_value() || item.link->empty())
+    if (!item.roleId.has_value()
+        || !item.caption.has_value()
+        || item.caption->empty()
+        || !item.link.has_value()
+        || item.link->empty())
     {
-        LOG_WARN << "createRoleMenuItem: roleId, caption, link are required";
+        LOG_WARN << "createRoleMenuItem: обязательны roleId, caption и link";
         return std::nullopt;
     }
 
     if (!m_roleRepo->exists(*item.roleId))
     {
-        LOG_WARN << "createRoleMenuItem: role not found, roleId=" << *item.roleId;
+        LOG_WARN << "createRoleMenuItem: роль не найдена, roleId=" << *item.roleId;
         return std::nullopt;
     }
 
@@ -54,15 +60,17 @@ std::optional<dto::RoleMenuItem> RoleMenuItemService::createRoleMenuItem(const d
     if (newId <= 0)
         return std::nullopt;
 
-    LOG_INFO << "RoleMenuItem created: id=" << newId;
+    LOG_INFO << "Пункт меню роли создан: id=" << newId;
     return m_menuItemRepo->findById(newId);
 }
 
-std::optional<dto::RoleMenuItem> RoleMenuItemService::updateRoleMenuItem(const dto::RoleMenuItem& item)
+std::optional<dto::RoleMenuItem> RoleMenuItemService::updateRoleMenuItem(
+    const dto::RoleMenuItem& item
+)
 {
     if (!item.id.has_value())
     {
-        LOG_WARN << "updateRoleMenuItem: missing id";
+        LOG_WARN << "updateRoleMenuItem: отсутствует id";
         return std::nullopt;
     }
 
@@ -73,7 +81,7 @@ std::optional<dto::RoleMenuItem> RoleMenuItemService::updateRoleMenuItem(const d
     // Если меняется roleId, проверяем существование
     if (item.roleId.has_value() && !m_roleRepo->exists(*item.roleId))
     {
-        LOG_WARN << "updateRoleMenuItem: new roleId not found";
+        LOG_WARN << "updateRoleMenuItem: новая roleId не найдена";
         return std::nullopt;
     }
 
@@ -88,7 +96,7 @@ bool RoleMenuItemService::deleteRoleMenuItem(int64_t id)
         return false;
     if (!m_menuItemRepo->remove(id))
         return false;
-    LOG_INFO << "RoleMenuItem deleted: id=" << id;
+    LOG_INFO << "Пункт меню роли удален: id=" << id;
     return true;
 }
 

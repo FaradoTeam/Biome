@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "logic/iauthorization_service.h"
 #include "logic/irule_state_service.h"
 
 #include "repo/rule_repository.h"
@@ -11,27 +12,20 @@
 namespace server::services
 {
 
-/**
- * @brief Реализация сервиса для управления правами на состояния.
- */
 class RuleStateService final : public IRuleStateService
 {
 public:
-    /**
-     * @param ruleStateRepo Репозиторий прав на состояния
-     * @param ruleRepo      Репозиторий правил
-     * @param stateRepo     Репозиторий состояний
-     */
     RuleStateService(
         std::shared_ptr<repositories::IRuleStateRepository> ruleStateRepo,
         std::shared_ptr<repositories::IRuleRepository> ruleRepo,
-        std::shared_ptr<repositories::IStateRepository> stateRepo
+        std::shared_ptr<repositories::IStateRepository> stateRepo,
+        std::shared_ptr<IAuthorizationService> authzService
     );
 
     RuleStatesPage getRuleStates(
         int page, int pageSize,
-        std::optional<int64_t> ruleId,
-        std::optional<int64_t> stateId
+        std::optional<int64_t> ruleId = std::nullopt,
+        std::optional<int64_t> stateId = std::nullopt
     ) override;
 
     std::optional<dto::RuleState> getRuleState(int64_t id) override;
@@ -40,9 +34,13 @@ public:
     bool deleteRuleState(int64_t id) override;
 
 private:
+    void invalidateUsersByRuleId(int64_t ruleId);
+
+private:
     std::shared_ptr<repositories::IRuleStateRepository> m_ruleStateRepo;
     std::shared_ptr<repositories::IRuleRepository> m_ruleRepo;
     std::shared_ptr<repositories::IStateRepository> m_stateRepo;
+    std::shared_ptr<IAuthorizationService> m_authzService;
 };
 
 } // namespace server::services

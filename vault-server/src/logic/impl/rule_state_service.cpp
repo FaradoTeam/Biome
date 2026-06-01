@@ -8,15 +8,25 @@ namespace server::services
 RuleStateService::RuleStateService(
     std::shared_ptr<repositories::IRuleStateRepository> ruleStateRepo,
     std::shared_ptr<repositories::IRuleRepository> ruleRepo,
-    std::shared_ptr<repositories::IStateRepository> stateRepo
+    std::shared_ptr<repositories::IStateRepository> stateRepo,
+    std::shared_ptr<IAuthorizationService> authzService
 )
     : m_ruleStateRepo(std::move(ruleStateRepo))
     , m_ruleRepo(std::move(ruleRepo))
     , m_stateRepo(std::move(stateRepo))
+    , m_authzService(std::move(authzService))
 {
     if (!m_ruleStateRepo || !m_ruleRepo || !m_stateRepo)
     {
-        throw std::runtime_error("RuleStateService: one or more repositories are null");
+        throw std::runtime_error(
+            "RuleStateService: репозитории не инициализированы"
+        );
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error(
+            "RuleStateService: сервис авторизации не инициализирован"
+        );
     }
 }
 
@@ -45,41 +55,46 @@ std::optional<dto::RuleState> RuleStateService::createRuleState(const dto::RuleS
     // Проверка обязательных полей
     if (!ruleState.ruleId.has_value() || !ruleState.stateId.has_value())
     {
-        LOG_WARN << "createRuleState: ruleId and stateId are required";
+        LOG_WARN << "createRuleState: обязательны ruleId и stateId";
         return std::nullopt;
     }
 
     // Проверка существования правила
     if (!m_ruleRepo->exists(*ruleState.ruleId))
     {
-        LOG_WARN << "createRuleState: rule with id=" << *ruleState.ruleId << " not found";
+        LOG_WARN << "createRuleState: правило с id=" << *ruleState.ruleId << " не найдено";
         return std::nullopt;
     }
 
     // Проверка существования состояния
     if (!m_stateRepo->findById(*ruleState.stateId).has_value())
     {
-        LOG_WARN << "createRuleState: state with id=" << *ruleState.stateId << " not found";
+        LOG_WARN << "createRuleState: состояние с id=" << *ruleState.stateId << " не найдено";
         return std::nullopt;
     }
 
     // Проверка уникальности пары (ruleId, stateId)
     if (m_ruleStateRepo->exists(*ruleState.ruleId, *ruleState.stateId))
     {
-        LOG_WARN << "createRuleState: pair (ruleId,stateId) already exists";
+        LOG_WARN << "createRuleState: пара (ruleId,stateId) уже существует";
         return std::nullopt;
     }
 
     int64_t newId = m_ruleStateRepo->create(ruleState);
     if (newId <= 0)
     {
-        LOG_ERROR << "createRuleState: failed to create RuleState";
+        LOG_ERROR << "createRuleState: не удалось создать RuleState";
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleState created: id=" << newId
-             << ", ruleId=" << *ruleState.ruleId
-             << ", stateId=" << *ruleState.stateId;
+    LOG_INFO
+        << "RuleState создан: id=" << newId
+        << ", ruleId=" << *ruleState.ruleId
+        << ", stateId=" << *ruleState.stateId;
+
+    // Инвалидируем кэш для всех пользователей с этой ролью
+    invalidateUsersByRuleId(*ruleState.ruleId);
+
     return m_ruleStateRepo->findById(newId);
 }
 
@@ -87,27 +102,28 @@ std::optional<dto::RuleState> RuleStateService::updateRuleState(const dto::RuleS
 {
     if (!ruleState.id.has_value())
     {
-        LOG_WARN << "updateRuleState: missing id";
+        LOG_WARN << "updateRuleState: отсутствует id";
         return std::nullopt;
     }
 
     auto existing = m_ruleStateRepo->findById(*ruleState.id);
     if (!existing)
     {
-        LOG_WARN << "updateRuleState: RuleState with id=" << *ruleState.id << " not found";
+        LOG_WARN << "updateRuleState: RuleState с id=" << *ruleState.id << " не найден";
         return std::nullopt;
     }
 
     // Проверка уникальности при изменении ruleId или stateId
     bool needUniquenessCheck = false;
-    int64_t newRuleId = *existing->ruleId;
+    int64_t oldRuleId = *existing->ruleId;
+    int64_t newRuleId = oldRuleId;
     int64_t newStateId = *existing->stateId;
 
-    if (ruleState.ruleId.has_value() && *ruleState.ruleId != newRuleId)
+    if (ruleState.ruleId.has_value() && *ruleState.ruleId != oldRuleId)
     {
         if (!m_ruleRepo->exists(*ruleState.ruleId))
         {
-            LOG_WARN << "updateRuleState: new ruleId=" << *ruleState.ruleId << " not found";
+            LOG_WARN << "updateRuleState: новая ruleId=" << *ruleState.ruleId << " не найдена";
             return std::nullopt;
         }
         newRuleId = *ruleState.ruleId;
@@ -118,7 +134,7 @@ std::optional<dto::RuleState> RuleStateService::updateRuleState(const dto::RuleS
     {
         if (!m_stateRepo->findById(*ruleState.stateId).has_value())
         {
-            LOG_WARN << "updateRuleState: new stateId=" << *ruleState.stateId << " not found";
+            LOG_WARN << "updateRuleState: новая stateId=" << *ruleState.stateId << " не найдена";
             return std::nullopt;
         }
         newStateId = *ruleState.stateId;
@@ -127,36 +143,73 @@ std::optional<dto::RuleState> RuleStateService::updateRuleState(const dto::RuleS
 
     if (needUniquenessCheck && m_ruleStateRepo->exists(newRuleId, newStateId))
     {
-        LOG_WARN << "updateRuleState: pair (ruleId,stateId) already exists";
+        LOG_WARN << "updateRuleState: пара (ruleId,stateId) уже существует";
         return std::nullopt;
     }
 
     if (!m_ruleStateRepo->update(ruleState))
     {
-        LOG_ERROR << "updateRuleState: failed to update RuleState id=" << *ruleState.id;
+        LOG_ERROR << "updateRuleState: не удалось обновить RuleState id=" << *ruleState.id;
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleState updated: id=" << *ruleState.id;
+    LOG_INFO << "RuleState обновлен: id=" << *ruleState.id;
+
+    // Инвалидируем кэш по старому и новому ruleId
+    invalidateUsersByRuleId(oldRuleId);
+    if (ruleState.ruleId.has_value() && *ruleState.ruleId != oldRuleId)
+    {
+        invalidateUsersByRuleId(*ruleState.ruleId);
+    }
+
     return m_ruleStateRepo->findById(*ruleState.id);
 }
 
 bool RuleStateService::deleteRuleState(int64_t id)
 {
-    if (!m_ruleStateRepo->findById(id).has_value())
+    auto existing = m_ruleStateRepo->findById(id);
+    if (!existing)
     {
-        LOG_WARN << "deleteRuleState: RuleState with id=" << id << " not found";
+        LOG_WARN << "deleteRuleState: RuleState с id=" << id << " не найден";
         return false;
     }
+
+    int64_t ruleId = *existing->ruleId;
 
     if (!m_ruleStateRepo->remove(id))
     {
-        LOG_ERROR << "deleteRuleState: failed to delete RuleState id=" << id;
+        LOG_ERROR << "deleteRuleState: не удалось удалить RuleState id=" << id;
         return false;
     }
 
-    LOG_INFO << "RuleState deleted: id=" << id;
+    LOG_INFO << "RuleState удален: id=" << id;
+
+    // Инвалидируем кэш для всех пользователей с этой ролью
+    invalidateUsersByRuleId(ruleId);
+
     return true;
+}
+
+void RuleStateService::invalidateUsersByRuleId(int64_t ruleId)
+{
+    auto rule = m_ruleRepo->findById(ruleId);
+    if (!rule || !rule->roleId.has_value())
+    {
+        LOG_DEBUG
+            << "invalidateUsersByRuleId: правило " << ruleId << " не имеет roleId";
+        return;
+    }
+
+    auto users = m_authzService->getUserIdsByRoleId(*rule->roleId);
+    LOG_DEBUG
+        << "Инвалидация кэша для " << users.size()
+        << " пользователей с ролью " << *rule->roleId;
+
+    for (int64_t userId : users)
+    {
+        m_authzService->invalidateCache(userId);
+        LOG_DEBUG << "Инвалидирован кэш для пользователя " << userId;
+    }
 }
 
 } // namespace server::services

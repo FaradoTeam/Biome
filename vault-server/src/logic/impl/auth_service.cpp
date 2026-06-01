@@ -1,6 +1,4 @@
 #include <cctype>
-#include <iomanip>
-#include <sstream>
 
 #include <openssl/evp.h>
 
@@ -30,11 +28,11 @@ AuthService::AuthService(
 {
     if (!m_userRepo)
     {
-        throw std::runtime_error("UserRepository cannot be null");
+        throw std::runtime_error("UserRepository не может быть пустым");
     }
     if (!m_authMiddleware)
     {
-        throw std::runtime_error("AuthMiddleware cannot be null");
+        throw std::runtime_error("AuthMiddleware не может быть пустым");
     }
 }
 
@@ -45,7 +43,7 @@ AuthResult AuthService::login(const std::string& login, const std::string& passw
     // 1. Проверяем входные данные
     if (login.empty() || password.empty())
     {
-        result.errorMessage = "Login and password are required";
+        result.errorMessage = "Логин и пароль обязательны для заполнения";
         result.errorCode = 400;
         LOG_WARN << "Попытка входа с пустым логином или паролем";
         return result;
@@ -55,7 +53,7 @@ AuthResult AuthService::login(const std::string& login, const std::string& passw
     auto userOpt = m_userRepo->findByLogin(login);
     if (!userOpt.has_value())
     {
-        result.errorMessage = "Invalid credentials";
+        result.errorMessage = "Неверные учетные данные";
         result.errorCode = 401;
         LOG_WARN << "Неудачная попытка входа: пользователь '" << login << "' не найден";
         return result;
@@ -66,7 +64,7 @@ AuthResult AuthService::login(const std::string& login, const std::string& passw
     // 3. Проверяем, не заблокирован ли пользователь
     if (user.isBlocked.value_or(false))
     {
-        result.errorMessage = "Account is blocked";
+        result.errorMessage = "Учетная запись заблокирована";
         result.errorCode = 403;
         LOG_WARN << "Попытка входа заблокированного пользователя: " << login;
         return result;
@@ -75,7 +73,7 @@ AuthResult AuthService::login(const std::string& login, const std::string& passw
     // 4. Проверяем пароль
     if (!user.id.has_value())
     {
-        result.errorMessage = "Invalid user data";
+        result.errorMessage = "Некорректные данные пользователя";
         result.errorCode = 500;
         LOG_ERROR << "Пользователь без ID: " << login;
         return result;
@@ -83,7 +81,7 @@ AuthResult AuthService::login(const std::string& login, const std::string& passw
 
     if (!verifyPassword(user.id.value(), password))
     {
-        result.errorMessage = "Invalid credentials";
+        result.errorMessage = "Неверные учетные данные";
         result.errorCode = 401;
         LOG_WARN << "Неверный пароль для пользователя: " << login;
         return result;
@@ -127,7 +125,7 @@ ChangePasswordResult AuthService::changePassword(
     // 1. Проверяем входные данные
     if (oldPassword.empty() || newPassword.empty())
     {
-        result.errorMessage = "Old password and new password are required";
+        result.errorMessage = "Старый и новый пароль обязательны для заполнения";
         result.errorCode = 400;
         return result;
     }
@@ -136,7 +134,7 @@ ChangePasswordResult AuthService::changePassword(
     auto userOpt = m_userRepo->findById(userId);
     if (!userOpt.has_value())
     {
-        result.errorMessage = "User not found";
+        result.errorMessage = "Пользователь не найден";
         result.errorCode = 404;
         return result;
     }
@@ -144,7 +142,7 @@ ChangePasswordResult AuthService::changePassword(
     // 3. Проверяем старый пароль
     if (!verifyPassword(userId, oldPassword))
     {
-        result.errorMessage = "Invalid old password";
+        result.errorMessage = "Неверный старый пароль";
         result.errorCode = 401;
         LOG_WARN
             << "Неверный старый пароль при смене пароля для пользователя id="
@@ -155,7 +153,7 @@ ChangePasswordResult AuthService::changePassword(
     // 4. Проверяем, что новый пароль отличается от старого
     if (oldPassword == newPassword)
     {
-        result.errorMessage = "New password must be different from old password";
+        result.errorMessage = "Новый пароль должен отличаться от старого";
         result.errorCode = 400;
         return result;
     }
@@ -163,8 +161,8 @@ ChangePasswordResult AuthService::changePassword(
     // 5. Валидируем сложность нового пароля
     if (!validatePasswordStrength(newPassword))
     {
-        result.errorMessage = "Password must be at least 8 characters long and "
-                              "contain uppercase, lowercase and digit";
+        result.errorMessage = "Пароль должен содержать не менее 8 символов, "
+                              "содержать заглавные и строчные буквы, а также цифры";
         result.errorCode = 400;
         return result;
     }
@@ -173,7 +171,7 @@ ChangePasswordResult AuthService::changePassword(
     const std::string newHash = crypto::sha256(newPassword);
     if (!m_userRepo->updatePassword(userId, newHash))
     {
-        result.errorMessage = "Failed to update password";
+        result.errorMessage = "Не удалось обновить пароль";
         result.errorCode = 500;
         LOG_ERROR
             << "Не удалось обновить пароль для пользователя id="

@@ -18,15 +18,15 @@ WorkflowService::WorkflowService(
 {
     if (!m_workflowRepo)
     {
-        throw std::runtime_error("WorkflowRepository cannot be null");
+        throw std::runtime_error("WorkflowRepository не может быть пустым");
     }
     if (!m_stateRepo)
     {
-        throw std::runtime_error("StateRepository cannot be null");
+        throw std::runtime_error("StateRepository не может быть пустым");
     }
     if (!m_edgeRepo)
     {
-        throw std::runtime_error("EdgeRepository cannot be null");
+        throw std::runtime_error("EdgeRepository не может быть пустым");
     }
 }
 
@@ -53,7 +53,7 @@ std::optional<dto::Workflow> WorkflowService::createWorkflow(
     std::string errorMessage;
     if (!validateWorkflow(workflow, errorMessage))
     {
-        LOG_WARN << "createWorkflow: валидация не пройдена - " << errorMessage;
+        LOG_WARN << "createWorkflow: проверка не пройдена - " << errorMessage;
         return std::nullopt;
     }
 
@@ -75,7 +75,7 @@ std::optional<dto::Workflow> WorkflowService::createWorkflow(
 
     LOG_INFO
         << "Рабочий процесс создан: id=" << newId
-        << ", caption='" << *workflow.caption << "'";
+        << ", название='" << *workflow.caption << "'";
 
     return m_workflowRepo->findById(newId);
 }

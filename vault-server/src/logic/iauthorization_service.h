@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace server::services
 {
@@ -15,6 +15,14 @@ struct AuthzResult
     bool granted = false;
     int errorCode = 403; // HTTP 403 Forbidden по умолчанию
     std::string errorMessage;
+
+    AuthzResult() = default;
+    AuthzResult(bool granted, int errorCode = 403, const std::string& errorMessage = "")
+        : granted(granted)
+        , errorCode(errorCode)
+        , errorMessage(errorMessage)
+    {
+    }
 };
 
 /**
@@ -124,9 +132,17 @@ public:
     /**
      * @brief Получает все ID проектов, доступные пользователю для чтения.
      * @param userId ID пользователя
-     * @return Вектор ID проектов
+     * @return Вектор ID проектов (пустой вектор означает "все проекты" для супер-админа)
      */
     virtual std::vector<int64_t> getReadableProjectIds(int64_t userId) = 0;
+
+    /**
+     * @brief Инвалидирует кэш прав для пользователя.
+     * @param userId ID пользователя
+     */
+    virtual void invalidateCache(int64_t userId) = 0;
+
+    virtual std::vector<int64_t> getUserIdsByRoleId(int64_t roleId) = 0;
 };
 
 } // namespace server::services

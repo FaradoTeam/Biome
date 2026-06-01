@@ -1,25 +1,31 @@
-#include <iomanip>
-#include <sstream>
-
 #include <openssl/evp.h>
 
-#include "common/log/log.h"
-
 #include "common/helpers/crypto_helper.hpp"
+#include "common/log/log.h"
 
 #include "user_service.h"
 
-namespace server
-{
-namespace services
+namespace server::services
 {
 
-UserService::UserService(std::shared_ptr<repositories::IUserRepository> userRepo)
+UserService::UserService(
+    std::shared_ptr<repositories::IUserRepository> userRepo,
+    std::shared_ptr<IAuthorizationService> authzService
+)
     : m_userRepo(std::move(userRepo))
+    , m_authzService(std::move(authzService))
 {
     if (!m_userRepo)
     {
-        throw std::runtime_error("UserRepository cannot be null");
+        throw std::runtime_error(
+            "UserService: репозиторий пользователей не инициализирован"
+        );
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error(
+            "UserService: сервис авторизации не инициализирован"
+        );
     }
 }
 
@@ -31,7 +37,6 @@ UsersPage UserService::users(int page, int pageSize)
         pageSize = 20;
 
     auto [users, total] = m_userRepo->findAll(page, pageSize);
-    // TODO: Здесь можно добавить бизнес-логику (скрытие полей) когда понадобится.
     return { users, total };
 }
 
@@ -66,10 +71,14 @@ std::optional<dto::User> UserService::createUser(
 
     const std::string hashedPassword = crypto::sha256(password);
     const int64_t newId = m_userRepo->create(user, hashedPassword);
+
     if (newId <= 0)
     {
+        LOG_ERROR << "createUser: не удалось создать пользователя";
         return std::nullopt;
     }
+
+    LOG_INFO << "Пользователь создан: id=" << newId << ", логин=" << *user.login;
 
     return m_userRepo->findById(newId);
 }
@@ -78,21 +87,68 @@ std::optional<dto::User> UserService::updateUser(const dto::User& user)
 {
     if (!user.id.has_value())
     {
-        LOG_WARN << "updateUser: отсутствует ID";
+        LOG_WARN << "updateUser: отсутствует id";
         return std::nullopt;
     }
 
-    if (!m_userRepo->update(user))
+    auto existing = m_userRepo->findById(*user.id);
+    if (!existing)
     {
+        LOG_WARN << "updateUser: пользователь не найден, id=" << *user.id;
         return std::nullopt;
     }
+
+    // Сохраняем старые значения для инвалидации
+    const bool wasSuperAdmin = existing->isSuperAdmin.value_or(false);
+    const bool wasBlocked = existing->isBlocked.value_or(false);
+    const bool wasHidden = existing->isHidden.value_or(false);
+
+    if (!m_userRepo->update(user))
+    {
+        LOG_ERROR << "updateUser: не удалось обновить пользователя id=" << *user.id;
+        return std::nullopt;
+    }
+
+    LOG_INFO << "Пользователь обновлен: id=" << *user.id;
+
+    // Проверяем, изменились ли права доступа
+    const bool isSuperAdminChanged = user.isSuperAdmin.has_value() && *user.isSuperAdmin != wasSuperAdmin;
+    const bool isBlockedChanged = user.isBlocked.has_value() && *user.isBlocked != wasBlocked;
+    const bool isHiddenChanged = user.isHidden.has_value() && *user.isHidden != wasHidden;
+
+    // Если изменились права, инвалидируем кэш
+    if (isSuperAdminChanged || isBlockedChanged || isHiddenChanged)
+    {
+        m_authzService->invalidateCache(*user.id);
+        LOG_DEBUG
+            << "Инвалидирован кэш для пользователя " << *user.id
+            << " из-за изменения прав";
+    }
+
     return m_userRepo->findById(*user.id);
 }
 
 bool UserService::deleteUser(int64_t id)
 {
-    return m_userRepo->remove(id);
+    auto existing = m_userRepo->findById(id);
+    if (!existing)
+    {
+        LOG_WARN << "deleteUser: пользователь не найден, id=" << id;
+        return false;
+    }
+
+    if (!m_userRepo->remove(id))
+    {
+        LOG_ERROR << "deleteUser: не удалось удалить пользователя id=" << id;
+        return false;
+    }
+
+    LOG_INFO << "Пользователь удален: id=" << id;
+
+    // Инвалидируем кэш удалённого пользователя
+    m_authzService->invalidateCache(id);
+
+    return true;
 }
 
-} // namespace services
-} // namespace server
+} // namespace server::services

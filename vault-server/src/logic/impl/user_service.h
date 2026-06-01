@@ -2,18 +2,21 @@
 
 #include <memory>
 
+#include "logic/iauthorization_service.h"
 #include "logic/iuser_service.h"
+
 #include "repo/user_repository.h"
 
-namespace server
-{
-namespace services
+namespace server::services
 {
 
 class UserService final : public IUserService
 {
 public:
-    explicit UserService(std::shared_ptr<repositories::IUserRepository> userRepo);
+    UserService(
+        std::shared_ptr<repositories::IUserRepository> userRepo,
+        std::shared_ptr<IAuthorizationService> authzService
+    );
 
     UsersPage users(int page, int pageSize) override;
     std::optional<dto::User> user(int64_t id) override;
@@ -23,7 +26,7 @@ public:
 
 private:
     std::shared_ptr<repositories::IUserRepository> m_userRepo;
+    std::shared_ptr<IAuthorizationService> m_authzService;
 };
 
-} // namespace services
-} // namespace server
+} // namespace server::services

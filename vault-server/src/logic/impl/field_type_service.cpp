@@ -14,7 +14,7 @@ FieldTypeService::FieldTypeService(
 {
     if (!m_fieldTypeRepo)
     {
-        throw std::runtime_error("FieldTypeRepository cannot be null");
+        throw std::runtime_error("FieldTypeRepository не может быть пустым");
     }
 }
 

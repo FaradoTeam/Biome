@@ -27,6 +27,7 @@ public:
     virtual std::optional<dto::UserTeamRole> findById(int64_t id) = 0;
     virtual std::vector<dto::UserTeamRole> findByUserId(int64_t userId) = 0;
     virtual std::vector<dto::UserTeamRole> findByTeamId(int64_t teamId) = 0;
+    virtual std::vector<dto::UserTeamRole> findByRoleId(int64_t roleId) = 0;
     virtual std::optional<dto::UserTeamRole> findByUserAndTeam(int64_t userId, int64_t teamId) = 0;
     virtual bool exists(int64_t userId, int64_t teamId) = 0;
     virtual int64_t create(const dto::UserTeamRole& userTeamRole) = 0;

@@ -34,6 +34,7 @@ public:
     virtual PhasesPage phases(
         int page,
         int pageSize,
+        int64_t userId,
         std::optional<int64_t> projectId = std::nullopt,
         std::optional<bool> isArchive = std::nullopt
     ) = 0;
@@ -41,27 +42,42 @@ public:
     /**
      * @brief Получает фазу по ID.
      */
-    virtual std::optional<dto::Phase> phase(int64_t id) = 0;
+    virtual std::optional<dto::Phase> phase(
+        int64_t id,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Создает новую фазу.
      */
-    virtual std::optional<dto::Phase> createPhase(const dto::Phase& phase) = 0;
+    virtual std::optional<dto::Phase> createPhase(
+        const dto::Phase& phase,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Обновляет существующую фазу.
      */
-    virtual std::optional<dto::Phase> updatePhase(const dto::Phase& phase) = 0;
+    virtual std::optional<dto::Phase> updatePhase(
+        const dto::Phase& phase,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Архивирует фазу.
      */
-    virtual bool archivePhase(int64_t id) = 0;
+    virtual bool archivePhase(
+        int64_t id,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Восстанавливает фазу из архива.
      */
-    virtual bool restorePhase(int64_t id) = 0;
+    virtual bool restorePhase(
+        int64_t id,
+        int64_t userId
+    ) = 0;
 };
 
 } // namespace services
