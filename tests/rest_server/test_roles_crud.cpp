@@ -26,7 +26,8 @@ struct RolesTestFixture
         mockAuthService = std::make_shared<MockAuthService>();
         mockRoleService = std::make_shared<MockRoleService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Используем супер-админа (userId=1) для создания/обновления/удаления
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
 
         server = std::make_unique<RestServer>("127.0.0.1", 18091);
         server->setAuthMiddleware(mockAuthMiddleware);
@@ -35,8 +36,10 @@ struct RolesTestFixture
 
         BOOST_REQUIRE(server->initialize());
 
-        serverThread = std::thread([this]()
-                                   { server->start(); });
+        serverThread = std::thread(
+            [this]()
+            { server->start(); }
+        );
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 

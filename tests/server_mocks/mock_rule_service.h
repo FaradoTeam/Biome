@@ -48,7 +48,11 @@ public:
     }
 
     // Реализация интерфейса
-    RulesPage getRules(int page, int pageSize, std::optional<int64_t> roleId = std::nullopt) override
+    RulesPage getRules(
+        int page,
+        int pageSize,
+        std::optional<int64_t> roleId = std::nullopt
+    ) override
     {
         m_lastGetRulesPage = page;
         m_lastGetRulesPageSize = pageSize;
@@ -71,24 +75,54 @@ public:
         return m_getRuleByRoleIdResult;
     }
 
-    std::optional<dto::Rule> createRule(const dto::Rule& rule) override
+    std::optional<dto::Rule> createRule(
+        const dto::Rule& rule,
+        int64_t userId
+    ) override
     {
         m_lastCreatedRule = rule;
+        m_lastCreateRuleUserId = userId;
         ++m_createRuleCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может создавать
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_createRuleResult;
     }
 
-    std::optional<dto::Rule> updateRule(const dto::Rule& rule) override
+    std::optional<dto::Rule> updateRule(
+        const dto::Rule& rule,
+        int64_t userId
+    ) override
     {
         m_lastUpdatedRule = rule;
+        m_lastUpdateRuleUserId = userId;
         ++m_updateRuleCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может обновлять
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_updateRuleResult;
     }
 
-    bool deleteRule(int64_t id) override
+    bool deleteRule(
+        int64_t id,
+        int64_t userId
+    ) override
     {
         m_lastDeletedRuleId = id;
+        m_lastDeleteRuleUserId = userId;
         ++m_deleteRuleCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может удалять
+        if (userId != 1)
+        {
+            return false;
+        }
         return m_deleteRuleResult;
     }
 
@@ -106,8 +140,11 @@ public:
     int64_t getLastGetRuleId() const { return m_lastGetRuleId; }
     int64_t getLastGetRuleByRoleId() const { return m_lastGetRuleByRoleId; }
     const dto::Rule& getLastCreatedRule() const { return m_lastCreatedRule; }
+    int64_t getLastCreateRuleUserId() const { return m_lastCreateRuleUserId; }
     const dto::Rule& getLastUpdatedRule() const { return m_lastUpdatedRule; }
+    int64_t getLastUpdateRuleUserId() const { return m_lastUpdateRuleUserId; }
     int64_t getLastDeletedRuleId() const { return m_lastDeletedRuleId; }
+    int64_t getLastDeleteRuleUserId() const { return m_lastDeleteRuleUserId; }
 
     void reset()
     {
@@ -123,8 +160,11 @@ public:
         m_lastGetRuleId = 0;
         m_lastGetRuleByRoleId = 0;
         m_lastCreatedRule = dto::Rule {};
+        m_lastCreateRuleUserId = 0;
         m_lastUpdatedRule = dto::Rule {};
+        m_lastUpdateRuleUserId = 0;
         m_lastDeletedRuleId = 0;
+        m_lastDeleteRuleUserId = 0;
     }
 
 private:
@@ -148,8 +188,11 @@ private:
     int64_t m_lastGetRuleId = 0;
     int64_t m_lastGetRuleByRoleId = 0;
     dto::Rule m_lastCreatedRule;
+    int64_t m_lastCreateRuleUserId = 0;
     dto::Rule m_lastUpdatedRule;
+    int64_t m_lastUpdateRuleUserId = 0;
     int64_t m_lastDeletedRuleId = 0;
+    int64_t m_lastDeleteRuleUserId = 0;
 };
 
 } // namespace server::tests

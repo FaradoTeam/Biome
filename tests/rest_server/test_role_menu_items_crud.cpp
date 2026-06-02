@@ -26,7 +26,8 @@ struct RoleMenuItemsTestFixture
         mockAuthService = std::make_shared<MockAuthService>();
         mockRoleMenuItemService = std::make_shared<MockRoleMenuItemService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Используем супер-админа (userId=1) для создания/обновления/удаления
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
 
         server = std::make_unique<RestServer>("127.0.0.1", 18096);
         server->setAuthMiddleware(mockAuthMiddleware);
@@ -35,8 +36,10 @@ struct RoleMenuItemsTestFixture
 
         BOOST_REQUIRE(server->initialize());
 
-        serverThread = std::thread([this]()
-                                   { server->start(); });
+        serverThread = std::thread(
+            [this]()
+            { server->start(); }
+        );
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
