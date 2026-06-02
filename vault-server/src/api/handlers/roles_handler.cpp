@@ -8,9 +8,7 @@
 
 #include "roles_handler.h"
 
-namespace server
-{
-namespace handlers
+namespace server::handlers
 {
 
 RolesHandler::RolesHandler(std::shared_ptr<services::IRoleService> roleService)
@@ -90,13 +88,22 @@ void RolesHandler::handleGetRole(
 
 void RolesHandler::handleCreateRole(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     request
         .extract_json()
         .then(
-            [this, request](pplx::task<web::json::value> task)
+            [this, request, userId](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -112,11 +119,11 @@ void RolesHandler::handleCreateRole(
                         return;
                     }
 
-                    auto created = m_roleService->createRole(role);
+                    auto created = m_roleService->createRole(role, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Could not create role");
+                        web::http::http_response resp(web::http::status_codes::Forbidden);
+                        sendErrorResponse(resp, 403, "Insufficient permissions to create role");
                         request.reply(resp);
                         return;
                     }
@@ -143,9 +150,18 @@ void RolesHandler::handleCreateRole(
 
 void RolesHandler::handleUpdateRole(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     const int64_t id = extractRoleIdFromPath(request);
     if (id <= 0)
     {
@@ -158,7 +174,7 @@ void RolesHandler::handleUpdateRole(
     request
         .extract_json()
         .then(
-            [this, request, id](pplx::task<web::json::value> task)
+            [this, request, userId, id](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -167,11 +183,11 @@ void RolesHandler::handleUpdateRole(
                     nlohmannJson["id"] = id;
                     dto::Role role(nlohmannJson);
 
-                    auto updated = m_roleService->updateRole(role);
+                    auto updated = m_roleService->updateRole(role, userId);
                     if (!updated)
                     {
                         web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "Role not found or update failed");
+                        sendErrorResponse(resp, 404, "Role not found or insufficient permissions");
                         request.reply(resp);
                         return;
                     }
@@ -198,9 +214,18 @@ void RolesHandler::handleUpdateRole(
 
 void RolesHandler::handleDeleteRole(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     const int64_t id = extractRoleIdFromPath(request);
     if (id <= 0)
     {
@@ -210,14 +235,14 @@ void RolesHandler::handleDeleteRole(
         return;
     }
 
-    if (m_roleService->deleteRole(id))
+    if (m_roleService->deleteRole(id, userId))
     {
         request.reply(web::http::status_codes::NoContent);
     }
     else
     {
         web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Role not found");
+        sendErrorResponse(resp, 404, "Role not found or insufficient permissions");
         request.reply(resp);
     }
 }
@@ -259,5 +284,32 @@ void RolesHandler::sendErrorResponse(
     response.set_body(error);
 }
 
-} // namespace handlers
-} // namespace server
+std::optional<int64_t> RolesHandler::parseUserId(
+    const std::string& userIdStr,
+    web::http::http_response& response
+)
+{
+    if (userIdStr.empty())
+    {
+        sendErrorResponse(response, 401, "User not authenticated");
+        return std::nullopt;
+    }
+
+    try
+    {
+        int64_t userId = std::stoll(userIdStr);
+        if (userId <= 0)
+        {
+            sendErrorResponse(response, 400, "Invalid user ID");
+            return std::nullopt;
+        }
+        return userId;
+    }
+    catch (const std::exception&)
+    {
+        sendErrorResponse(response, 400, "Invalid user ID format");
+        return std::nullopt;
+    }
+}
+
+} // namespace server::handlers

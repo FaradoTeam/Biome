@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -8,14 +9,9 @@
 
 #include "logic/irole_service.h"
 
-namespace server
-{
-namespace handlers
+namespace server::handlers
 {
 
-/**
- * @brief Обработчик запросов для работы с ролями.
- */
 class RolesHandler final
 {
 public:
@@ -56,10 +52,12 @@ private:
         int code,
         const std::string& message
     );
+    std::optional<int64_t> parseUserId(
+        const std::string& userIdStr,
+        web::http::http_response& response
+    );
 
-private:
     std::shared_ptr<services::IRoleService> m_roleService;
 };
 
-} // namespace handlers
-} // namespace server
+} // namespace server::handlers
