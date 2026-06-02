@@ -29,7 +29,8 @@ struct FieldTypesTestFixture
         mockUserService = std::make_shared<MockUserService>();
         mockFieldTypeService = std::make_shared<MockFieldTypeService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Супер-админ (userId=1) для создания/обновления/удаления типов полей
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
 
         // Настройка тестовых данных по умолчанию
         setupDefaultFieldTypeService();
@@ -351,6 +352,7 @@ BOOST_AUTO_TEST_CASE(test_create_field_type_success)
         *mockFieldTypeService->getLastCreatedFieldType().valueType,
         "String"
     );
+    BOOST_CHECK_EQUAL(mockFieldTypeService->getLastCreateFieldTypeUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 100);
@@ -360,20 +362,15 @@ BOOST_AUTO_TEST_CASE(test_create_field_type_success)
 
 BOOST_AUTO_TEST_CASE(test_create_field_type_missing_required_fields)
 {
-    // Настраиваем мок на возврат ошибки
     mockFieldTypeService->setCreateFieldTypeResult(std::nullopt);
 
     web::json::value body;
     body[U("valueType")] = web::json::value::string(U("String"));
-    // caption отсутствует
 
     auto response = makePostRequest("/api/field-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
-    BOOST_CHECK_EQUAL(mockFieldTypeService->createFieldTypeCallCount(), 1);
-    
-    // Проверяем, что сервис получил неполные данные
-    BOOST_CHECK(!mockFieldTypeService->getLastCreatedFieldType().caption.has_value());
+    BOOST_CHECK_EQUAL(mockFieldTypeService->createFieldTypeCallCount(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_field_type_with_all_value_types)
@@ -465,6 +462,7 @@ BOOST_AUTO_TEST_CASE(test_update_field_type_success)
         *mockFieldTypeService->getLastUpdatedFieldType().valueType,
         "MarkdownText"
     );
+    BOOST_CHECK_EQUAL(mockFieldTypeService->getLastUpdateFieldTypeUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("caption")).as_string(), U("Обновленное поле"));
@@ -514,6 +512,7 @@ BOOST_AUTO_TEST_CASE(test_delete_field_type_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockFieldTypeService->deleteFieldTypeCallCount(), 1);
     BOOST_CHECK_EQUAL(mockFieldTypeService->getLastDeletedFieldTypeId(), 3);
+    BOOST_CHECK_EQUAL(mockFieldTypeService->getLastDeleteFieldTypeUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_field_type_not_found)

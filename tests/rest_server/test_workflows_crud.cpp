@@ -27,7 +27,8 @@ struct WorkflowsTestFixture
         mockAuthService = std::make_shared<MockAuthService>();
         mockWorkflowService = std::make_shared<MockWorkflowService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Супер-админ (userId=1) для создания/обновления/удаления рабочих процессов
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
 
         server = std::make_unique<RestServer>("127.0.0.1", 18085);
         server->setAuthMiddleware(mockAuthMiddleware);
@@ -253,6 +254,7 @@ BOOST_AUTO_TEST_CASE(test_create_workflow_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockWorkflowService->getCreateWorkflowCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockWorkflowService->getLastCreatedWorkflow().caption, "New Workflow");
+    BOOST_CHECK_EQUAL(mockWorkflowService->getLastCreateWorkflowUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 100);
@@ -272,6 +274,15 @@ BOOST_AUTO_TEST_CASE(test_create_workflow_missing_caption)
 
 BOOST_AUTO_TEST_CASE(test_create_workflow_duplicate)
 {
+    // Создаем существующий workflow
+    dto::Workflow existingWorkflow;
+    existingWorkflow.id = 1;
+    existingWorkflow.caption = "Existing Workflow";
+
+    // Настраиваем mock с существующим workflow
+    mockWorkflowService->addWorkflow(existingWorkflow);
+
+    // Настраиваем createWorkflow (хотя он не должен вызываться)
     mockWorkflowService->setCreateWorkflowResult(std::nullopt);
 
     web::json::value body;
@@ -279,8 +290,10 @@ BOOST_AUTO_TEST_CASE(test_create_workflow_duplicate)
 
     auto response = makePostRequest("/api/workflows", body).get();
 
+    // Должен вернуть 409 Conflict, потому что workflow с таким названием уже существует
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Conflict);
-    BOOST_CHECK_EQUAL(mockWorkflowService->getCreateWorkflowCallCount(), 1);
+    // createWorkflow не должен вызываться
+    BOOST_CHECK_EQUAL(mockWorkflowService->getCreateWorkflowCallCount(), 0);
 }
 
 // ============================================================
@@ -304,6 +317,7 @@ BOOST_AUTO_TEST_CASE(test_update_workflow_success)
     BOOST_CHECK_EQUAL(mockWorkflowService->getUpdateWorkflowCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockWorkflowService->getLastUpdatedWorkflow().id, 1);
     BOOST_CHECK_EQUAL(*mockWorkflowService->getLastUpdatedWorkflow().caption, "Updated Workflow");
+    BOOST_CHECK_EQUAL(mockWorkflowService->getLastUpdateWorkflowUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_update_workflow_not_found)
@@ -334,6 +348,7 @@ BOOST_AUTO_TEST_CASE(test_delete_workflow_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockWorkflowService->getDeleteWorkflowCallCount(), 1);
     BOOST_CHECK_EQUAL(mockWorkflowService->getLastDeletedWorkflowId(), 1);
+    BOOST_CHECK_EQUAL(mockWorkflowService->getLastDeleteWorkflowUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_workflow_not_found)

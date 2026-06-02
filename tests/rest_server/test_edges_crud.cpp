@@ -27,7 +27,8 @@ struct EdgesTestFixture
         mockAuthService = std::make_shared<MockAuthService>();
         mockEdgeService = std::make_shared<MockEdgeService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Возвращаем числовой userId, который можно преобразовать в int64_t
+        mockAuthMiddleware->setValidateRequestResult(true, "100");
 
         server = std::make_unique<RestServer>("127.0.0.1", 18087);
         server->setAuthMiddleware(mockAuthMiddleware);
@@ -216,6 +217,7 @@ BOOST_AUTO_TEST_CASE(test_create_edge_success)
     BOOST_CHECK_EQUAL(mockEdgeService->getCreateEdgeCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockEdgeService->getLastCreatedEdge().beginStateId, 10);
     BOOST_CHECK_EQUAL(*mockEdgeService->getLastCreatedEdge().endStateId, 20);
+    BOOST_CHECK_EQUAL(mockEdgeService->getLastCreateEdgeUserId(), 100);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_edge_missing_fields)
@@ -231,6 +233,19 @@ BOOST_AUTO_TEST_CASE(test_create_edge_missing_fields)
 
 BOOST_AUTO_TEST_CASE(test_create_edge_duplicate)
 {
+    // Создаем существующий переход
+    dto::Edge existingEdge;
+    existingEdge.id = 1;
+    existingEdge.beginStateId = 10;
+    existingEdge.endStateId = 20;
+
+    // Настраиваем mock так, чтобы при проверке существования возвращался существующий переход
+    services::EdgesPage pageWithEdge;
+    pageWithEdge.edges = { existingEdge };
+    pageWithEdge.totalCount = 1;
+    mockEdgeService->setEdgesResult(pageWithEdge);
+
+    // Настраиваем createEdge (хотя он не должен вызываться)
     mockEdgeService->setCreateEdgeResult(std::nullopt);
 
     web::json::value body;
@@ -239,8 +254,10 @@ BOOST_AUTO_TEST_CASE(test_create_edge_duplicate)
 
     auto response = makePostRequest("/api/edges", body).get();
 
+    // Должен вернуть 409 Conflict, потому что переход уже существует
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Conflict);
-    BOOST_CHECK_EQUAL(mockEdgeService->getCreateEdgeCallCount(), 1);
+    // createEdge не должен вызываться
+    BOOST_CHECK_EQUAL(mockEdgeService->getCreateEdgeCallCount(), 0);
 }
 
 // ============================================================
@@ -286,6 +303,7 @@ BOOST_AUTO_TEST_CASE(test_delete_edge_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockEdgeService->getDeleteEdgeCallCount(), 1);
     BOOST_CHECK_EQUAL(mockEdgeService->getLastDeletedEdgeId(), 7);
+    BOOST_CHECK_EQUAL(mockEdgeService->getLastDeleteEdgeUserId(), 100);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_edge_not_found)

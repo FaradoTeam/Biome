@@ -22,31 +22,72 @@ public:
     void setGetFieldTypesResult(const FieldTypesPage& result)
     {
         m_getFieldTypesResult = result;
+        m_getFieldTypesCallback = nullptr;
     }
 
     void setGetFieldTypeResult(std::optional<dto::FieldType> fieldType)
     {
         m_getFieldTypeResult = std::move(fieldType);
+        m_getFieldTypeCallback = nullptr;
     }
 
     void setCreateFieldTypeResult(std::optional<dto::FieldType> fieldType)
     {
         m_createFieldTypeResult = std::move(fieldType);
+        m_createFieldTypeCallback = nullptr;
     }
 
     void setUpdateFieldTypeResult(std::optional<dto::FieldType> fieldType)
     {
         m_updateFieldTypeResult = std::move(fieldType);
+        m_updateFieldTypeCallback = nullptr;
     }
 
     void setDeleteFieldTypeResult(bool result)
     {
         m_deleteFieldTypeResult = result;
+        m_deleteFieldTypeCallback = nullptr;
     }
 
     void setFieldTypesByItemTypeResult(std::vector<dto::FieldType> fieldTypes)
     {
         m_fieldTypesByItemTypeResult = std::move(fieldTypes);
+    }
+
+    // Callback-и
+    void setGetFieldTypesCallback(
+        std::function<FieldTypesPage(int, int, std::optional<int64_t>, std::optional<std::string>, const std::string&)> callback
+    )
+    {
+        m_getFieldTypesCallback = std::move(callback);
+    }
+
+    void setGetFieldTypeCallback(
+        std::function<std::optional<dto::FieldType>(int64_t)> callback
+    )
+    {
+        m_getFieldTypeCallback = std::move(callback);
+    }
+
+    void setCreateFieldTypeCallback(
+        std::function<std::optional<dto::FieldType>(const dto::FieldType&, int64_t)> callback
+    )
+    {
+        m_createFieldTypeCallback = std::move(callback);
+    }
+
+    void setUpdateFieldTypeCallback(
+        std::function<std::optional<dto::FieldType>(const dto::FieldType&, int64_t)> callback
+    )
+    {
+        m_updateFieldTypeCallback = std::move(callback);
+    }
+
+    void setDeleteFieldTypeCallback(
+        std::function<bool(int64_t, int64_t)> callback
+    )
+    {
+        m_deleteFieldTypeCallback = std::move(callback);
     }
 
     // Реализация интерфейса
@@ -64,6 +105,11 @@ public:
         m_lastGetFieldTypesValueType = valueType;
         m_lastGetFieldTypesSearch = searchCaption;
         m_getFieldTypesCallCount++;
+
+        if (m_getFieldTypesCallback)
+        {
+            return m_getFieldTypesCallback(page, pageSize, itemTypeId, valueType, searchCaption);
+        }
         return m_getFieldTypesResult;
     }
 
@@ -71,27 +117,77 @@ public:
     {
         m_lastGetFieldTypeId = id;
         m_getFieldTypeCallCount++;
+
+        if (m_getFieldTypeCallback)
+        {
+            return m_getFieldTypeCallback(id);
+        }
         return m_getFieldTypeResult;
     }
 
-    std::optional<dto::FieldType> createFieldType(const dto::FieldType& fieldType) override
+    std::optional<dto::FieldType> createFieldType(
+        const dto::FieldType& fieldType,
+        int64_t userId
+    ) override
     {
         m_lastCreatedFieldType = fieldType;
+        m_lastCreateFieldTypeUserId = userId;
         m_createFieldTypeCallCount++;
+
+        if (m_createFieldTypeCallback)
+        {
+            return m_createFieldTypeCallback(fieldType, userId);
+        }
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может создавать
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_createFieldTypeResult;
     }
 
-    std::optional<dto::FieldType> updateFieldType(const dto::FieldType& fieldType) override
+    std::optional<dto::FieldType> updateFieldType(
+        const dto::FieldType& fieldType,
+        int64_t userId
+    ) override
     {
         m_lastUpdatedFieldType = fieldType;
+        m_lastUpdateFieldTypeUserId = userId;
         m_updateFieldTypeCallCount++;
+
+        if (m_updateFieldTypeCallback)
+        {
+            return m_updateFieldTypeCallback(fieldType, userId);
+        }
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может обновлять
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_updateFieldTypeResult;
     }
 
-    bool deleteFieldType(int64_t id) override
+    bool deleteFieldType(
+        int64_t id,
+        int64_t userId
+    ) override
     {
         m_lastDeletedFieldTypeId = id;
+        m_lastDeleteFieldTypeUserId = userId;
         m_deleteFieldTypeCallCount++;
+
+        if (m_deleteFieldTypeCallback)
+        {
+            return m_deleteFieldTypeCallback(id, userId);
+        }
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может удалять
+        if (userId != 1)
+        {
+            return false;
+        }
         return m_deleteFieldTypeResult;
     }
 
@@ -112,8 +208,11 @@ public:
     int getLastGetFieldTypesPage() const { return m_lastGetFieldTypesPage; }
     int64_t getLastGetFieldTypeId() const { return m_lastGetFieldTypeId; }
     const dto::FieldType& getLastCreatedFieldType() const { return m_lastCreatedFieldType; }
+    int64_t getLastCreateFieldTypeUserId() const { return m_lastCreateFieldTypeUserId; }
     const dto::FieldType& getLastUpdatedFieldType() const { return m_lastUpdatedFieldType; }
+    int64_t getLastUpdateFieldTypeUserId() const { return m_lastUpdateFieldTypeUserId; }
     int64_t getLastDeletedFieldTypeId() const { return m_lastDeletedFieldTypeId; }
+    int64_t getLastDeleteFieldTypeUserId() const { return m_lastDeleteFieldTypeUserId; }
 
     void reset()
     {
@@ -128,6 +227,9 @@ public:
         m_lastGetFieldTypesPageSize = 0;
         m_lastGetFieldTypeId = 0;
         m_lastDeletedFieldTypeId = 0;
+        m_lastCreateFieldTypeUserId = 0;
+        m_lastUpdateFieldTypeUserId = 0;
+        m_lastDeleteFieldTypeUserId = 0;
     }
 
 private:
@@ -137,6 +239,13 @@ private:
     std::optional<dto::FieldType> m_updateFieldTypeResult;
     bool m_deleteFieldTypeResult = false;
     std::vector<dto::FieldType> m_fieldTypesByItemTypeResult;
+
+    // Callback-и
+    std::function<FieldTypesPage(int, int, std::optional<int64_t>, std::optional<std::string>, const std::string&)> m_getFieldTypesCallback;
+    std::function<std::optional<dto::FieldType>(int64_t)> m_getFieldTypeCallback;
+    std::function<std::optional<dto::FieldType>(const dto::FieldType&, int64_t)> m_createFieldTypeCallback;
+    std::function<std::optional<dto::FieldType>(const dto::FieldType&, int64_t)> m_updateFieldTypeCallback;
+    std::function<bool(int64_t, int64_t)> m_deleteFieldTypeCallback;
 
     int m_getFieldTypesCallCount = 0;
     int m_getFieldTypeCallCount = 0;
@@ -152,8 +261,11 @@ private:
     std::string m_lastGetFieldTypesSearch;
     int64_t m_lastGetFieldTypeId = 0;
     dto::FieldType m_lastCreatedFieldType;
+    int64_t m_lastCreateFieldTypeUserId = 0;
     dto::FieldType m_lastUpdatedFieldType;
+    int64_t m_lastUpdateFieldTypeUserId = 0;
     int64_t m_lastDeletedFieldTypeId = 0;
+    int64_t m_lastDeleteFieldTypeUserId = 0;
     int64_t m_lastFieldTypesByItemTypeId = 0;
 };
 
