@@ -20,9 +20,21 @@ public:
 
     RolesPage getRoles(int page, int pageSize, const std::string& searchCaption = "") override;
     std::optional<dto::Role> getRole(int64_t id) override;
-    std::optional<dto::Role> createRole(const dto::Role& role) override;
-    std::optional<dto::Role> updateRole(const dto::Role& role) override;
-    bool deleteRole(int64_t id) override;
+
+    std::optional<dto::Role> createRole(
+        const dto::Role& role,
+        int64_t userId
+    ) override;
+
+    std::optional<dto::Role> updateRole(
+        const dto::Role& role,
+        int64_t userId
+    ) override;
+
+    bool deleteRole(
+        int64_t id,
+        int64_t userId
+    ) override;
 
 private:
     void invalidateUsersByRoleId(int64_t roleId);

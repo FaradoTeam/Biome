@@ -50,8 +50,18 @@ std::optional<dto::RuleItemType> RuleItemTypeService::getRuleItemType(int64_t id
     return m_ritRepo->findById(id);
 }
 
-std::optional<dto::RuleItemType> RuleItemTypeService::createRuleItemType(const dto::RuleItemType& rit)
+std::optional<dto::RuleItemType> RuleItemTypeService::createRuleItemType(
+    const dto::RuleItemType& rit,
+    int64_t userId
+)
 {
+    // Только супер-админ может создавать права на типы элементов
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createRuleItemType: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     // Проверка обязательных полей
     if (!rit.ruleId.has_value() || !rit.itemTypeId.has_value())
     {
@@ -62,17 +72,14 @@ std::optional<dto::RuleItemType> RuleItemTypeService::createRuleItemType(const d
     // Проверка существования правила
     if (!m_ruleRepo->exists(*rit.ruleId))
     {
-        LOG_WARN
-            << "createRuleItemType: правило с id=" << *rit.ruleId << " не найдено";
+        LOG_WARN << "createRuleItemType: правило с id=" << *rit.ruleId << " не найдено";
         return std::nullopt;
     }
 
     // Проверка существования типа элемента
     if (!m_itemTypeRepo->exists(*rit.itemTypeId))
     {
-        LOG_WARN
-            << "createRuleItemType: тип элемента с id=" << *rit.itemTypeId
-            << " не найден";
+        LOG_WARN << "createRuleItemType: тип элемента с id=" << *rit.itemTypeId << " не найден";
         return std::nullopt;
     }
 
@@ -90,10 +97,10 @@ std::optional<dto::RuleItemType> RuleItemTypeService::createRuleItemType(const d
         return std::nullopt;
     }
 
-    LOG_INFO
-        << "RuleItemType создан: id=" << newId
-        << ", ruleId=" << *rit.ruleId
-        << ", itemTypeId=" << *rit.itemTypeId;
+    LOG_INFO << "RuleItemType создан: id=" << newId
+             << ", ruleId=" << *rit.ruleId
+             << ", itemTypeId=" << *rit.itemTypeId
+             << ", пользователь=" << userId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRuleId(*rit.ruleId);
@@ -101,8 +108,18 @@ std::optional<dto::RuleItemType> RuleItemTypeService::createRuleItemType(const d
     return m_ritRepo->findById(newId);
 }
 
-std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(const dto::RuleItemType& rit)
+std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(
+    const dto::RuleItemType& rit,
+    int64_t userId
+)
 {
+    // Только супер-админ может обновлять права на типы элементов
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateRuleItemType: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!rit.id.has_value())
     {
         LOG_WARN << "updateRuleItemType: отсутствует id";
@@ -156,7 +173,7 @@ std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(const d
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleItemType обновлен: id=" << *rit.id;
+    LOG_INFO << "RuleItemType обновлен: id=" << *rit.id << ", пользователь=" << userId;
 
     // Инвалидируем кэш по старому и новому ruleId
     invalidateUsersByRuleId(oldRuleId);
@@ -168,8 +185,15 @@ std::optional<dto::RuleItemType> RuleItemTypeService::updateRuleItemType(const d
     return m_ritRepo->findById(*rit.id);
 }
 
-bool RuleItemTypeService::deleteRuleItemType(int64_t id)
+bool RuleItemTypeService::deleteRuleItemType(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять права на типы элементов
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteRuleItemType: пользователь " << userId << " не имеет прав";
+        return false;
+    }
+
     auto existing = m_ritRepo->findById(id);
     if (!existing)
     {
@@ -185,7 +209,7 @@ bool RuleItemTypeService::deleteRuleItemType(int64_t id)
         return false;
     }
 
-    LOG_INFO << "RuleItemType удален: id=" << id;
+    LOG_INFO << "RuleItemType удален: id=" << id << ", пользователь=" << userId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRuleId(ruleId);
@@ -198,15 +222,13 @@ void RuleItemTypeService::invalidateUsersByRuleId(int64_t ruleId)
     auto rule = m_ruleRepo->findById(ruleId);
     if (!rule || !rule->roleId.has_value())
     {
-        LOG_DEBUG
-            << "invalidateUsersByRuleId: правило " << ruleId << " не имеет roleId";
+        LOG_DEBUG << "invalidateUsersByRuleId: правило " << ruleId << " не имеет roleId";
         return;
     }
 
     auto users = m_authzService->getUserIdsByRoleId(*rule->roleId);
-    LOG_DEBUG
-        << "Инвалидация кэша для " << users.size()
-        << " пользователей с ролью " << *rule->roleId;
+    LOG_DEBUG << "Инвалидация кэша для " << users.size()
+              << " пользователей с ролью " << *rule->roleId;
 
     for (int64_t userId : users)
     {

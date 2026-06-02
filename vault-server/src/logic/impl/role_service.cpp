@@ -38,8 +38,15 @@ std::optional<dto::Role> RoleService::getRole(int64_t id)
     return m_roleRepo->findById(id);
 }
 
-std::optional<dto::Role> RoleService::createRole(const dto::Role& role)
+std::optional<dto::Role> RoleService::createRole(const dto::Role& role, int64_t userId)
 {
+    // Только супер-админ может создавать роли
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createRole: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!role.caption.has_value() || role.caption->empty())
     {
         LOG_WARN << "createRole: название роли обязательно";
@@ -53,14 +60,23 @@ std::optional<dto::Role> RoleService::createRole(const dto::Role& role)
         return std::nullopt;
     }
 
-    LOG_INFO << "Роль создана: id=" << newId << ", название=" << *role.caption;
+    LOG_INFO
+        << "Роль создана: id=" << newId << ", название=" << *role.caption
+        << ", пользователь=" << userId;
 
     // Роль новая, пользователей с ней ещё нет, поэтому инвалидация не требуется
     return m_roleRepo->findById(newId);
 }
 
-std::optional<dto::Role> RoleService::updateRole(const dto::Role& role)
+std::optional<dto::Role> RoleService::updateRole(const dto::Role& role, int64_t userId)
 {
+    // Только супер-админ может обновлять роли
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateRole: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!role.id.has_value())
     {
         LOG_WARN << "updateRole: отсутствует id";
@@ -80,7 +96,7 @@ std::optional<dto::Role> RoleService::updateRole(const dto::Role& role)
         return std::nullopt;
     }
 
-    LOG_INFO << "Роль обновлена: id=" << *role.id;
+    LOG_INFO << "Роль обновлена: id=" << *role.id << ", пользователь=" << userId;
 
     // Изменение роли может повлиять на права
     // Для консистентности инвалидируем кэш пользователей с этой ролью
@@ -89,8 +105,15 @@ std::optional<dto::Role> RoleService::updateRole(const dto::Role& role)
     return m_roleRepo->findById(*role.id);
 }
 
-bool RoleService::deleteRole(int64_t id)
+bool RoleService::deleteRole(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять роли
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteRole: пользователь " << userId << " не имеет прав";
+        return false;
+    }
+
     auto existing = m_roleRepo->findById(id);
     if (!existing)
     {
@@ -99,14 +122,13 @@ bool RoleService::deleteRole(int64_t id)
     }
 
     // TODO: проверить, что роль не используется в UserTeamRole, Rule и других таблицах
-    // Это можно сделать через соответствующие репозитории
     if (!m_roleRepo->remove(id))
     {
         LOG_ERROR << "deleteRole: не удалось удалить роль id=" << id;
         return false;
     }
 
-    LOG_INFO << "Роль удалена: id=" << id;
+    LOG_INFO << "Роль удалена: id=" << id << ", пользователь=" << userId;
 
     // Инвалидируем кэш для всех пользователей, у которых была эта роль
     invalidateUsersByRoleId(id);

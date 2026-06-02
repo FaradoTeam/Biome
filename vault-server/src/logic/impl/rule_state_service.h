@@ -29,9 +29,21 @@ public:
     ) override;
 
     std::optional<dto::RuleState> getRuleState(int64_t id) override;
-    std::optional<dto::RuleState> createRuleState(const dto::RuleState& ruleState) override;
-    std::optional<dto::RuleState> updateRuleState(const dto::RuleState& ruleState) override;
-    bool deleteRuleState(int64_t id) override;
+
+    std::optional<dto::RuleState> createRuleState(
+        const dto::RuleState& ruleState,
+        int64_t userId
+    ) override;
+
+    std::optional<dto::RuleState> updateRuleState(
+        const dto::RuleState& ruleState,
+        int64_t userId
+    ) override;
+
+    bool deleteRuleState(
+        int64_t id,
+        int64_t userId
+    ) override;
 
 private:
     void invalidateUsersByRuleId(int64_t ruleId);

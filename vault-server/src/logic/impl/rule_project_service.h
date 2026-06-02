@@ -29,9 +29,21 @@ public:
     ) override;
 
     std::optional<dto::RuleProject> getRuleProject(int64_t id) override;
-    std::optional<dto::RuleProject> createRuleProject(const dto::RuleProject& ruleProject) override;
-    std::optional<dto::RuleProject> updateRuleProject(const dto::RuleProject& ruleProject) override;
-    bool deleteRuleProject(int64_t id) override;
+
+    std::optional<dto::RuleProject> createRuleProject(
+        const dto::RuleProject& ruleProject,
+        int64_t userId
+    ) override;
+
+    std::optional<dto::RuleProject> updateRuleProject(
+        const dto::RuleProject& ruleProject,
+        int64_t userId
+    ) override;
+
+    bool deleteRuleProject(
+        int64_t id,
+        int64_t userId
+    ) override;
 
 private:
     void invalidateUsersByRuleId(int64_t ruleId);

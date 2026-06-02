@@ -46,8 +46,18 @@ std::optional<dto::RuleProject> RuleProjectService::getRuleProject(int64_t id)
     return m_ruleProjectRepo->findById(id);
 }
 
-std::optional<dto::RuleProject> RuleProjectService::createRuleProject(const dto::RuleProject& rp)
+std::optional<dto::RuleProject> RuleProjectService::createRuleProject(
+    const dto::RuleProject& rp,
+    int64_t userId
+)
 {
+    // Только супер-админ может создавать права на проекты
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createRuleProject: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!rp.ruleId.has_value() || !rp.projectId.has_value())
     {
         LOG_WARN << "createRuleProject: обязательны ruleId и projectId";
@@ -82,15 +92,27 @@ std::optional<dto::RuleProject> RuleProjectService::createRuleProject(const dto:
 
     LOG_INFO
         << "RuleProject создан: id=" << newId
-        << ", ruleId=" << *rp.ruleId << ", projectId=" << *rp.projectId;
+        << ", ruleId=" << *rp.ruleId
+        << ", projectId=" << *rp.projectId
+        << ", пользователь=" << userId;
 
     invalidateUsersByRuleId(*rp.ruleId);
 
     return m_ruleProjectRepo->findById(newId);
 }
 
-std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto::RuleProject& rp)
+std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(
+    const dto::RuleProject& rp,
+    int64_t userId
+)
 {
+    // Только супер-админ может обновлять права на проекты
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateRuleProject: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!rp.id.has_value())
     {
         LOG_WARN << "updateRuleProject: отсутствует id";
@@ -142,7 +164,7 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleProject обновлен: id=" << *rp.id;
+    LOG_INFO << "RuleProject обновлен: id=" << *rp.id << ", пользователь=" << userId;
 
     // Инвалидируем по старому и новому ruleId
     invalidateUsersByRuleId(oldRuleId);
@@ -154,8 +176,15 @@ std::optional<dto::RuleProject> RuleProjectService::updateRuleProject(const dto:
     return m_ruleProjectRepo->findById(*rp.id);
 }
 
-bool RuleProjectService::deleteRuleProject(int64_t id)
+bool RuleProjectService::deleteRuleProject(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять права на проекты
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteRuleProject: пользователь " << userId << " не имеет прав";
+        return false;
+    }
+
     auto existing = m_ruleProjectRepo->findById(id);
     if (!existing)
     {
@@ -171,7 +200,7 @@ bool RuleProjectService::deleteRuleProject(int64_t id)
         return false;
     }
 
-    LOG_INFO << "RuleProject удален: id=" << id;
+    LOG_INFO << "RuleProject удален: id=" << id << ", пользователь=" << userId;
 
     invalidateUsersByRuleId(ruleId);
 
