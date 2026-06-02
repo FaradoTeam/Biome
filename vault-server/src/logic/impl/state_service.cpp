@@ -18,9 +18,15 @@ StateService::StateService(
     , m_workflowRepo(std::move(workflowRepo))
     , m_authzService(std::move(authzService))
 {
-    if (!m_stateRepo || !m_edgeRepo || !m_workflowRepo || !m_authzService)
+    if (!m_stateRepo || !m_edgeRepo || !m_workflowRepo)
     {
-        throw std::runtime_error("StateService: один или несколько репозиториев не инициализированы");
+        throw std::runtime_error(
+            "StateService: один или несколько репозиториев не инициализированы"
+        );
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 

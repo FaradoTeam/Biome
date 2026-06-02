@@ -16,11 +16,15 @@ EdgeService::EdgeService(
     , m_stateRepo(std::move(stateRepo))
     , m_authzService(std::move(authzService))
 {
-    if (!m_edgeRepo || !m_stateRepo || !m_authzService)
+    if (!m_edgeRepo || !m_stateRepo)
     {
         throw std::runtime_error(
             "EdgeService: один или несколько репозиториев не инициализированы"
         );
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 

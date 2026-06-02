@@ -14,11 +14,15 @@ FieldTypeService::FieldTypeService(
     : m_fieldTypeRepo(std::move(fieldTypeRepo))
     , m_authzService(std::move(authzService))
 {
-    if (!m_fieldTypeRepo || !m_authzService)
+    if (!m_fieldTypeRepo)
     {
         throw std::runtime_error(
             "FieldTypeService: один или несколько репозиториев не инициализированы"
         );
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 

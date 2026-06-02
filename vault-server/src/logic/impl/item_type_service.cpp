@@ -14,11 +14,15 @@ ItemTypeService::ItemTypeService(
     : m_itemTypeRepo(std::move(itemTypeRepo))
     , m_authzService(std::move(authzService))
 {
-    if (!m_itemTypeRepo || !m_authzService)
+    if (!m_itemTypeRepo)
     {
         throw std::runtime_error(
             "ItemTypeService: один или несколько репозиториев не инициализированы"
         );
+    }
+    if (!m_authzService)
+    {
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 
