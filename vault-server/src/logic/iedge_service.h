@@ -63,16 +63,24 @@ public:
     /**
      * @brief Создает новый переход.
      * @param edge DTO перехода
+     * @param userId ID пользователя для проверки прав
      * @return Созданный переход или std::nullopt при ошибке
      */
-    virtual std::optional<dto::Edge> createEdge(const dto::Edge& edge) = 0;
+    virtual std::optional<dto::Edge> createEdge(
+        const dto::Edge& edge,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Удаляет переход.
      * @param id Идентификатор перехода
+     * @param userId ID пользователя для проверки прав
      * @return Результат операции
      */
-    virtual EdgeResult deleteEdge(int64_t id) = 0;
+    virtual EdgeResult deleteEdge(
+        int64_t id,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Получает все переходы для рабочего процесса.

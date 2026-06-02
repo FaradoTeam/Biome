@@ -8,13 +8,17 @@ namespace services
 {
 
 ItemTypeService::ItemTypeService(
-    std::shared_ptr<repositories::IItemTypeRepository> itemTypeRepo
+    std::shared_ptr<repositories::IItemTypeRepository> itemTypeRepo,
+    std::shared_ptr<IAuthorizationService> authzService
 )
     : m_itemTypeRepo(std::move(itemTypeRepo))
+    , m_authzService(std::move(authzService))
 {
-    if (!m_itemTypeRepo)
+    if (!m_itemTypeRepo || !m_authzService)
     {
-        throw std::runtime_error("ItemTypeRepository не может быть пустым");
+        throw std::runtime_error(
+            "ItemTypeService: один или несколько репозиториев не инициализированы"
+        );
     }
 }
 
@@ -32,11 +36,7 @@ ItemTypesPage ItemTypeService::itemTypes(
         pageSize = 20;
 
     auto [itemTypeList, total] = m_itemTypeRepo->findAll(
-        page,
-        pageSize,
-        workflowId,
-        kind,
-        searchCaption
+        page, pageSize, workflowId, kind, searchCaption
     );
     return { itemTypeList, total };
 }
@@ -47,14 +47,20 @@ std::optional<dto::ItemType> ItemTypeService::itemType(int64_t id)
 }
 
 std::optional<dto::ItemType> ItemTypeService::createItemType(
-    const dto::ItemType& itemType
+    const dto::ItemType& itemType,
+    int64_t userId
 )
 {
-    // Валидация на уровне бизнес-логики
+    // Только супер-админ может создавать типы элементов
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createItemType: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!itemType.caption.has_value() || itemType.caption->empty())
     {
-        LOG_WARN
-            << "createItemType: название типа элемента не может быть пустым";
+        LOG_WARN << "createItemType: название типа элемента не может быть пустым";
         return std::nullopt;
     }
 
@@ -73,19 +79,26 @@ std::optional<dto::ItemType> ItemTypeService::createItemType(
     const int64_t newId = m_itemTypeRepo->create(itemType);
     if (newId <= 0)
     {
-        LOG_ERROR
-            << "createItemType: ошибка при создании типа элемента в репозитории";
+        LOG_ERROR << "createItemType: ошибка при создании типа элемента";
         return std::nullopt;
     }
 
-    LOG_INFO << "Создан новый тип элемента с id=" << newId;
+    LOG_INFO << "Создан новый тип элемента с id=" << newId << ", пользователь=" << userId;
     return m_itemTypeRepo->findById(newId);
 }
 
 std::optional<dto::ItemType> ItemTypeService::updateItemType(
-    const dto::ItemType& itemType
+    const dto::ItemType& itemType,
+    int64_t userId
 )
 {
+    // Только супер-админ может обновлять типы элементов
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateItemType: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!itemType.id.has_value())
     {
         LOG_WARN << "updateItemType: отсутствует ID типа элемента";
@@ -94,27 +107,29 @@ std::optional<dto::ItemType> ItemTypeService::updateItemType(
 
     if (!m_itemTypeRepo->exists(itemType.id.value()))
     {
-        LOG_WARN
-            << "updateItemType: тип элемента с id=" << itemType.id.value()
-            << " не найден";
+        LOG_WARN << "updateItemType: тип элемента с id=" << itemType.id.value() << " не найден";
         return std::nullopt;
     }
 
     if (!m_itemTypeRepo->update(itemType))
     {
-        LOG_ERROR
-            << "updateItemType: ошибка при обновлении типа элемента в репозитории";
+        LOG_ERROR << "updateItemType: ошибка при обновлении типа элемента";
         return std::nullopt;
     }
 
-    LOG_INFO
-        << "Тип элемента с id=" << itemType.id.value()
-        << " успешно обновлен";
+    LOG_INFO << "Тип элемента с id=" << itemType.id.value() << " обновлен, пользователь=" << userId;
     return m_itemTypeRepo->findById(itemType.id.value());
 }
 
-bool ItemTypeService::deleteItemType(int64_t id)
+bool ItemTypeService::deleteItemType(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять типы элементов
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteItemType: пользователь " << userId << " не имеет прав";
+        return false;
+    }
+
     if (!m_itemTypeRepo->exists(id))
     {
         LOG_WARN << "deleteItemType: тип элемента с id=" << id << " не найден";
@@ -123,7 +138,7 @@ bool ItemTypeService::deleteItemType(int64_t id)
 
     if (m_itemTypeRepo->remove(id))
     {
-        LOG_INFO << "Тип элемента с id=" << id << " успешно удален";
+        LOG_INFO << "Тип элемента с id=" << id << " удален, пользователь=" << userId;
         return true;
     }
 

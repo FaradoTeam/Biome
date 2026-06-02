@@ -10,23 +10,19 @@ namespace services
 WorkflowService::WorkflowService(
     std::shared_ptr<repositories::IWorkflowRepository> workflowRepo,
     std::shared_ptr<repositories::IStateRepository> stateRepo,
-    std::shared_ptr<repositories::IEdgeRepository> edgeRepo
+    std::shared_ptr<repositories::IEdgeRepository> edgeRepo,
+    std::shared_ptr<IAuthorizationService> authzService
 )
     : m_workflowRepo(std::move(workflowRepo))
     , m_stateRepo(std::move(stateRepo))
     , m_edgeRepo(std::move(edgeRepo))
+    , m_authzService(std::move(authzService))
 {
-    if (!m_workflowRepo)
+    if (!m_workflowRepo || !m_stateRepo || !m_edgeRepo || !m_authzService)
     {
-        throw std::runtime_error("WorkflowRepository не может быть пустым");
-    }
-    if (!m_stateRepo)
-    {
-        throw std::runtime_error("StateRepository не может быть пустым");
-    }
-    if (!m_edgeRepo)
-    {
-        throw std::runtime_error("EdgeRepository не может быть пустым");
+        throw std::runtime_error(
+            "WorkflowService: один или несколько репозиториев не инициализированы"
+        );
     }
 }
 
@@ -47,22 +43,29 @@ std::optional<dto::Workflow> WorkflowService::workflow(int64_t id)
 }
 
 std::optional<dto::Workflow> WorkflowService::createWorkflow(
-    const dto::Workflow& workflow
+    const dto::Workflow& workflow,
+    int64_t userId
 )
 {
-    std::string errorMessage;
-    if (!validateWorkflow(workflow, errorMessage))
+    // Только супер-админ может создавать рабочие процессы
+    if (!m_authzService->isSuperAdmin(userId))
     {
-        LOG_WARN << "createWorkflow: проверка не пройдена - " << errorMessage;
+        LOG_WARN << "createWorkflow: пользователь " << userId << " не имеет прав";
         return std::nullopt;
     }
 
-    // Проверяем уникальность названия
+    std::string errorMessage;
+    if (!validateWorkflow(workflow, errorMessage))
+    {
+        LOG_WARN << "createWorkflow: " << errorMessage;
+        return std::nullopt;
+    }
+
     if (m_workflowRepo->existsByCaption(*workflow.caption))
     {
         LOG_WARN
-            << "createWorkflow: рабочий процесс с названием '"
-            << *workflow.caption << "' уже существует";
+            << "createWorkflow: рабочий процесс с названием '" << *workflow.caption
+            << "' уже существует";
         return std::nullopt;
     }
 
@@ -73,36 +76,36 @@ std::optional<dto::Workflow> WorkflowService::createWorkflow(
         return std::nullopt;
     }
 
-    LOG_INFO
-        << "Рабочий процесс создан: id=" << newId
-        << ", название='" << *workflow.caption << "'";
-
+    LOG_INFO << "Рабочий процесс создан: id=" << newId << ", пользователь=" << userId;
     return m_workflowRepo->findById(newId);
 }
 
 std::optional<dto::Workflow> WorkflowService::updateWorkflow(
-    const dto::Workflow& workflow
+    const dto::Workflow& workflow,
+    int64_t userId
 )
 {
+    // Только супер-админ может обновлять рабочие процессы
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateWorkflow: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!workflow.id.has_value())
     {
         LOG_WARN << "updateWorkflow: отсутствует ID";
         return std::nullopt;
     }
 
-    // Проверяем существование
     auto existing = m_workflowRepo->findById(*workflow.id);
     if (!existing.has_value())
     {
-        LOG_WARN
-            << "updateWorkflow: рабочий процесс с id="
-            << *workflow.id << " не найден";
+        LOG_WARN << "updateWorkflow: рабочий процесс с id=" << *workflow.id << " не найден";
         return std::nullopt;
     }
 
-    // Если меняется название, проверяем уникальность
-    if (workflow.caption.has_value()
-        && workflow.caption.value() != existing->caption.value_or(""))
+    if (workflow.caption.has_value() && *workflow.caption != existing->caption.value_or(""))
     {
         if (m_workflowRepo->existsByCaption(*workflow.caption))
         {
@@ -121,16 +124,23 @@ std::optional<dto::Workflow> WorkflowService::updateWorkflow(
         return std::nullopt;
     }
 
-    LOG_INFO << "Рабочий процесс обновлен: id=" << *workflow.id;
-
+    LOG_INFO << "Рабочий процесс обновлен: id=" << *workflow.id << ", пользователь=" << userId;
     return m_workflowRepo->findById(*workflow.id);
 }
 
-WorkflowResult WorkflowService::deleteWorkflow(int64_t id)
+WorkflowResult WorkflowService::deleteWorkflow(int64_t id, int64_t userId)
 {
     WorkflowResult result;
 
-    // Проверяем существование
+    // Только супер-админ может удалять рабочие процессы
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        result.errorMessage = "Недостаточно прав для удаления рабочего процесса";
+        result.errorCode = 403;
+        LOG_WARN << "deleteWorkflow: пользователь " << userId << " не имеет прав";
+        return result;
+    }
+
     auto existing = m_workflowRepo->findById(id);
     if (!existing.has_value())
     {
@@ -139,15 +149,10 @@ WorkflowResult WorkflowService::deleteWorkflow(int64_t id)
         return result;
     }
 
-    // Проверяем, можно ли удалить
     if (!canDeleteWorkflow(id))
     {
-        result.errorMessage = "Невозможно удалить рабочий процесс: "
-                              "имеются связанные состояния или элементы";
+        result.errorMessage = "Невозможно удалить рабочий процесс: имеются связанные состояния или элементы";
         result.errorCode = 409;
-        LOG_WARN
-            << "deleteWorkflow: рабочий процесс id=" << id
-            << " не может быть удален из-за зависимостей";
         return result;
     }
 
@@ -155,39 +160,28 @@ WorkflowResult WorkflowService::deleteWorkflow(int64_t id)
     {
         result.errorMessage = "Не удалось удалить рабочий процесс";
         result.errorCode = 500;
-        LOG_ERROR << "deleteWorkflow: ошибка удаления рабочего процесса id=" << id;
         return result;
     }
 
     result.success = true;
-    LOG_INFO << "Рабочий процесс удален: id=" << id;
-
+    LOG_INFO << "Рабочий процесс удален: id=" << id << ", пользователь=" << userId;
     return result;
 }
 
 bool WorkflowService::canDeleteWorkflow(int64_t id)
 {
-    // Проверяем наличие состояний
     auto states = m_stateRepo->findByWorkflowId(id);
-    if (!states.empty())
+    for (const auto& state : states)
     {
-        // Проверяем, используются ли эти состояния элементами
-        for (const auto& state : states)
+        if (m_stateRepo->isUsedByItems(*state.id))
         {
-            if (m_stateRepo->isUsedByItems(*state.id))
-            {
-                return false;
-            }
+            return false;
         }
     }
-
     return true;
 }
 
-bool WorkflowService::validateWorkflow(
-    const dto::Workflow& workflow,
-    std::string& errorMessage
-)
+bool WorkflowService::validateWorkflow(const dto::Workflow& workflow, std::string& errorMessage)
 {
     if (!workflow.caption.has_value() || workflow.caption->empty())
     {

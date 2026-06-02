@@ -56,23 +56,35 @@ public:
     /**
      * @brief Создает новый рабочий процесс.
      * @param workflow DTO рабочего процесса
+     * @param userId ID пользователя для проверки прав
      * @return Созданный рабочий процесс или std::nullopt при ошибке
      */
-    virtual std::optional<dto::Workflow> createWorkflow(const dto::Workflow& workflow) = 0;
+    virtual std::optional<dto::Workflow> createWorkflow(
+        const dto::Workflow& workflow,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Обновляет существующий рабочий процесс.
-     * @param workflow DTO с новыми данными (id обязателен)
+     * @param workflow DTO рабочего процесса с новыми данными
+     * @param userId ID пользователя для проверки прав
      * @return Обновленный рабочий процесс или std::nullopt при ошибке
      */
-    virtual std::optional<dto::Workflow> updateWorkflow(const dto::Workflow& workflow) = 0;
+    virtual std::optional<dto::Workflow> updateWorkflow(
+        const dto::Workflow& workflow,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Удаляет рабочий процесс.
      * @param id Идентификатор рабочего процесса
+     * @param userId ID пользователя для проверки прав
      * @return Результат операции
      */
-    virtual WorkflowResult deleteWorkflow(int64_t id) = 0;
+    virtual WorkflowResult deleteWorkflow(
+        int64_t id,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Проверяет, можно ли удалить рабочий процесс.
