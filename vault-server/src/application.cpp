@@ -112,8 +112,14 @@ bool Application::initialize()
         teamRepository,
         roleRepository
     );
-    auto fieldTypeService = std::make_shared<services::FieldTypeService>(fieldTypeRepository);
-    auto itemTypeService = std::make_shared<services::ItemTypeService>(itemTypeRepository);
+    auto fieldTypeService = std::make_shared<services::FieldTypeService>(
+        fieldTypeRepository,
+        authorizationService
+    );
+    auto itemTypeService = std::make_shared<services::ItemTypeService>(
+        itemTypeRepository,
+        authorizationService
+    );
     auto userService = std::make_shared<services::UserService>(
         userRepository,
         authorizationService
@@ -127,13 +133,16 @@ bool Application::initialize()
         authorizationService
     );
     auto workflowService = std::make_shared<services::WorkflowService>(
-        workflowRepository, stateRepository, edgeRepository
+        workflowRepository, stateRepository, edgeRepository,
+        authorizationService
     );
     auto stateService = std::make_shared<services::StateService>(
-        stateRepository, edgeRepository, workflowRepository
+        stateRepository, edgeRepository, workflowRepository,
+        authorizationService
     );
     auto edgeService = std::make_shared<services::EdgeService>(
-        edgeRepository, stateRepository
+        edgeRepository, stateRepository,
+        authorizationService
     );
     auto teamService = std::make_shared<services::TeamService>(
         teamRepository,

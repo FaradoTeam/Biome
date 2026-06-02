@@ -26,9 +26,17 @@ WorkflowsHandler::WorkflowsHandler(
 
 void WorkflowsHandler::handleGetWorkflows(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+
     auto params = extractQueryParams(request);
 
     int page = 1;
@@ -59,9 +67,17 @@ void WorkflowsHandler::handleGetWorkflows(
 
 void WorkflowsHandler::handleGetWorkflow(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+
     int64_t id = extractWorkflowIdFromPath(request);
     if (id <= 0)
     {
@@ -88,13 +104,22 @@ void WorkflowsHandler::handleGetWorkflow(
 
 void WorkflowsHandler::handleCreateWorkflow(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     request
         .extract_json()
         .then(
-            [this, request](pplx::task<web::json::value> task)
+            [this, request, userId](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -111,8 +136,18 @@ void WorkflowsHandler::handleCreateWorkflow(
                         return;
                     }
 
-                    auto created = m_workflowService->createWorkflow(workflow);
-                    if (!created)
+                    auto workflowsPage = m_workflowService->workflows(1, 100);
+                    bool exists = false;
+                    for (const auto& wf : workflowsPage.workflows)
+                    {
+                        if (wf.caption == workflow.caption)
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+
+                    if (exists)
                     {
                         web::http::http_response resp(
                             web::http::status_codes::Conflict
@@ -120,6 +155,20 @@ void WorkflowsHandler::handleCreateWorkflow(
                         sendErrorResponse(
                             resp, 409,
                             "Workflow with this caption already exists"
+                        );
+                        request.reply(resp);
+                        return;
+                    }
+
+                    auto created = m_workflowService->createWorkflow(workflow, userId);
+                    if (!created)
+                    {
+                        web::http::http_response resp(
+                            web::http::status_codes::Forbidden
+                        );
+                        sendErrorResponse(
+                            resp, 403,
+                            "Insufficient permissions to create workflow"
                         );
                         request.reply(resp);
                         return;
@@ -148,9 +197,18 @@ void WorkflowsHandler::handleCreateWorkflow(
 
 void WorkflowsHandler::handleUpdateWorkflow(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     const int64_t id = extractWorkflowIdFromPath(request);
     if (id <= 0)
     {
@@ -163,7 +221,7 @@ void WorkflowsHandler::handleUpdateWorkflow(
     request
         .extract_json()
         .then(
-            [this, request, id](pplx::task<web::json::value> task)
+            [this, request, userId, id](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -172,7 +230,7 @@ void WorkflowsHandler::handleUpdateWorkflow(
                     nlohmannJson["id"] = id;
                     dto::Workflow workflow(nlohmannJson);
 
-                    auto updated = m_workflowService->updateWorkflow(workflow);
+                    auto updated = m_workflowService->updateWorkflow(workflow, userId);
                     if (!updated)
                     {
                         web::http::http_response resp(
@@ -180,7 +238,7 @@ void WorkflowsHandler::handleUpdateWorkflow(
                         );
                         sendErrorResponse(
                             resp, 404,
-                            "Workflow not found or update failed"
+                            "Workflow not found or insufficient permissions"
                         );
                         request.reply(resp);
                         return;
@@ -209,9 +267,18 @@ void WorkflowsHandler::handleUpdateWorkflow(
 
 void WorkflowsHandler::handleDeleteWorkflow(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     const int64_t id = extractWorkflowIdFromPath(request);
     if (id <= 0)
     {
@@ -221,7 +288,7 @@ void WorkflowsHandler::handleDeleteWorkflow(
         return;
     }
 
-    auto result = m_workflowService->deleteWorkflow(id);
+    auto result = m_workflowService->deleteWorkflow(id, userId);
     if (!result.success)
     {
         web::http::http_response resp(
@@ -272,6 +339,34 @@ void WorkflowsHandler::sendErrorResponse(
     error["code"] = web::json::value::number(code);
     error["message"] = web::json::value::string(message);
     response.set_body(error);
+}
+
+std::optional<int64_t> WorkflowsHandler::parseUserId(
+    const std::string& userIdStr,
+    web::http::http_response& response
+)
+{
+    if (userIdStr.empty())
+    {
+        sendErrorResponse(response, 401, "User not authenticated");
+        return std::nullopt;
+    }
+
+    try
+    {
+        int64_t userId = std::stoll(userIdStr);
+        if (userId <= 0)
+        {
+            sendErrorResponse(response, 400, "Invalid user ID");
+            return std::nullopt;
+        }
+        return userId;
+    }
+    catch (const std::exception&)
+    {
+        sendErrorResponse(response, 400, "Invalid user ID format");
+        return std::nullopt;
+    }
 }
 
 } // namespace handlers

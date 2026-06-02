@@ -26,9 +26,17 @@ ItemTypesHandler::ItemTypesHandler(
 
 void ItemTypesHandler::handleGetItemTypes(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+
     auto params = extractQueryParams(request);
 
     int page = 1;
@@ -73,9 +81,17 @@ void ItemTypesHandler::handleGetItemTypes(
 
 void ItemTypesHandler::handleGetItemType(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+
     int64_t id = extractItemTypeIdFromPath(request);
     if (id <= 0)
     {
@@ -102,13 +118,22 @@ void ItemTypesHandler::handleGetItemType(
 
 void ItemTypesHandler::handleCreateItemType(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     request
         .extract_json()
         .then(
-            [this, request](pplx::task<web::json::value> task)
+            [this, request, userId](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -116,16 +141,46 @@ void ItemTypesHandler::handleCreateItemType(
                     auto nlohmannJson = dto::toNlohmannJson(jsonBody);
                     dto::ItemType itemType(nlohmannJson);
 
-                    auto created = m_itemTypeService->createItemType(itemType);
-                    if (!created)
+                    if (!itemType.caption.has_value() || itemType.caption->empty())
                     {
                         web::http::http_response resp(
                             web::http::status_codes::BadRequest
                         );
+                        sendErrorResponse(resp, 400, "Caption is required");
+                        request.reply(resp);
+                        return;
+                    }
+
+                    if (!itemType.workflowId.has_value())
+                    {
+                        web::http::http_response resp(
+                            web::http::status_codes::BadRequest
+                        );
+                        sendErrorResponse(resp, 400, "workflowId is required");
+                        request.reply(resp);
+                        return;
+                    }
+
+                    if (!itemType.kind.has_value() || itemType.kind->empty())
+                    {
+                        web::http::http_response resp(
+                            web::http::status_codes::BadRequest
+                        );
+                        sendErrorResponse(resp, 400, "kind is required");
+                        request.reply(resp);
+                        return;
+                    }
+
+                    auto created = m_itemTypeService->createItemType(itemType, userId);
+                    if (!created)
+                    {
+                        web::http::http_response resp(
+                            web::http::status_codes::Forbidden
+                        );
                         sendErrorResponse(
                             resp,
-                            400,
-                            "Invalid item type data or could not create item type"
+                            403,
+                            "Insufficient permissions to create item type"
                         );
                         request.reply(resp);
                         return;
@@ -153,9 +208,18 @@ void ItemTypesHandler::handleCreateItemType(
 
 void ItemTypesHandler::handleUpdateItemType(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     const int64_t id = extractItemTypeIdFromPath(request);
     if (id <= 0)
     {
@@ -168,7 +232,7 @@ void ItemTypesHandler::handleUpdateItemType(
     request
         .extract_json()
         .then(
-            [this, request, id](pplx::task<web::json::value> task)
+            [this, request, userId, id](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -177,7 +241,7 @@ void ItemTypesHandler::handleUpdateItemType(
                     nlohmannJson["id"] = id;
                     dto::ItemType itemType(nlohmannJson);
 
-                    auto updated = m_itemTypeService->updateItemType(itemType);
+                    auto updated = m_itemTypeService->updateItemType(itemType, userId);
                     if (!updated)
                     {
                         web::http::http_response resp(
@@ -186,7 +250,7 @@ void ItemTypesHandler::handleUpdateItemType(
                         sendErrorResponse(
                             resp,
                             404,
-                            "Item type not found or update failed"
+                            "Item type not found or insufficient permissions"
                         );
                         request.reply(resp);
                         return;
@@ -216,9 +280,18 @@ void ItemTypesHandler::handleUpdateItemType(
 
 void ItemTypesHandler::handleDeleteItemType(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     const int64_t id = extractItemTypeIdFromPath(request);
     if (id <= 0)
     {
@@ -228,14 +301,14 @@ void ItemTypesHandler::handleDeleteItemType(
         return;
     }
 
-    if (m_itemTypeService->deleteItemType(id))
+    if (m_itemTypeService->deleteItemType(id, userId))
     {
         request.reply(web::http::status_codes::NoContent);
     }
     else
     {
         web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Item type not found");
+        sendErrorResponse(resp, 404, "Item type not found or insufficient permissions");
         request.reply(resp);
     }
 }
@@ -277,6 +350,34 @@ void ItemTypesHandler::sendErrorResponse(
     error["code"] = web::json::value::number(code);
     error["message"] = web::json::value::string(message);
     response.set_body(error);
+}
+
+std::optional<int64_t> ItemTypesHandler::parseUserId(
+    const std::string& userIdStr,
+    web::http::http_response& response
+)
+{
+    if (userIdStr.empty())
+    {
+        sendErrorResponse(response, 401, "User not authenticated");
+        return std::nullopt;
+    }
+
+    try
+    {
+        int64_t userId = std::stoll(userIdStr);
+        if (userId <= 0)
+        {
+            sendErrorResponse(response, 400, "Invalid user ID");
+            return std::nullopt;
+        }
+        return userId;
+    }
+    catch (const std::exception&)
+    {
+        sendErrorResponse(response, 400, "Invalid user ID format");
+        return std::nullopt;
+    }
 }
 
 } // namespace handlers

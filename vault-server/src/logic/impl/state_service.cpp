@@ -10,23 +10,23 @@ namespace services
 StateService::StateService(
     std::shared_ptr<repositories::IStateRepository> stateRepo,
     std::shared_ptr<repositories::IEdgeRepository> edgeRepo,
-    std::shared_ptr<repositories::IWorkflowRepository> workflowRepo
+    std::shared_ptr<repositories::IWorkflowRepository> workflowRepo,
+    std::shared_ptr<IAuthorizationService> authzService
 )
     : m_stateRepo(std::move(stateRepo))
     , m_edgeRepo(std::move(edgeRepo))
     , m_workflowRepo(std::move(workflowRepo))
+    , m_authzService(std::move(authzService))
 {
-    if (!m_stateRepo)
+    if (!m_stateRepo || !m_edgeRepo || !m_workflowRepo)
     {
-        throw std::runtime_error("StateRepository не может быть пустым");
+        throw std::runtime_error(
+            "StateService: один или несколько репозиториев не инициализированы"
+        );
     }
-    if (!m_edgeRepo)
+    if (!m_authzService)
     {
-        throw std::runtime_error("EdgeRepository не может быть пустым");
-    }
-    if (!m_workflowRepo)
-    {
-        throw std::runtime_error("WorkflowRepository не может быть пустым");
+        throw std::runtime_error("AuthorizationService не может быть пустым");
     }
 }
 
@@ -49,22 +49,29 @@ std::optional<dto::State> StateService::state(int64_t id)
     return m_stateRepo->findById(id);
 }
 
-std::optional<dto::State> StateService::createState(const dto::State& state)
+std::optional<dto::State> StateService::createState(
+    const dto::State& state,
+    int64_t userId
+)
 {
-    std::string errorMessage;
-    if (!validateState(state, errorMessage))
+    // Только супер-админ может создавать состояния
+    if (!m_authzService->isSuperAdmin(userId))
     {
-        LOG_WARN << "createState: проверка не пройдена - " << errorMessage;
+        LOG_WARN << "createState: пользователь " << userId << " не имеет прав";
         return std::nullopt;
     }
 
-    // Проверяем существование workflow
+    std::string errorMessage;
+    if (!validateState(state, errorMessage))
+    {
+        LOG_WARN << "createState: " << errorMessage;
+        return std::nullopt;
+    }
+
     auto workflow = m_workflowRepo->findById(*state.workflowId);
     if (!workflow.has_value())
     {
-        LOG_WARN
-            << "createState: рабочий процесс с id="
-            << *state.workflowId << " не найден";
+        LOG_WARN << "createState: рабочий процесс с id=" << *state.workflowId << " не найден";
         return std::nullopt;
     }
 
@@ -75,62 +82,68 @@ std::optional<dto::State> StateService::createState(const dto::State& state)
         return std::nullopt;
     }
 
-    LOG_INFO
-        << "Состояние создано: id=" << newId
-        << ", название='" << *state.caption << "'"
-        << ", workflowId=" << *state.workflowId;
-
+    LOG_INFO << "Состояние создано: id=" << newId << ", пользователь=" << userId;
     return m_stateRepo->findById(newId);
 }
 
-std::optional<dto::State> StateService::updateState(const dto::State& state)
+std::optional<dto::State> StateService::updateState(
+    const dto::State& state,
+    int64_t userId
+)
 {
+    // Только супер-админ может обновлять состояния
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateState: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!state.id.has_value())
     {
         LOG_WARN << "updateState: отсутствует ID";
         return std::nullopt;
     }
 
-    // Проверяем существование
     auto existing = m_stateRepo->findById(*state.id);
     if (!existing.has_value())
     {
-        LOG_WARN
-            << "updateState: состояние с id="
-            << *state.id << " не найдено";
+        LOG_WARN << "updateState: состояние с id=" << *state.id << " не найдено";
         return std::nullopt;
     }
 
-    // Если состояние используется элементами, запрещаем перевод в архив
     if (state.isArchive.has_value() && *state.isArchive)
     {
         if (m_stateRepo->isUsedByItems(*state.id))
         {
-            LOG_WARN
-                << "updateState: невозможно архивировать состояние id="
-                << *state.id << ", так как оно используется элементами";
+            LOG_WARN << "updateState: невозможно архивировать состояние id=" << *state.id
+                     << ", так как оно используется элементами";
             return std::nullopt;
         }
     }
 
     if (!m_stateRepo->update(state))
     {
-        LOG_ERROR
-            << "updateState: не удалось обновить состояние id="
-            << *state.id;
+        LOG_ERROR << "updateState: не удалось обновить состояние id=" << *state.id;
         return std::nullopt;
     }
 
-    LOG_INFO << "Состояние обновлено: id=" << *state.id;
-
+    LOG_INFO << "Состояние обновлено: id=" << *state.id << ", пользователь=" << userId;
     return m_stateRepo->findById(*state.id);
 }
 
-StateResult StateService::deleteState(int64_t id)
+StateResult StateService::deleteState(int64_t id, int64_t userId)
 {
     StateResult result;
 
-    // Проверяем существование
+    // Только супер-админ может удалять состояния
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        result.errorMessage = "Недостаточно прав для удаления состояния";
+        result.errorCode = 403;
+        LOG_WARN << "deleteState: пользователь " << userId << " не имеет прав";
+        return result;
+    }
+
     auto existing = m_stateRepo->findById(id);
     if (!existing.has_value())
     {
@@ -139,15 +152,10 @@ StateResult StateService::deleteState(int64_t id)
         return result;
     }
 
-    // Проверяем, можно ли удалить
     if (!canDeleteState(id))
     {
-        result.errorMessage = "Невозможно удалить состояние: "
-                              "имеются связанные элементы или переходы";
+        result.errorMessage = "Невозможно удалить состояние: имеются связанные элементы или переходы";
         result.errorCode = 409;
-        LOG_WARN
-            << "deleteState: состояние id=" << id
-            << " не может быть удалено из-за зависимостей";
         return result;
     }
 
@@ -155,13 +163,11 @@ StateResult StateService::deleteState(int64_t id)
     {
         result.errorMessage = "Не удалось удалить состояние";
         result.errorCode = 500;
-        LOG_ERROR << "deleteState: ошибка удаления состояния id=" << id;
         return result;
     }
 
     result.success = true;
-    LOG_INFO << "Состояние удалено: id=" << id;
-
+    LOG_INFO << "Состояние удалено: id=" << id << ", пользователь=" << userId;
     return result;
 }
 
@@ -180,18 +186,10 @@ bool StateService::canDeleteState(int64_t id)
 
     // Проверяем, есть ли связанные переходы
     auto edges = m_edgeRepo->findByStateId(id);
-    if (!edges.empty())
-    {
-        return false;
-    }
-
-    return true;
+    return edges.empty();
 }
 
-bool StateService::validateState(
-    const dto::State& state,
-    std::string& errorMessage
-)
+bool StateService::validateState(const dto::State& state, std::string& errorMessage)
 {
     if (!state.workflowId.has_value())
     {

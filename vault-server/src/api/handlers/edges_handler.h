@@ -60,6 +60,10 @@ private:
         int code,
         const std::string& message
     );
+    std::optional<int64_t> parseUserId(
+        const std::string& userIdStr,
+        web::http::http_response& response
+    );
 
 private:
     std::shared_ptr<services::IEdgeService> m_edgeService;

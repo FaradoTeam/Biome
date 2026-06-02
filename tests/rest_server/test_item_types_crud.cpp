@@ -29,7 +29,8 @@ struct ItemTypesTestFixture
         mockUserService = std::make_shared<MockUserService>();
         mockItemTypeService = std::make_shared<MockItemTypeService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Супер-админ (userId=1) для создания/обновления/удаления типов элементов
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
 
         // Настройка тестовых данных по умолчанию
         setupDefaultItemTypeService();
@@ -355,6 +356,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_type_success)
         *mockItemTypeService->getLastCreatedItemType().kind,
         "folder"
     );
+    BOOST_CHECK_EQUAL(mockItemTypeService->getLastCreateItemTypeUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 100);
@@ -364,20 +366,15 @@ BOOST_AUTO_TEST_CASE(test_create_item_type_success)
 
 BOOST_AUTO_TEST_CASE(test_create_item_type_missing_required_fields)
 {
-    // Настраиваем мок на возврат ошибки
     mockItemTypeService->setCreateItemTypeResult(std::nullopt);
 
     web::json::value body;
     body[U("kind")] = web::json::value::string(U("issue"));
-    // caption отсутствует
 
     auto response = makePostRequest("/api/item-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
-    BOOST_CHECK_EQUAL(mockItemTypeService->createItemTypeCallCount(), 1);
-    
-    // Проверяем, что сервис получил неполные данные
-    BOOST_CHECK(!mockItemTypeService->getLastCreatedItemType().caption.has_value());
+    BOOST_CHECK_EQUAL(mockItemTypeService->createItemTypeCallCount(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_item_type_with_all_kinds)
@@ -446,6 +443,7 @@ BOOST_AUTO_TEST_CASE(test_update_item_type_success)
         *mockItemTypeService->getLastUpdatedItemType().kind,
         "requirement"
     );
+    BOOST_CHECK_EQUAL(mockItemTypeService->getLastUpdateItemTypeUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_update_item_type_partial)
@@ -457,7 +455,6 @@ BOOST_AUTO_TEST_CASE(test_update_item_type_partial)
 
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Только название"));
-    // kind не передаём
 
     auto response = makePutRequest("/api/item-types/1", body).get();
 
@@ -491,6 +488,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_type_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockItemTypeService->deleteItemTypeCallCount(), 1);
     BOOST_CHECK_EQUAL(mockItemTypeService->getLastDeletedItemTypeId(), 2);
+    BOOST_CHECK_EQUAL(mockItemTypeService->getLastDeleteItemTypeUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_item_type_not_found)

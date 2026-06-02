@@ -27,18 +27,22 @@ public:
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleGetItemType(
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleCreateItemType(
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleUpdateItemType(
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleDeleteItemType(
         const web::http::http_request& request,
         const std::string& userId
@@ -46,15 +50,17 @@ public:
 
 private:
     int64_t extractItemTypeIdFromPath(const web::http::http_request& request);
-
     std::map<std::string, std::string> extractQueryParams(
         const web::http::http_request& request
     );
-
     void sendErrorResponse(
         web::http::http_response& response,
         int code,
         const std::string& message
+    );
+    std::optional<int64_t> parseUserId(
+        const std::string& userIdStr,
+        web::http::http_response& response
     );
 
 private:

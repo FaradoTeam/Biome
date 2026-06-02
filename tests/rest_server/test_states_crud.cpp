@@ -27,7 +27,8 @@ struct StatesTestFixture
         mockAuthService = std::make_shared<MockAuthService>();
         mockStateService = std::make_shared<MockStateService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Супер-админ (userId=1) для создания/обновления/удаления состояний
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
 
         server = std::make_unique<RestServer>("127.0.0.1", 18086);
         server->setAuthMiddleware(mockAuthMiddleware);
@@ -241,6 +242,7 @@ BOOST_AUTO_TEST_CASE(test_create_state_success)
     BOOST_CHECK_EQUAL(mockStateService->getCreateStateCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockStateService->getLastCreatedState().caption, "Review");
     BOOST_CHECK_EQUAL(*mockStateService->getLastCreatedState().workflowId, 10);
+    BOOST_CHECK_EQUAL(mockStateService->getLastCreateStateUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_state_missing_required_fields)
@@ -275,6 +277,7 @@ BOOST_AUTO_TEST_CASE(test_update_state_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockStateService->getUpdateStateCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockStateService->getLastUpdatedState().id, 5);
+    BOOST_CHECK_EQUAL(mockStateService->getLastUpdateStateUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_update_state_not_found)
@@ -304,6 +307,7 @@ BOOST_AUTO_TEST_CASE(test_delete_state_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockStateService->getDeleteStateCallCount(), 1);
     BOOST_CHECK_EQUAL(mockStateService->getLastDeletedStateId(), 5);
+    BOOST_CHECK_EQUAL(mockStateService->getLastDeleteStateUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_state_with_dependencies)

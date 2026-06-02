@@ -61,23 +61,35 @@ public:
     /**
      * @brief Создает новое состояние.
      * @param state DTO состояния
+     * @param userId ID пользователя для проверки прав
      * @return Созданное состояние или std::nullopt при ошибке
      */
-    virtual std::optional<dto::State> createState(const dto::State& state) = 0;
+    virtual std::optional<dto::State> createState(
+        const dto::State& state,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Обновляет существующее состояние.
-     * @param state DTO с новыми данными (id обязателен)
+     * @param state DTO состояния с новыми данными
+     * @param userId ID пользователя для проверки прав
      * @return Обновленное состояние или std::nullopt при ошибке
      */
-    virtual std::optional<dto::State> updateState(const dto::State& state) = 0;
+    virtual std::optional<dto::State> updateState(
+        const dto::State& state,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Удаляет состояние.
      * @param id Идентификатор состояния
+     * @param userId ID пользователя для проверки прав
      * @return Результат операции
      */
-    virtual StateResult deleteState(int64_t id) = 0;
+    virtual StateResult deleteState(
+        int64_t id,
+        int64_t userId
+    ) = 0;
 
     /**
      * @brief Получает все состояния рабочего процесса.
