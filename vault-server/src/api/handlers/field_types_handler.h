@@ -27,18 +27,22 @@ public:
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleGetFieldType(
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleCreateFieldType(
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleUpdateFieldType(
         const web::http::http_request& request,
         const std::string& userId
     );
+
     void handleDeleteFieldType(
         const web::http::http_request& request,
         const std::string& userId
@@ -46,15 +50,17 @@ public:
 
 private:
     int64_t extractFieldTypeIdFromPath(const web::http::http_request& request);
-
     std::map<std::string, std::string> extractQueryParams(
         const web::http::http_request& request
     );
-
     void sendErrorResponse(
         web::http::http_response& response,
         int code,
         const std::string& message
+    );
+    std::optional<int64_t> parseUserId(
+        const std::string& userIdStr,
+        web::http::http_response& response
     );
 
 private:
