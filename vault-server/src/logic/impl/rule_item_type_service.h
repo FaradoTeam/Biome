@@ -29,9 +29,21 @@ public:
     ) override;
 
     std::optional<dto::RuleItemType> getRuleItemType(int64_t id) override;
-    std::optional<dto::RuleItemType> createRuleItemType(const dto::RuleItemType& rit) override;
-    std::optional<dto::RuleItemType> updateRuleItemType(const dto::RuleItemType& rit) override;
-    bool deleteRuleItemType(int64_t id) override;
+
+    std::optional<dto::RuleItemType> createRuleItemType(
+        const dto::RuleItemType& rit,
+        int64_t userId
+    ) override;
+
+    std::optional<dto::RuleItemType> updateRuleItemType(
+        const dto::RuleItemType& rit,
+        int64_t userId
+    ) override;
+
+    bool deleteRuleItemType(
+        int64_t id,
+        int64_t userId
+    ) override;
 
 private:
     void invalidateUsersByRuleId(int64_t ruleId);

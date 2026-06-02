@@ -50,8 +50,18 @@ std::optional<dto::RuleState> RuleStateService::getRuleState(int64_t id)
     return m_ruleStateRepo->findById(id);
 }
 
-std::optional<dto::RuleState> RuleStateService::createRuleState(const dto::RuleState& ruleState)
+std::optional<dto::RuleState> RuleStateService::createRuleState(
+    const dto::RuleState& ruleState,
+    int64_t userId
+)
 {
+    // Только супер-админ может создавать права на состояния
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createRuleState: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     // Проверка обязательных полей
     if (!ruleState.ruleId.has_value() || !ruleState.stateId.has_value())
     {
@@ -90,7 +100,8 @@ std::optional<dto::RuleState> RuleStateService::createRuleState(const dto::RuleS
     LOG_INFO
         << "RuleState создан: id=" << newId
         << ", ruleId=" << *ruleState.ruleId
-        << ", stateId=" << *ruleState.stateId;
+        << ", stateId=" << *ruleState.stateId
+        << ", пользователь=" << userId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRuleId(*ruleState.ruleId);
@@ -98,8 +109,18 @@ std::optional<dto::RuleState> RuleStateService::createRuleState(const dto::RuleS
     return m_ruleStateRepo->findById(newId);
 }
 
-std::optional<dto::RuleState> RuleStateService::updateRuleState(const dto::RuleState& ruleState)
+std::optional<dto::RuleState> RuleStateService::updateRuleState(
+    const dto::RuleState& ruleState,
+    int64_t userId
+)
 {
+    // Только супер-админ может обновлять права на состояния
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateRuleState: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!ruleState.id.has_value())
     {
         LOG_WARN << "updateRuleState: отсутствует id";
@@ -153,7 +174,7 @@ std::optional<dto::RuleState> RuleStateService::updateRuleState(const dto::RuleS
         return std::nullopt;
     }
 
-    LOG_INFO << "RuleState обновлен: id=" << *ruleState.id;
+    LOG_INFO << "RuleState обновлен: id=" << *ruleState.id << ", пользователь=" << userId;
 
     // Инвалидируем кэш по старому и новому ruleId
     invalidateUsersByRuleId(oldRuleId);
@@ -165,8 +186,15 @@ std::optional<dto::RuleState> RuleStateService::updateRuleState(const dto::RuleS
     return m_ruleStateRepo->findById(*ruleState.id);
 }
 
-bool RuleStateService::deleteRuleState(int64_t id)
+bool RuleStateService::deleteRuleState(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять права на состояния
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteRuleState: пользователь " << userId << " не имеет прав";
+        return false;
+    }
+
     auto existing = m_ruleStateRepo->findById(id);
     if (!existing)
     {
@@ -182,7 +210,7 @@ bool RuleStateService::deleteRuleState(int64_t id)
         return false;
     }
 
-    LOG_INFO << "RuleState удален: id=" << id;
+    LOG_INFO << "RuleState удален: id=" << id << ", пользователь=" << userId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRuleId(ruleId);
@@ -196,7 +224,8 @@ void RuleStateService::invalidateUsersByRuleId(int64_t ruleId)
     if (!rule || !rule->roleId.has_value())
     {
         LOG_DEBUG
-            << "invalidateUsersByRuleId: правило " << ruleId << " не имеет roleId";
+            << "invalidateUsersByRuleId: правило " << ruleId
+            << " не имеет roleId";
         return;
     }
 

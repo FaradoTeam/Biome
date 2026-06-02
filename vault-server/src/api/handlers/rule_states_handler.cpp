@@ -11,35 +11,62 @@
 namespace server::handlers
 {
 
-RuleStatesHandler::RuleStatesHandler(std::shared_ptr<services::IRuleStateService> service)
+RuleStatesHandler::RuleStatesHandler(
+    std::shared_ptr<services::IRuleStateService> service
+)
     : m_service(std::move(service))
 {
+    if (!m_service)
+    {
+        LOG_WARN << "RuleStatesHandler инициализирован без сервиса";
+    }
 }
 
-void RuleStatesHandler::handleGetItems(const web::http::http_request& request, const std::string& /*userId*/)
+void RuleStatesHandler::handleGetItems(
+    const web::http::http_request& request,
+    const std::string& /*userId*/
+)
 {
     auto params = extractQueryParams(request);
-    int page = params.count("page") ? std::stoi(params["page"]) : 1;
-    int pageSize = params.count("pageSize") ? std::stoi(params["pageSize"]) : 20;
-    std::optional<int64_t> ruleId, stateId;
+
+    int page = 1;
+    if (params.count("page"))
+        page = std::stoi(params["page"]);
+
+    int pageSize = 20;
+    if (params.count("pageSize"))
+        pageSize = std::stoi(params["pageSize"]);
+
+    std::optional<int64_t> ruleId;
     if (params.count("ruleId"))
         ruleId = std::stoll(params["ruleId"]);
+
+    std::optional<int64_t> stateId;
     if (params.count("stateId"))
         stateId = std::stoll(params["stateId"]);
 
     auto pageData = m_service->getRuleStates(page, pageSize, ruleId, stateId);
+
     web::json::value response;
     web::json::value items = web::json::value::array();
+
     for (size_t i = 0; i < pageData.items.size(); ++i)
+    {
         items[i] = dto::toWebJson(pageData.items[i].toJson());
+    }
+
     response["items"] = items;
     response["totalCount"] = pageData.totalCount;
     response["page"] = page;
     response["pageSize"] = pageSize;
+
     request.reply(web::http::status_codes::OK, response);
 }
 
-void RuleStatesHandler::handleGetItem(const web::http::http_request& request, const std::string& /*userId*/)
+void RuleStatesHandler::handleGetItem(
+    const web::http::http_request& request,
+    const std::string& /*userId*/
+)
 {
     int64_t id = extractId(request);
     if (id <= 0)
@@ -49,6 +76,7 @@ void RuleStatesHandler::handleGetItem(const web::http::http_request& request, co
         request.reply(resp);
         return;
     }
+
     auto item = m_service->getRuleState(id);
     if (!item)
     {
@@ -57,41 +85,67 @@ void RuleStatesHandler::handleGetItem(const web::http::http_request& request, co
         request.reply(resp);
         return;
     }
-    request.reply(web::http::status_codes::OK, dto::toWebJson(item->toJson()));
+
+    request.reply(
+        web::http::status_codes::OK,
+        dto::toWebJson(item->toJson())
+    );
 }
 
-void RuleStatesHandler::handleCreateItem(const web::http::http_request& request, const std::string& /*userId*/)
+void RuleStatesHandler::handleCreateItem(
+    const web::http::http_request& request,
+    const std::string& userIdStr
+)
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     request
         .extract_json()
         .then(
-            [this, request](pplx::task<web::json::value> task)
+            [this, request, userId](pplx::task<web::json::value> task)
             {
                 try
                 {
                     auto json = task.get();
                     dto::RuleState rs(dto::toNlohmannJson(json));
-                    if (!rs.ruleId || !rs.stateId)
+
+                    if (!rs.ruleId.has_value() || !rs.stateId.has_value())
                     {
                         web::http::http_response resp(web::http::status_codes::BadRequest);
                         sendErrorResponse(resp, 400, "ruleId and stateId are required");
                         request.reply(resp);
                         return;
                     }
-                    auto created = m_service->createRuleState(rs);
+
+                    auto created = m_service->createRuleState(rs, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Conflict);
-                        sendErrorResponse(resp, 409, "RuleState already exists or invalid references");
+                        web::http::http_response resp(web::http::status_codes::Forbidden);
+                        sendErrorResponse(resp, 403, "Insufficient permissions to create RuleState");
                         request.reply(resp);
                         return;
                     }
-                    request.reply(web::http::status_codes::Created, dto::toWebJson(created->toJson()));
+
+                    request.reply(
+                        web::http::status_codes::Created,
+                        dto::toWebJson(created->toJson())
+                    );
                 }
                 catch (const std::exception& e)
                 {
                     web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    sendErrorResponse(
+                        resp,
+                        400,
+                        std::string("Invalid request: ") + e.what()
+                    );
                     request.reply(resp);
                 }
             }
@@ -99,8 +153,20 @@ void RuleStatesHandler::handleCreateItem(const web::http::http_request& request,
         .wait();
 }
 
-void RuleStatesHandler::handleUpdateItem(const web::http::http_request& request, const std::string& /*userId*/)
+void RuleStatesHandler::handleUpdateItem(
+    const web::http::http_request& request,
+    const std::string& userIdStr
+)
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     int64_t id = extractId(request);
     if (id <= 0)
     {
@@ -109,10 +175,11 @@ void RuleStatesHandler::handleUpdateItem(const web::http::http_request& request,
         request.reply(resp);
         return;
     }
+
     request
         .extract_json()
         .then(
-            [this, request, id](pplx::task<web::json::value> task)
+            [this, request, userId, id](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -120,20 +187,29 @@ void RuleStatesHandler::handleUpdateItem(const web::http::http_request& request,
                     auto nl = dto::toNlohmannJson(json);
                     nl["id"] = id;
                     dto::RuleState rs(nl);
-                    auto updated = m_service->updateRuleState(rs);
+
+                    auto updated = m_service->updateRuleState(rs, userId);
                     if (!updated)
                     {
                         web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "RuleState not found or update failed");
+                        sendErrorResponse(resp, 404, "RuleState not found or insufficient permissions");
                         request.reply(resp);
                         return;
                     }
-                    request.reply(web::http::status_codes::OK, dto::toWebJson(updated->toJson()));
+
+                    request.reply(
+                        web::http::status_codes::OK,
+                        dto::toWebJson(updated->toJson())
+                    );
                 }
                 catch (const std::exception& e)
                 {
                     web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
+                    sendErrorResponse(
+                        resp,
+                        400,
+                        std::string("Invalid request: ") + e.what()
+                    );
                     request.reply(resp);
                 }
             }
@@ -141,8 +217,20 @@ void RuleStatesHandler::handleUpdateItem(const web::http::http_request& request,
         .wait();
 }
 
-void RuleStatesHandler::handleDeleteItem(const web::http::http_request& request, const std::string& /*userId*/)
+void RuleStatesHandler::handleDeleteItem(
+    const web::http::http_request& request,
+    const std::string& userIdStr
+)
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    int64_t userId = *userIdOpt;
+
     int64_t id = extractId(request);
     if (id <= 0)
     {
@@ -151,14 +239,15 @@ void RuleStatesHandler::handleDeleteItem(const web::http::http_request& request,
         request.reply(resp);
         return;
     }
-    if (m_service->deleteRuleState(id))
+
+    if (m_service->deleteRuleState(id, userId))
     {
         request.reply(web::http::status_codes::NoContent);
     }
     else
     {
         web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "RuleState not found");
+        sendErrorResponse(resp, 404, "RuleState not found or insufficient permissions");
         request.reply(resp);
     }
 }
@@ -173,7 +262,9 @@ int64_t RuleStatesHandler::extractId(const web::http::http_request& request)
     return -1;
 }
 
-std::map<std::string, std::string> RuleStatesHandler::extractQueryParams(const web::http::http_request& request)
+std::map<std::string, std::string> RuleStatesHandler::extractQueryParams(
+    const web::http::http_request& request
+)
 {
     std::map<std::string, std::string> params;
     auto query = web::uri::split_query(request.request_uri().query());
@@ -182,12 +273,44 @@ std::map<std::string, std::string> RuleStatesHandler::extractQueryParams(const w
     return params;
 }
 
-void RuleStatesHandler::sendErrorResponse(web::http::http_response& response, int code, const std::string& message)
+void RuleStatesHandler::sendErrorResponse(
+    web::http::http_response& response,
+    int code,
+    const std::string& message
+)
 {
     web::json::value error;
     error["code"] = web::json::value::number(code);
     error["message"] = web::json::value::string(message);
     response.set_body(error);
+}
+
+std::optional<int64_t> RuleStatesHandler::parseUserId(
+    const std::string& userIdStr,
+    web::http::http_response& response
+)
+{
+    if (userIdStr.empty())
+    {
+        sendErrorResponse(response, 401, "User not authenticated");
+        return std::nullopt;
+    }
+
+    try
+    {
+        int64_t userId = std::stoll(userIdStr);
+        if (userId <= 0)
+        {
+            sendErrorResponse(response, 400, "Invalid user ID");
+            return std::nullopt;
+        }
+        return userId;
+    }
+    catch (const std::exception&)
+    {
+        sendErrorResponse(response, 400, "Invalid user ID format");
+        return std::nullopt;
+    }
 }
 
 } // namespace server::handlers

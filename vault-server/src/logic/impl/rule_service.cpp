@@ -48,8 +48,15 @@ std::optional<dto::Rule> RuleService::getRuleByRoleId(int64_t roleId)
     return m_ruleRepo->findByRoleId(roleId);
 }
 
-std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule)
+std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule, int64_t userId)
 {
+    // Только супер-админ может создавать правила
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createRule: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!rule.roleId.has_value())
     {
         LOG_WARN << "createRule: roleId обязателен";
@@ -66,8 +73,7 @@ std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule)
     // У одной роли не может быть нескольких правил
     if (m_ruleRepo->findByRoleId(*rule.roleId).has_value())
     {
-        LOG_WARN
-            << "createRule: правило для roleId=" << *rule.roleId << " уже существует";
+        LOG_WARN << "createRule: правило для roleId=" << *rule.roleId << " уже существует";
         return std::nullopt;
     }
 
@@ -78,7 +84,10 @@ std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule)
         return std::nullopt;
     }
 
-    LOG_INFO << "Правило создано: id=" << newId << ", roleId=" << *rule.roleId;
+    LOG_INFO
+        << "Правило создано: id=" << newId
+        << ", roleId=" << *rule.roleId
+        << ", пользователь=" << userId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRoleId(*rule.roleId);
@@ -86,8 +95,15 @@ std::optional<dto::Rule> RuleService::createRule(const dto::Rule& rule)
     return m_ruleRepo->findById(newId);
 }
 
-std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
+std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule, int64_t userId)
 {
+    // Только супер-админ может обновлять правила
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateRule: пользователь " << userId << " не имеет прав";
+        return std::nullopt;
+    }
+
     if (!rule.id.has_value())
     {
         LOG_WARN << "updateRule: отсутствует id";
@@ -114,9 +130,7 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
         }
         if (m_ruleRepo->findByRoleId(*rule.roleId).has_value())
         {
-            LOG_WARN
-                << "updateRule: правило для новой roleId=" << *rule.roleId
-                << " уже существует";
+            LOG_WARN << "updateRule: правило для новой roleId=" << *rule.roleId << " уже существует";
             return std::nullopt;
         }
         newRoleId = *rule.roleId;
@@ -128,7 +142,7 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
         return std::nullopt;
     }
 
-    LOG_INFO << "Правило обновлено: id=" << *rule.id;
+    LOG_INFO << "Правило обновлено: id=" << *rule.id << ", пользователь=" << userId;
 
     // Инвалидируем кэш по старой и новой роли
     invalidateUsersByRoleId(oldRoleId);
@@ -140,8 +154,15 @@ std::optional<dto::Rule> RuleService::updateRule(const dto::Rule& rule)
     return m_ruleRepo->findById(*rule.id);
 }
 
-bool RuleService::deleteRule(int64_t id)
+bool RuleService::deleteRule(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять правила
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteRule: пользователь " << userId << " не имеет прав";
+        return false;
+    }
+
     auto existing = m_ruleRepo->findById(id);
     if (!existing)
     {
@@ -152,14 +173,13 @@ bool RuleService::deleteRule(int64_t id)
     const int64_t roleId = *existing->roleId;
 
     // TODO: проверить, что правило не используется в RuleProject, RuleItemType, RuleState
-    // Это можно сделать через соответствующие репозитории
     if (!m_ruleRepo->remove(id))
     {
         LOG_ERROR << "deleteRule: не удалось удалить правило id=" << id;
         return false;
     }
 
-    LOG_INFO << "Правило удалено: id=" << id;
+    LOG_INFO << "Правило удалено: id=" << id << ", пользователь=" << userId;
 
     // Инвалидируем кэш для всех пользователей с этой ролью
     invalidateUsersByRoleId(roleId);

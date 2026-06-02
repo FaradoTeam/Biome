@@ -43,7 +43,12 @@ public:
     }
 
     // Реализация интерфейса
-    RuleStatesPage getRuleStates(int page, int pageSize, std::optional<int64_t> ruleId = std::nullopt, std::optional<int64_t> stateId = std::nullopt) override
+    RuleStatesPage getRuleStates(
+        int page,
+        int pageSize,
+        std::optional<int64_t> ruleId = std::nullopt,
+        std::optional<int64_t> stateId = std::nullopt
+    ) override
     {
         m_lastGetRuleStatesPage = page;
         m_lastGetRuleStatesPageSize = pageSize;
@@ -60,24 +65,54 @@ public:
         return m_getRuleStateResult;
     }
 
-    std::optional<dto::RuleState> createRuleState(const dto::RuleState& rs) override
+    std::optional<dto::RuleState> createRuleState(
+        const dto::RuleState& rs,
+        int64_t userId
+    ) override
     {
         m_lastCreatedRuleState = rs;
+        m_lastCreateRuleStateUserId = userId;
         ++m_createRuleStateCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может создавать
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_createRuleStateResult;
     }
 
-    std::optional<dto::RuleState> updateRuleState(const dto::RuleState& rs) override
+    std::optional<dto::RuleState> updateRuleState(
+        const dto::RuleState& rs,
+        int64_t userId
+    ) override
     {
         m_lastUpdatedRuleState = rs;
+        m_lastUpdateRuleStateUserId = userId;
         ++m_updateRuleStateCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может обновлять
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_updateRuleStateResult;
     }
 
-    bool deleteRuleState(int64_t id) override
+    bool deleteRuleState(
+        int64_t id,
+        int64_t userId
+    ) override
     {
         m_lastDeletedRuleStateId = id;
+        m_lastDeleteRuleStateUserId = userId;
         ++m_deleteRuleStateCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может удалять
+        if (userId != 1)
+        {
+            return false;
+        }
         return m_deleteRuleStateResult;
     }
 
@@ -94,8 +129,11 @@ public:
     std::optional<int64_t> getLastGetRuleStatesStateId() const { return m_lastGetRuleStatesStateId; }
     int64_t getLastGetRuleStateId() const { return m_lastGetRuleStateId; }
     const dto::RuleState& getLastCreatedRuleState() const { return m_lastCreatedRuleState; }
+    int64_t getLastCreateRuleStateUserId() const { return m_lastCreateRuleStateUserId; }
     const dto::RuleState& getLastUpdatedRuleState() const { return m_lastUpdatedRuleState; }
+    int64_t getLastUpdateRuleStateUserId() const { return m_lastUpdateRuleStateUserId; }
     int64_t getLastDeletedRuleStateId() const { return m_lastDeletedRuleStateId; }
+    int64_t getLastDeleteRuleStateUserId() const { return m_lastDeleteRuleStateUserId; }
 
     void reset()
     {
@@ -110,8 +148,11 @@ public:
         m_lastGetRuleStatesStateId.reset();
         m_lastGetRuleStateId = 0;
         m_lastCreatedRuleState = dto::RuleState {};
+        m_lastCreateRuleStateUserId = 0;
         m_lastUpdatedRuleState = dto::RuleState {};
+        m_lastUpdateRuleStateUserId = 0;
         m_lastDeletedRuleStateId = 0;
+        m_lastDeleteRuleStateUserId = 0;
     }
 
 private:
@@ -133,8 +174,11 @@ private:
     std::optional<int64_t> m_lastGetRuleStatesStateId;
     int64_t m_lastGetRuleStateId = 0;
     dto::RuleState m_lastCreatedRuleState;
+    int64_t m_lastCreateRuleStateUserId = 0;
     dto::RuleState m_lastUpdatedRuleState;
+    int64_t m_lastUpdateRuleStateUserId = 0;
     int64_t m_lastDeletedRuleStateId = 0;
+    int64_t m_lastDeleteRuleStateUserId = 0;
 };
 
 } // namespace server::tests

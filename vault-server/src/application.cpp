@@ -169,7 +169,8 @@ bool Application::initialize()
         authorizationService
     );
     auto roleMenuItemService = std::make_shared<services::RoleMenuItemService>(
-        roleMenuItemRepository, roleRepository
+        roleMenuItemRepository, roleRepository,
+        authorizationService
     );
     auto userTeamRoleService = std::make_shared<services::UserTeamRoleService>(
         userTeamRoleRepository, userRepository, teamRepository, roleRepository,

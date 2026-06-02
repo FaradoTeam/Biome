@@ -43,7 +43,11 @@ public:
     }
 
     // Реализация интерфейса
-    RoleMenuItemsPage getRoleMenuItems(int page, int pageSize, std::optional<int64_t> roleId = std::nullopt) override
+    RoleMenuItemsPage getRoleMenuItems(
+        int page,
+        int pageSize,
+        std::optional<int64_t> roleId = std::nullopt
+    ) override
     {
         m_lastGetRoleMenuItemsPage = page;
         m_lastGetRoleMenuItemsPageSize = pageSize;
@@ -59,24 +63,54 @@ public:
         return m_getRoleMenuItemResult;
     }
 
-    std::optional<dto::RoleMenuItem> createRoleMenuItem(const dto::RoleMenuItem& item) override
+    std::optional<dto::RoleMenuItem> createRoleMenuItem(
+        const dto::RoleMenuItem& item,
+        int64_t userId
+    ) override
     {
         m_lastCreatedRoleMenuItem = item;
+        m_lastCreateRoleMenuItemUserId = userId;
         ++m_createRoleMenuItemCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может создавать
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_createRoleMenuItemResult;
     }
 
-    std::optional<dto::RoleMenuItem> updateRoleMenuItem(const dto::RoleMenuItem& item) override
+    std::optional<dto::RoleMenuItem> updateRoleMenuItem(
+        const dto::RoleMenuItem& item,
+        int64_t userId
+    ) override
     {
         m_lastUpdatedRoleMenuItem = item;
+        m_lastUpdateRoleMenuItemUserId = userId;
         ++m_updateRoleMenuItemCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может обновлять
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_updateRoleMenuItemResult;
     }
 
-    bool deleteRoleMenuItem(int64_t id) override
+    bool deleteRoleMenuItem(
+        int64_t id,
+        int64_t userId
+    ) override
     {
         m_lastDeletedRoleMenuItemId = id;
+        m_lastDeleteRoleMenuItemUserId = userId;
         ++m_deleteRoleMenuItemCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может удалять
+        if (userId != 1)
+        {
+            return false;
+        }
         return m_deleteRoleMenuItemResult;
     }
 
@@ -92,8 +126,11 @@ public:
     std::optional<int64_t> getLastGetRoleMenuItemsRoleId() const { return m_lastGetRoleMenuItemsRoleId; }
     int64_t getLastGetRoleMenuItemId() const { return m_lastGetRoleMenuItemId; }
     const dto::RoleMenuItem& getLastCreatedRoleMenuItem() const { return m_lastCreatedRoleMenuItem; }
+    int64_t getLastCreateRoleMenuItemUserId() const { return m_lastCreateRoleMenuItemUserId; }
     const dto::RoleMenuItem& getLastUpdatedRoleMenuItem() const { return m_lastUpdatedRoleMenuItem; }
+    int64_t getLastUpdateRoleMenuItemUserId() const { return m_lastUpdateRoleMenuItemUserId; }
     int64_t getLastDeletedRoleMenuItemId() const { return m_lastDeletedRoleMenuItemId; }
+    int64_t getLastDeleteRoleMenuItemUserId() const { return m_lastDeleteRoleMenuItemUserId; }
 
     void reset()
     {
@@ -107,8 +144,11 @@ public:
         m_lastGetRoleMenuItemsRoleId.reset();
         m_lastGetRoleMenuItemId = 0;
         m_lastCreatedRoleMenuItem = dto::RoleMenuItem {};
+        m_lastCreateRoleMenuItemUserId = 0;
         m_lastUpdatedRoleMenuItem = dto::RoleMenuItem {};
+        m_lastUpdateRoleMenuItemUserId = 0;
         m_lastDeletedRoleMenuItemId = 0;
+        m_lastDeleteRoleMenuItemUserId = 0;
     }
 
 private:
@@ -129,8 +169,11 @@ private:
     std::optional<int64_t> m_lastGetRoleMenuItemsRoleId;
     int64_t m_lastGetRoleMenuItemId = 0;
     dto::RoleMenuItem m_lastCreatedRoleMenuItem;
+    int64_t m_lastCreateRoleMenuItemUserId = 0;
     dto::RoleMenuItem m_lastUpdatedRoleMenuItem;
+    int64_t m_lastUpdateRoleMenuItemUserId = 0;
     int64_t m_lastDeletedRoleMenuItemId = 0;
+    int64_t m_lastDeleteRoleMenuItemUserId = 0;
 };
 
 } // namespace server::tests

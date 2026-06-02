@@ -43,7 +43,12 @@ public:
     }
 
     // Реализация интерфейса
-    RuleItemTypesPage getRuleItemTypes(int page, int pageSize, std::optional<int64_t> ruleId = std::nullopt, std::optional<int64_t> itemTypeId = std::nullopt) override
+    RuleItemTypesPage getRuleItemTypes(
+        int page,
+        int pageSize,
+        std::optional<int64_t> ruleId = std::nullopt,
+        std::optional<int64_t> itemTypeId = std::nullopt
+    ) override
     {
         m_lastGetRuleItemTypesPage = page;
         m_lastGetRuleItemTypesPageSize = pageSize;
@@ -60,24 +65,54 @@ public:
         return m_getRuleItemTypeResult;
     }
 
-    std::optional<dto::RuleItemType> createRuleItemType(const dto::RuleItemType& rit) override
+    std::optional<dto::RuleItemType> createRuleItemType(
+        const dto::RuleItemType& rit,
+        int64_t userId
+    ) override
     {
         m_lastCreatedRuleItemType = rit;
+        m_lastCreateRuleItemTypeUserId = userId;
         ++m_createRuleItemTypeCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может создавать
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_createRuleItemTypeResult;
     }
 
-    std::optional<dto::RuleItemType> updateRuleItemType(const dto::RuleItemType& rit) override
+    std::optional<dto::RuleItemType> updateRuleItemType(
+        const dto::RuleItemType& rit,
+        int64_t userId
+    ) override
     {
         m_lastUpdatedRuleItemType = rit;
+        m_lastUpdateRuleItemTypeUserId = userId;
         ++m_updateRuleItemTypeCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может обновлять
+        if (userId != 1)
+        {
+            return std::nullopt;
+        }
         return m_updateRuleItemTypeResult;
     }
 
-    bool deleteRuleItemType(int64_t id) override
+    bool deleteRuleItemType(
+        int64_t id,
+        int64_t userId
+    ) override
     {
         m_lastDeletedRuleItemTypeId = id;
+        m_lastDeleteRuleItemTypeUserId = userId;
         ++m_deleteRuleItemTypeCallCount;
+
+        // Симуляция проверки прав: только супер-админ (userId=1) может удалять
+        if (userId != 1)
+        {
+            return false;
+        }
         return m_deleteRuleItemTypeResult;
     }
 
@@ -94,8 +129,11 @@ public:
     std::optional<int64_t> getLastGetRuleItemTypesItemTypeId() const { return m_lastGetRuleItemTypesItemTypeId; }
     int64_t getLastGetRuleItemTypeId() const { return m_lastGetRuleItemTypeId; }
     const dto::RuleItemType& getLastCreatedRuleItemType() const { return m_lastCreatedRuleItemType; }
+    int64_t getLastCreateRuleItemTypeUserId() const { return m_lastCreateRuleItemTypeUserId; }
     const dto::RuleItemType& getLastUpdatedRuleItemType() const { return m_lastUpdatedRuleItemType; }
+    int64_t getLastUpdateRuleItemTypeUserId() const { return m_lastUpdateRuleItemTypeUserId; }
     int64_t getLastDeletedRuleItemTypeId() const { return m_lastDeletedRuleItemTypeId; }
+    int64_t getLastDeleteRuleItemTypeUserId() const { return m_lastDeleteRuleItemTypeUserId; }
 
     void reset()
     {
@@ -110,8 +148,11 @@ public:
         m_lastGetRuleItemTypesItemTypeId.reset();
         m_lastGetRuleItemTypeId = 0;
         m_lastCreatedRuleItemType = dto::RuleItemType {};
+        m_lastCreateRuleItemTypeUserId = 0;
         m_lastUpdatedRuleItemType = dto::RuleItemType {};
+        m_lastUpdateRuleItemTypeUserId = 0;
         m_lastDeletedRuleItemTypeId = 0;
+        m_lastDeleteRuleItemTypeUserId = 0;
     }
 
 private:
@@ -133,8 +174,11 @@ private:
     std::optional<int64_t> m_lastGetRuleItemTypesItemTypeId;
     int64_t m_lastGetRuleItemTypeId = 0;
     dto::RuleItemType m_lastCreatedRuleItemType;
+    int64_t m_lastCreateRuleItemTypeUserId = 0;
     dto::RuleItemType m_lastUpdatedRuleItemType;
+    int64_t m_lastUpdateRuleItemTypeUserId = 0;
     int64_t m_lastDeletedRuleItemTypeId = 0;
+    int64_t m_lastDeleteRuleItemTypeUserId = 0;
 };
 
 } // namespace server::tests

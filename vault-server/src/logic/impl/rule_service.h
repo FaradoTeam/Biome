@@ -27,9 +27,21 @@ public:
 
     std::optional<dto::Rule> getRule(int64_t id) override;
     std::optional<dto::Rule> getRuleByRoleId(int64_t roleId) override;
-    std::optional<dto::Rule> createRule(const dto::Rule& rule) override;
-    std::optional<dto::Rule> updateRule(const dto::Rule& rule) override;
-    bool deleteRule(int64_t id) override;
+
+    std::optional<dto::Rule> createRule(
+        const dto::Rule& rule,
+        int64_t userId
+    ) override;
+
+    std::optional<dto::Rule> updateRule(
+        const dto::Rule& rule,
+        int64_t userId
+    ) override;
+
+    bool deleteRule(
+        int64_t id,
+        int64_t userId
+    ) override;
 
 private:
     void invalidateUsersByRoleId(int64_t roleId);
