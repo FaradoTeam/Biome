@@ -10,6 +10,8 @@
 
 #include "logic/iauth_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
@@ -21,7 +23,7 @@ namespace handlers
  * Предоставляет методы для входа в систему, выхода и смены пароля.
  * Работает в связке с AuthMiddleware для генерации и проверки JWT-токенов.
  */
-class AuthHandler final
+class AuthHandler final : public BaseHandler
 {
 public:
     /**
@@ -61,20 +63,6 @@ public:
     void handleChangePassword(
         const web::http::http_request& request,
         const std::string& userId
-    );
-
-private:
-    /**
-     * @brief Отправляет ошибку в формате JSON.
-     *
-     * @param response HTTP-ответ для модификации
-     * @param code Код ошибки
-     * @param message Текст сообщения об ошибке
-     */
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
     );
 
 private:

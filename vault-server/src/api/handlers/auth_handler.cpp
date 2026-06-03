@@ -306,17 +306,5 @@ void AuthHandler::handleChangePassword(
     }
 }
 
-void AuthHandler::sendErrorResponse(
-    web::http::http_response& response,
-    int code,
-    const std::string& message
-)
-{
-    web::json::value error;
-    error["code"] = web::json::value::number(code);
-    error["message"] = web::json::value::string(message);
-    response.set_body(error);
-}
-
 } // namespace handlers
 } // namespace server

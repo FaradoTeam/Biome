@@ -8,6 +8,8 @@
 
 #include "logic/iworkflow_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
@@ -16,7 +18,7 @@ namespace handlers
 /**
  * @brief Обработчик запросов для работы с рабочими процессами.
  */
-class WorkflowsHandler final
+class WorkflowsHandler final : public BaseHandler
 {
 public:
     explicit WorkflowsHandler(
@@ -61,32 +63,6 @@ public:
     void handleDeleteWorkflow(
         const web::http::http_request& request,
         const std::string& userId
-    );
-
-private:
-    /**
-     * @brief Извлекает ID рабочего процесса из пути запроса.
-     */
-    int64_t extractWorkflowIdFromPath(const web::http::http_request& request);
-
-    /**
-     * @brief Извлекает query-параметры из запроса.
-     */
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
-
-    /**
-     * @brief Отправляет ошибку в формате JSON.
-     */
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
-    );
-    std::optional<int64_t> parseUserId(
-        const std::string& userIdStr,
-        web::http::http_response& response
     );
 
 private:

@@ -8,6 +8,8 @@
 
 #include "logic/iitem_type_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
@@ -16,7 +18,7 @@ namespace handlers
 /**
  * @brief Обработчик запросов для работы с типами элементов.
  */
-class ItemTypesHandler final
+class ItemTypesHandler final : public BaseHandler
 {
 public:
     explicit ItemTypesHandler(
@@ -46,21 +48,6 @@ public:
     void handleDeleteItemType(
         const web::http::http_request& request,
         const std::string& userId
-    );
-
-private:
-    int64_t extractItemTypeIdFromPath(const web::http::http_request& request);
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
-    );
-    std::optional<int64_t> parseUserId(
-        const std::string& userIdStr,
-        web::http::http_response& response
     );
 
 private:

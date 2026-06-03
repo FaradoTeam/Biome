@@ -1,5 +1,3 @@
-#include <regex>
-
 #include <cpprest/uri.h>
 
 #include "common/dto/team.h"
@@ -64,7 +62,7 @@ void TeamsHandler::handleGetTeam(
     const std::string& /*userId*/
 )
 {
-    int64_t id = extractTeamIdFromPath(request);
+    int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -146,7 +144,7 @@ void TeamsHandler::handleUpdateTeam(
     const std::string& /*userId*/
 )
 {
-    const int64_t id = extractTeamIdFromPath(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -201,7 +199,7 @@ void TeamsHandler::handleDeleteTeam(
     const std::string& /*userId*/
 )
 {
-    const int64_t id = extractTeamIdFromPath(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -220,43 +218,6 @@ void TeamsHandler::handleDeleteTeam(
         sendErrorResponse(resp, 404, "Team not found");
         request.reply(resp);
     }
-}
-
-int64_t TeamsHandler::extractTeamIdFromPath(const web::http::http_request& request)
-{
-    std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/teams/(\d+))");
-    std::smatch matches;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
-    {
-        return std::stoll(matches[1].str());
-    }
-    return -1;
-}
-
-std::map<std::string, std::string> TeamsHandler::extractQueryParams(
-    const web::http::http_request& request
-)
-{
-    std::map<std::string, std::string> params;
-    auto query = web::uri::split_query(request.request_uri().query());
-    for (const auto& p : query)
-    {
-        params[p.first] = p.second;
-    }
-    return params;
-}
-
-void TeamsHandler::sendErrorResponse(
-    web::http::http_response& response,
-    int code,
-    const std::string& message
-)
-{
-    web::json::value error;
-    error["code"] = web::json::value::number(code);
-    error["message"] = web::json::value::string(message);
-    response.set_body(error);
 }
 
 } // namespace handlers

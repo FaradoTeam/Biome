@@ -60,7 +60,7 @@ void UsersHandler::handleGetUser(
     const std::string& /*userId*/
 )
 {
-    int64_t id = extractUserIdFromPath(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -170,7 +170,7 @@ void UsersHandler::handleUpdateUser(
     const std::string& /*userId*/
 )
 {
-    const int64_t id = extractUserIdFromPath(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -230,7 +230,7 @@ void UsersHandler::handleDeleteUser(
     const std::string& /*userId*/
 )
 {
-    const int64_t id = extractUserIdFromPath(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -249,43 +249,6 @@ void UsersHandler::handleDeleteUser(
         sendErrorResponse(resp, 404, "User not found");
         request.reply(resp);
     }
-}
-
-int64_t UsersHandler::extractUserIdFromPath(const web::http::http_request& request)
-{
-    std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/users/(\d+))");
-    std::smatch matches;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
-    {
-        return std::stoll(matches[1].str());
-    }
-    return -1;
-}
-
-std::map<std::string, std::string> UsersHandler::extractQueryParams(
-    const web::http::http_request& request
-)
-{
-    std::map<std::string, std::string> params;
-    auto query = web::uri::split_query(request.request_uri().query());
-    for (const auto& p : query)
-    {
-        params[p.first] = p.second;
-    }
-    return params;
-}
-
-void UsersHandler::sendErrorResponse(
-    web::http::http_response& response,
-    int code,
-    const std::string& message
-)
-{
-    web::json::value error;
-    error["code"] = web::json::value::number(code);
-    error["message"] = web::json::value::string(message);
-    response.set_body(error);
 }
 
 } // namespace handlers

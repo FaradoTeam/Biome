@@ -9,10 +9,12 @@
 
 #include "logic/irule_item_type_service.h"
 
+#include "base_handler.h"
+
 namespace server::handlers
 {
 
-class RuleItemTypesHandler final
+class RuleItemTypesHandler final : public BaseHandler
 {
 public:
     explicit RuleItemTypesHandler(std::shared_ptr<services::IRuleItemTypeService> service);
@@ -43,20 +45,6 @@ public:
     );
 
 private:
-    int64_t extractId(const web::http::http_request& request);
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
-    );
-    std::optional<int64_t> parseUserId(
-        const std::string& userIdStr,
-        web::http::http_response& response
-    );
-
     std::shared_ptr<services::IRuleItemTypeService> m_service;
 };
 

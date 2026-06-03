@@ -39,7 +39,7 @@ void PhasesHandler::handleGetPhases(
         request.reply(errorResponse);
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     auto params = extractQueryParams(request);
 
@@ -153,9 +153,9 @@ void PhasesHandler::handleGetPhase(
         request.reply(errorResponse);
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
-    int64_t phaseId = extractPhaseIdFromPath(request);
+    const int64_t phaseId = extractIdFromPath(request);
     if (phaseId <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -284,9 +284,9 @@ void PhasesHandler::handleUpdatePhase(
         request.reply(errorResponse);
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
-    int64_t phaseId = extractPhaseIdFromPath(request);
+    const int64_t phaseId = extractIdFromPath(request);
     if (phaseId <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -364,9 +364,9 @@ void PhasesHandler::handleDeletePhase(
         request.reply(errorResponse);
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
-    int64_t phaseId = extractPhaseIdFromPath(request);
+    const int64_t phaseId = extractIdFromPath(request);
     if (phaseId <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -412,104 +412,6 @@ void PhasesHandler::handleDeletePhase(
         sendErrorResponse(resp, 500, "Internal server error");
         request.reply(resp);
     }
-}
-
-int64_t PhasesHandler::extractPhaseIdFromPath(
-    const web::http::http_request& request
-)
-{
-    std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/phases/(\d+))");
-    std::smatch matches;
-
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
-    {
-        try
-        {
-            return std::stoll(matches[1].str());
-        }
-        catch (const std::exception& e)
-        {
-            LOG_WARN << "extractPhaseIdFromPath: не удалось преобразовать ID: " << e.what();
-            return -1;
-        }
-    }
-    return -1;
-}
-
-std::map<std::string, std::string> PhasesHandler::extractQueryParams(
-    const web::http::http_request& request
-)
-{
-    std::map<std::string, std::string> params;
-    auto query = web::uri::split_query(request.request_uri().query());
-    for (const auto& p : query)
-    {
-        params[p.first] = p.second;
-    }
-    return params;
-}
-
-std::optional<int64_t> PhasesHandler::parseUserId(
-    const std::string& userIdStr,
-    web::http::http_response& response
-)
-{
-    if (userIdStr.empty())
-    {
-        sendErrorResponse(response, 401, "User not authenticated");
-        return std::nullopt;
-    }
-
-    try
-    {
-        int64_t userId = std::stoll(userIdStr);
-        if (userId <= 0)
-        {
-            sendErrorResponse(response, 400, "Invalid user ID");
-            return std::nullopt;
-        }
-        return userId;
-    }
-    catch (const std::exception& e)
-    {
-        sendErrorResponse(response, 400, "Invalid user ID format");
-        return std::nullopt;
-    }
-}
-
-void PhasesHandler::sendErrorResponse(
-    web::http::http_response& response,
-    int code,
-    const std::string& message
-)
-{
-    web::json::value error;
-    error["code"] = web::json::value::number(code);
-    error["message"] = web::json::value::string(message);
-    response.set_body(error);
-}
-
-std::optional<bool> PhasesHandler::parseBool(const std::string& value)
-{
-    std::string lowerValue = value;
-    std::transform(
-        lowerValue.begin(),
-        lowerValue.end(),
-        lowerValue.begin(),
-        ::tolower
-    );
-
-    if (lowerValue == "true" || lowerValue == "1")
-    {
-        return true;
-    }
-    if (lowerValue == "false" || lowerValue == "0")
-    {
-        return false;
-    }
-
-    return std::nullopt;
 }
 
 } // namespace handlers

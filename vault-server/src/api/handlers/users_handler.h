@@ -8,12 +8,14 @@
 
 #include "logic/iuser_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
 {
 
-class UsersHandler final
+class UsersHandler final : public BaseHandler
 {
 public:
     explicit UsersHandler(std::shared_ptr<services::IUserService> userService);
@@ -23,11 +25,6 @@ public:
     void handleCreateUser(const web::http::http_request& request, const std::string& userId);
     void handleUpdateUser(const web::http::http_request& request, const std::string& userId);
     void handleDeleteUser(const web::http::http_request& request, const std::string& userId);
-
-private:
-    int64_t extractUserIdFromPath(const web::http::http_request& request);
-    std::map<std::string, std::string> extractQueryParams(const web::http::http_request& request);
-    void sendErrorResponse(web::http::http_response& response, int code, const std::string& message);
 
 private:
     std::shared_ptr<services::IUserService> m_userService;

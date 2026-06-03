@@ -6,6 +6,8 @@
 #include <cpprest/http_msg.h>
 #include <cpprest/json.h>
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
@@ -17,7 +19,7 @@ namespace handlers
  * Предоставляет методы для создания, чтения, обновления и удаления элементов.
  * Все методы, кроме специально отмеченных, требуют аутентификации пользователя.
  */
-class ItemsHandler final
+class ItemsHandler final : public BaseHandler
 {
 public:
     ItemsHandler();
@@ -83,39 +85,6 @@ public:
         const std::string& userId
     );
 
-private:
-    /**
-     * @brief Извлекает ID элемента из пути запроса.
-     *
-     * Ожидает формат пути: /api/items/{id}
-     *
-     * @param request HTTP-запрос от клиента
-     * @return ID элемента или -1 при ошибке
-     */
-    int64_t extractItemId(const web::http::http_request& request);
-
-    /**
-     * @brief Отправляет ошибку в формате JSON.
-     *
-     * @param response HTTP-ответ для модификации
-     * @param code Код ошибки
-     * @param message Текст сообщения об ошибке
-     */
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
-    );
-
-    /**
-     * @brief Извлекает query-параметры из запроса.
-     *
-     * @param request HTTP-запрос от клиента
-     * @return Словарь с параметрами и их значениями
-     */
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
 };
 
 } // namespace handlers

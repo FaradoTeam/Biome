@@ -8,6 +8,8 @@
 
 #include "logic/iedge_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
@@ -16,7 +18,7 @@ namespace handlers
 /**
  * @brief Обработчик запросов для работы с переходами.
  */
-class EdgesHandler final
+class EdgesHandler final : public BaseHandler
 {
 public:
     explicit EdgesHandler(std::shared_ptr<services::IEdgeService> edgeService);
@@ -47,22 +49,6 @@ public:
     void handleGetWorkflowEdges(
         const web::http::http_request& request,
         const std::string& userId
-    );
-
-private:
-    int64_t extractEdgeIdFromPath(const web::http::http_request& request);
-    int64_t extractWorkflowIdFromPath(const web::http::http_request& request);
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
-    );
-    std::optional<int64_t> parseUserId(
-        const std::string& userIdStr,
-        web::http::http_response& response
     );
 
 private:

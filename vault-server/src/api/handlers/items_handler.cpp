@@ -1,5 +1,3 @@
-#include <regex>
-
 #include <cpprest/http_msg.h>
 #include <cpprest/json.h>
 #include <cpprest/uri.h>
@@ -17,27 +15,6 @@ namespace handlers
 
 ItemsHandler::ItemsHandler()
 {
-}
-
-std::map<std::string, std::string> ItemsHandler::extractQueryParams(
-    const web::http::http_request& request
-)
-{
-    std::map<std::string, std::string> params;
-    auto uri = request.relative_uri();
-    auto query = uri.query(); // Получаем строку запроса (часть после '?')
-
-    if (!query.empty())
-    {
-        // Разбираем query-строку вида "key1=value1&key2=value2"
-        auto queryParams = web::uri::split_query(query);
-        for (const auto& param : queryParams)
-        {
-            params[param.first] = param.second;
-        }
-    }
-
-    return params;
 }
 
 void ItemsHandler::handleGetItems(
@@ -95,7 +72,7 @@ void ItemsHandler::handleGetItem(
     const std::string& userId
 )
 {
-    int64_t itemId = extractItemId(request);
+    int64_t itemId = extractIdFromPath(request);
     if (itemId <= 0)
     {
         web::http::http_response response(web::http::status_codes::BadRequest);
@@ -193,7 +170,7 @@ void ItemsHandler::handleCreateItem(
 
 void ItemsHandler::handleUpdateItem(const web::http::http_request& request, const std::string& userId)
 {
-    int64_t itemId = extractItemId(request);
+    int64_t itemId = extractIdFromPath(request);
     if (itemId <= 0)
     {
         web::http::http_response response(web::http::status_codes::BadRequest);
@@ -257,7 +234,7 @@ void ItemsHandler::handleDeleteItem(
     const std::string& userId
 )
 {
-    int64_t itemId = extractItemId(request);
+    int64_t itemId = extractIdFromPath(request);
     if (itemId <= 0)
     {
         web::http::http_response response(web::http::status_codes::BadRequest);
@@ -271,41 +248,6 @@ void ItemsHandler::handleDeleteItem(
     // TODO: Здесь должна быть логика удаления элемента из БД
 
     request.reply(web::http::status_codes::NoContent);
-}
-
-int64_t ItemsHandler::extractItemId(const web::http::http_request& request)
-{
-    // Извлекаем ID из пути, ожидая формат: /api/items/{id}
-    std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+))"); // Регулярка для поиска числа после /api/items/
-    std::smatch matches;
-
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
-    {
-        try
-        {
-            return std::stoll(matches[1].str()); // Конвертируем строку в число
-        }
-        catch (const std::exception&)
-        {
-            return -1; // Ошибка конвертации
-        }
-    }
-
-    return -1; // ID не найден
-}
-
-void ItemsHandler::sendErrorResponse(
-    web::http::http_response& response,
-    int code,
-    const std::string& message
-)
-{
-    // Формируем JSON с информацией об ошибке
-    web::json::value error;
-    error["code"] = web::json::value::number(code);
-    error["message"] = web::json::value::string(message);
-    response.set_body(error);
 }
 
 } // namespace handlers
