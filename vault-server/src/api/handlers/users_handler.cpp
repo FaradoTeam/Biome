@@ -1,5 +1,3 @@
-#include <regex>
-
 #include <cpprest/uri.h>
 
 #include "common/dto/user.h"
@@ -24,9 +22,18 @@ UsersHandler::UsersHandler(std::shared_ptr<services::IUserService> userService)
 
 void UsersHandler::handleGetUsers(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     auto params = extractQueryParams(request);
 
     int page = 1;
@@ -37,18 +44,18 @@ void UsersHandler::handleGetUsers(
     if (params.count("pageSize"))
         pageSize = std::stoi(params["pageSize"]);
 
-    auto [users, total] = m_userService->users(page, pageSize);
+    auto usersPage = m_userService->users(page, pageSize, userId);
 
     web::json::value response;
     web::json::value items = web::json::value::array();
 
-    for (size_t i = 0; i < users.size(); ++i)
+    for (size_t i = 0; i < usersPage.users.size(); ++i)
     {
-        items[i] = dto::toWebJson(users[i].toJson());
+        items[i] = dto::toWebJson(usersPage.users[i].toJson());
     }
 
     response["items"] = items;
-    response["totalCount"] = web::json::value::number(total);
+    response["totalCount"] = web::json::value::number(usersPage.totalCount);
     response["page"] = web::json::value::number(page);
     response["pageSize"] = web::json::value::number(pageSize);
 
@@ -57,9 +64,18 @@ void UsersHandler::handleGetUsers(
 
 void UsersHandler::handleGetUser(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
@@ -69,7 +85,7 @@ void UsersHandler::handleGetUser(
         return;
     }
 
-    auto user = m_userService->user(id);
+    auto user = m_userService->user(id, userId);
     if (!user)
     {
         web::http::http_response resp(web::http::status_codes::NotFound);
@@ -80,21 +96,41 @@ void UsersHandler::handleGetUser(
 
     request.reply(
         web::http::status_codes::OK,
-        dto::toWebJson(
-            user->toJson()
-        )
+        dto::toWebJson(user->toJson())
     );
 }
 
 void UsersHandler::handleCreateUser(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
+    // Только супер-админ может создавать пользователей
+    if (userId != 1)
+    {
+        web::http::http_response resp(web::http::status_codes::Forbidden);
+        sendErrorResponse(
+            resp,
+            403,
+            "Insufficient permissions to create user"
+        );
+        request.reply(resp);
+        return;
+    }
+
     request
         .extract_json()
         .then(
-            [this, request](pplx::task<web::json::value> task)
+            [this, request, userId](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -126,9 +162,10 @@ void UsersHandler::handleCreateUser(
                         return;
                     }
 
-                    auto created = m_userService->createUser(user, password);
+                    auto created = m_userService->createUser(user, password, userId);
                     if (!created)
                     {
+                        // Конфликт (дубликат)
                         web::http::http_response resp(
                             web::http::status_codes::Conflict
                         );
@@ -143,9 +180,7 @@ void UsersHandler::handleCreateUser(
 
                     request.reply(
                         web::http::status_codes::Created,
-                        dto::toWebJson(
-                            created->toJson()
-                        )
+                        dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
@@ -167,9 +202,18 @@ void UsersHandler::handleCreateUser(
 
 void UsersHandler::handleUpdateUser(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
@@ -179,10 +223,23 @@ void UsersHandler::handleUpdateUser(
         return;
     }
 
+    // Только супер-админ может обновлять пользователей
+    if (userId != 1)
+    {
+        web::http::http_response resp(web::http::status_codes::Forbidden);
+        sendErrorResponse(
+            resp,
+            403,
+            "Insufficient permissions to update user"
+        );
+        request.reply(resp);
+        return;
+    }
+
     request
         .extract_json()
         .then(
-            [this, request, id](pplx::task<web::json::value> task)
+            [this, request, userId, id](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -191,17 +248,11 @@ void UsersHandler::handleUpdateUser(
                     nlohmannJson["id"] = id;
                     dto::User user(nlohmannJson);
 
-                    auto updated = m_userService->updateUser(user);
+                    auto updated = m_userService->updateUser(user, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::NotFound
-                        );
-                        sendErrorResponse(
-                            resp,
-                            404,
-                            "User not found or update failed"
-                        );
+                        web::http::http_response resp(web::http::status_codes::NotFound);
+                        sendErrorResponse(resp, 404, "User not found");
                         request.reply(resp);
                         return;
                     }
@@ -227,9 +278,18 @@ void UsersHandler::handleUpdateUser(
 
 void UsersHandler::handleDeleteUser(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
@@ -239,7 +299,20 @@ void UsersHandler::handleDeleteUser(
         return;
     }
 
-    if (m_userService->deleteUser(id))
+    // Только супер-админ может удалять пользователей
+    if (userId != 1)
+    {
+        web::http::http_response resp(web::http::status_codes::Forbidden);
+        sendErrorResponse(
+            resp,
+            403,
+            "Insufficient permissions to delete user"
+        );
+        request.reply(resp);
+        return;
+    }
+
+    if (m_userService->deleteUser(id, userId))
     {
         request.reply(web::http::status_codes::NoContent);
     }

@@ -146,6 +146,7 @@ bool Application::initialize()
     );
     auto teamService = std::make_shared<services::TeamService>(
         teamRepository,
+        userTeamRoleRepository,
         authorizationService
     );
     auto roleService = std::make_shared<services::RoleService>(

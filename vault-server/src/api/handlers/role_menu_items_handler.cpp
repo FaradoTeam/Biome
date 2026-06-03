@@ -1,5 +1,3 @@
-#include <regex>
-
 #include <cpprest/uri.h>
 
 #include "common/dto/role_menu_item.h"

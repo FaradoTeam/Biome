@@ -1,5 +1,3 @@
-#include <regex>
-
 #include <cpprest/uri.h>
 
 #include "common/dto/rule.h"

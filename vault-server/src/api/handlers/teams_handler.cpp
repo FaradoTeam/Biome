@@ -22,9 +22,18 @@ TeamsHandler::TeamsHandler(std::shared_ptr<services::ITeamService> teamService)
 
 void TeamsHandler::handleGetTeams(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     auto params = extractQueryParams(request);
 
     int page = 1;
@@ -39,7 +48,7 @@ void TeamsHandler::handleGetTeams(
     if (params.count("searchCaption"))
         searchCaption = params["searchCaption"];
 
-    auto teamsPage = m_teamService->getTeams(page, pageSize, searchCaption);
+    auto teamsPage = m_teamService->getTeams(page, pageSize, userId, searchCaption);
 
     web::json::value response;
     web::json::value items = web::json::value::array();
@@ -59,9 +68,18 @@ void TeamsHandler::handleGetTeams(
 
 void TeamsHandler::handleGetTeam(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
@@ -71,7 +89,7 @@ void TeamsHandler::handleGetTeam(
         return;
     }
 
-    auto team = m_teamService->getTeam(id);
+    auto team = m_teamService->getTeam(id, userId);
     if (!team)
     {
         web::http::http_response resp(web::http::status_codes::NotFound);
@@ -88,13 +106,22 @@ void TeamsHandler::handleGetTeam(
 
 void TeamsHandler::handleCreateTeam(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     request
         .extract_json()
         .then(
-            [this, request](pplx::task<web::json::value> task)
+            [this, request, userId](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -110,11 +137,20 @@ void TeamsHandler::handleCreateTeam(
                         return;
                     }
 
-                    auto created = m_teamService->createTeam(team);
+                    // Только супер-админ может создавать команды
+                    if (userId != 1)
+                    {
+                        web::http::http_response resp(web::http::status_codes::Forbidden);
+                        sendErrorResponse(resp, 403, "Insufficient permissions to create team");
+                        request.reply(resp);
+                        return;
+                    }
+
+                    auto created = m_teamService->createTeam(team, userId);
                     if (!created)
                     {
                         web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Could not create team");
+                        sendErrorResponse(resp, 400, "Failed to create team");
                         request.reply(resp);
                         return;
                     }
@@ -141,9 +177,18 @@ void TeamsHandler::handleCreateTeam(
 
 void TeamsHandler::handleUpdateTeam(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
@@ -153,10 +198,19 @@ void TeamsHandler::handleUpdateTeam(
         return;
     }
 
+    // Только супер-админ может обновлять команды
+    if (userId != 1)
+    {
+        web::http::http_response resp(web::http::status_codes::Forbidden);
+        sendErrorResponse(resp, 403, "Insufficient permissions to update team");
+        request.reply(resp);
+        return;
+    }
+
     request
         .extract_json()
         .then(
-            [this, request, id](pplx::task<web::json::value> task)
+            [this, request, userId, id](pplx::task<web::json::value> task)
             {
                 try
                 {
@@ -165,11 +219,11 @@ void TeamsHandler::handleUpdateTeam(
                     nlohmannJson["id"] = id;
                     dto::Team team(nlohmannJson);
 
-                    auto updated = m_teamService->updateTeam(team);
+                    auto updated = m_teamService->updateTeam(team, userId);
                     if (!updated)
                     {
                         web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "Team not found or update failed");
+                        sendErrorResponse(resp, 404, "Team not found");
                         request.reply(resp);
                         return;
                     }
@@ -196,9 +250,18 @@ void TeamsHandler::handleUpdateTeam(
 
 void TeamsHandler::handleDeleteTeam(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    web::http::http_response errorResponse(web::http::status_codes::OK);
+    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    if (!userIdOpt.has_value())
+    {
+        request.reply(errorResponse);
+        return;
+    }
+    const int64_t userId = *userIdOpt;
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
@@ -208,7 +271,16 @@ void TeamsHandler::handleDeleteTeam(
         return;
     }
 
-    if (m_teamService->deleteTeam(id))
+    // Только супер-админ может удалять команды
+    if (userId != 1)
+    {
+        web::http::http_response resp(web::http::status_codes::Forbidden);
+        sendErrorResponse(resp, 403, "Insufficient permissions to delete team");
+        request.reply(resp);
+        return;
+    }
+
+    if (m_teamService->deleteTeam(id, userId))
     {
         request.reply(web::http::status_codes::NoContent);
     }
