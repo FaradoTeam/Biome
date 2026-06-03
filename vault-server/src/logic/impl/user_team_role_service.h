@@ -13,9 +13,20 @@
 namespace server::services
 {
 
+/**
+ * @brief Реализация сервиса для управления назначениями пользователей в команды.
+ */
 class UserTeamRoleService final : public IUserTeamRoleService
 {
 public:
+    /**
+     * @brief Конструктор.
+     * @param utrRepo Репозиторий назначений
+     * @param userRepo Репозиторий пользователей
+     * @param teamRepo Репозиторий команд
+     * @param roleRepo Репозиторий ролей
+     * @param authzService Сервис авторизации для проверки прав
+     */
     UserTeamRoleService(
         std::shared_ptr<repositories::IUserTeamRoleRepository> utrRepo,
         std::shared_ptr<repositories::IUserRepository> userRepo,
@@ -24,17 +35,35 @@ public:
         std::shared_ptr<IAuthorizationService> authzService
     );
 
+    // IUserTeamRoleService
     UserTeamRolesPage getUserTeamRoles(
-        int page, int pageSize,
-        std::optional<int64_t> userId = std::nullopt,
+        int page,
+        int pageSize,
+        int64_t userId,
+        std::optional<int64_t> filterUserId = std::nullopt,
         std::optional<int64_t> teamId = std::nullopt,
         std::optional<int64_t> roleId = std::nullopt
     ) override;
 
-    std::optional<dto::UserTeamRole> getUserTeamRole(int64_t id) override;
-    std::optional<dto::UserTeamRole> createUserTeamRole(const dto::UserTeamRole& utr) override;
-    std::optional<dto::UserTeamRole> updateUserTeamRole(const dto::UserTeamRole& utr) override;
-    bool deleteUserTeamRole(int64_t id) override;
+    std::optional<dto::UserTeamRole> getUserTeamRole(
+        int64_t id,
+        int64_t userId
+    ) override;
+
+    std::optional<dto::UserTeamRole> createUserTeamRole(
+        const dto::UserTeamRole& userTeamRole,
+        int64_t userId
+    ) override;
+
+    std::optional<dto::UserTeamRole> updateUserTeamRole(
+        const dto::UserTeamRole& userTeamRole,
+        int64_t userId
+    ) override;
+
+    bool deleteUserTeamRole(
+        int64_t id,
+        int64_t userId
+    ) override;
 
 private:
     void invalidateUserCache(int64_t userId);

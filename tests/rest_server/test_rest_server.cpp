@@ -33,8 +33,8 @@ struct RestServerFixture
         mockProjectService = std::make_shared<MockProjectService>();
         mockUserService = std::make_shared<MockUserService>();
 
-        // Настройка по умолчанию
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Настройка по умолчанию - обычный пользователь (не супер-админ)
+        mockAuthMiddleware->setValidateRequestResult(true, "100");
 
         // Настройка UserService с тестовыми данными
         setupDefaultUserService();
@@ -67,34 +67,45 @@ struct RestServerFixture
 
         dto::User user1;
         user1.id = 1;
-        user1.login = "testuser1";
-        user1.firstName = "Test";
-        user1.lastName = "User1";
-        user1.email = "test1@example.com";
+        user1.login = "admin";
+        user1.firstName = "Admin";
+        user1.lastName = "User";
+        user1.email = "admin@example.com";
+        user1.isSuperAdmin = true;
         user1.needChangePassword = false;
         user1.isBlocked = false;
-        user1.isSuperAdmin = false;
         user1.isHidden = false;
 
         dto::User user2;
         user2.id = 2;
-        user2.login = "testuser2";
+        user2.login = "testuser";
         user2.firstName = "Test";
-        user2.lastName = "User2";
-        user2.email = "test2@example.com";
+        user2.lastName = "User";
+        user2.email = "test@example.com";
         user2.needChangePassword = true;
+        user2.isSuperAdmin = false;
         user2.isBlocked = false;
-        user2.isSuperAdmin = true;
         user2.isHidden = false;
 
-        testPage.users = { user1, user2 };
-        testPage.totalCount = 2;
+        dto::User user3;
+        user3.id = 3;
+        user3.login = "regular";
+        user3.firstName = "Regular";
+        user3.lastName = "User";
+        user3.email = "regular@example.com";
+        user3.needChangePassword = false;
+        user3.isSuperAdmin = false;
+        user3.isBlocked = false;
+        user3.isHidden = false;
+
+        testPage.users = { user1, user2, user3 };
+        testPage.totalCount = 3;
 
         mockUserService->setGetUsersResult(testPage);
         mockUserService->setGetUserResult(user1);
 
         dto::User newUser;
-        newUser.id = 3;
+        newUser.id = 100;
         newUser.login = "newuser";
         newUser.firstName = "New";
         newUser.lastName = "User";
@@ -134,6 +145,7 @@ struct RestServerFixture
         if (!body.is_null())
         {
             request.set_body(body);
+            request.headers().set_content_type(U("application/json"));
         }
 
         return client.request(request);
@@ -212,13 +224,13 @@ BOOST_AUTO_TEST_CASE(test_login_with_invalid_credentials)
 BOOST_AUTO_TEST_CASE(test_protected_endpoint_requires_auth)
 {
     // Без токена - middleware не должен вызываться
-    auto response = makeRequest("/api/items").get();
+    auto response = makeRequest("/api/users").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
 }
 
 BOOST_AUTO_TEST_CASE(test_protected_endpoint_with_valid_token)
 {
-    auto response = makeRequest("/api/items", methods::GET, "valid_token").get();
+    auto response = makeRequest("/api/users", methods::GET, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockAuthMiddleware->getValidateCallCount(), 1);
     BOOST_CHECK_EQUAL(mockAuthMiddleware->getLastAuthHeader(), "Bearer valid_token");
@@ -270,16 +282,17 @@ BOOST_AUTO_TEST_CASE(test_not_found_route_returns_404)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
-BOOST_AUTO_TEST_CASE(test_get_users_returns_list)
+BOOST_AUTO_TEST_CASE(test_get_users_returns_list_for_authenticated_user)
 {
+    // Любой авторизованный пользователь может получить список пользователей
     auto response = makeRequest("/api/users", methods::GET, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
     auto json = response.extract_json().get();
     BOOST_CHECK(json.has_field(U("items")));
     BOOST_CHECK(json.has_field(U("totalCount")));
-    BOOST_CHECK_EQUAL(json.at(U("totalCount")).as_integer(), 2);
-    BOOST_CHECK_EQUAL(json.at(U("items")).as_array().size(), 2);
+    BOOST_CHECK_EQUAL(json.at(U("totalCount")).as_integer(), 3);
+    BOOST_CHECK_EQUAL(json.at(U("items")).as_array().size(), 3);
 }
 
 BOOST_AUTO_TEST_CASE(test_get_user_by_id_success)
@@ -289,11 +302,44 @@ BOOST_AUTO_TEST_CASE(test_get_user_by_id_success)
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 1);
-    BOOST_CHECK_EQUAL(json.at(U("login")).as_string(), U("testuser1"));
+    BOOST_CHECK_EQUAL(json.at(U("login")).as_string(), U("admin"));
 }
 
-BOOST_AUTO_TEST_CASE(test_create_user_success)
+BOOST_AUTO_TEST_CASE(test_create_user_fails_for_non_admin)
 {
+    // Обычный пользователь не может создавать других пользователей
+    web::json::value body;
+    body[U("login")] = web::json::value::string(U("newuser"));
+    body[U("email")] = web::json::value::string(U("new@test.com"));
+    body[U("password")] = web::json::value::string(U("securepass123"));
+    body[U("firstName")] = web::json::value::string(U("New"));
+
+    auto response = makeRequest("/api/users", methods::POST, "valid_token", body).get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(test_update_user_fails_for_non_admin)
+{
+    // Обычный пользователь не может обновлять других пользователей
+    web::json::value body;
+    body[U("firstName")] = web::json::value::string(U("UpdatedName"));
+
+    auto response = makeRequest("/api/users/1", methods::PUT, "valid_token", body).get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(test_delete_user_fails_for_non_admin)
+{
+    // Обычный пользователь не может удалять других пользователей
+    auto response = makeRequest("/api/users/2", methods::DEL, "valid_token").get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
+}
+
+BOOST_AUTO_TEST_CASE(test_admin_can_create_user)
+{
+    // Супер-админ может создавать пользователей
+    mockAuthMiddleware->setValidateRequestResult(true, "1");
+
     web::json::value body;
     body[U("login")] = web::json::value::string(U("newuser"));
     body[U("email")] = web::json::value::string(U("new@test.com"));
@@ -304,12 +350,15 @@ BOOST_AUTO_TEST_CASE(test_create_user_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
 
     auto json = response.extract_json().get();
-    BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 3);
+    BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 100);
     BOOST_CHECK(!json.has_field(U("password")));
 }
 
-BOOST_AUTO_TEST_CASE(test_update_user_success)
+BOOST_AUTO_TEST_CASE(test_admin_can_update_user)
 {
+    // Супер-админ может обновлять пользователей
+    mockAuthMiddleware->setValidateRequestResult(true, "1");
+
     web::json::value body;
     body[U("firstName")] = web::json::value::string(U("UpdatedName"));
 
@@ -317,8 +366,11 @@ BOOST_AUTO_TEST_CASE(test_update_user_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
 }
 
-BOOST_AUTO_TEST_CASE(test_delete_user_success)
+BOOST_AUTO_TEST_CASE(test_admin_can_delete_user)
 {
+    // Супер-админ может удалять пользователей
+    mockAuthMiddleware->setValidateRequestResult(true, "1");
+
     auto response = makeRequest("/api/users/2", methods::DEL, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
 }

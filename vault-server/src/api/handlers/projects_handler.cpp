@@ -1,5 +1,4 @@
 #include <cctype>
-#include <regex>
 
 #include <cpprest/uri.h>
 

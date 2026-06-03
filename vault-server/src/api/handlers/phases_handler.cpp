@@ -1,12 +1,7 @@
-#include <algorithm>
-#include <cctype>
-#include <regex>
-
 #include <cpprest/uri.h>
 
 #include "common/dto/phase.h"
 #include "common/helpers/json_helper.hpp"
-#include "common/helpers/time_helpers.h"
 #include "common/log/log.h"
 
 #include "phases_handler.h"

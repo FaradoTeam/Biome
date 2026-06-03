@@ -33,8 +33,8 @@ UserTeamRoleService::UserTeamRoleService(
 }
 
 UserTeamRolesPage UserTeamRoleService::getUserTeamRoles(
-    int page, int pageSize,
-    std::optional<int64_t> userId,
+    int page, int pageSize, int64_t /*userId*/,
+    std::optional<int64_t> filterUserId,
     std::optional<int64_t> teamId,
     std::optional<int64_t> roleId
 )
@@ -44,17 +44,27 @@ UserTeamRolesPage UserTeamRoleService::getUserTeamRoles(
     if (pageSize < 1)
         pageSize = 20;
 
-    auto [items, total] = m_utrRepo->findAll(page, pageSize, userId, teamId, roleId);
+    auto [items, total] = m_utrRepo->findAll(page, pageSize, filterUserId, teamId, roleId);
     return { items, total };
 }
 
-std::optional<dto::UserTeamRole> UserTeamRoleService::getUserTeamRole(int64_t id)
+std::optional<dto::UserTeamRole> UserTeamRoleService::getUserTeamRole(int64_t id, int64_t userId)
 {
     return m_utrRepo->findById(id);
 }
 
-std::optional<dto::UserTeamRole> UserTeamRoleService::createUserTeamRole(const dto::UserTeamRole& utr)
+std::optional<dto::UserTeamRole> UserTeamRoleService::createUserTeamRole(
+    const dto::UserTeamRole& utr,
+    int64_t userId
+)
 {
+    // Только супер-админ может создавать назначения
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createUserTeamRole: пользователь " << userId << " не имеет прав на создание назначений";
+        return std::nullopt;
+    }
+
     if (!utr.userId.has_value() || !utr.teamId.has_value() || !utr.roleId.has_value())
     {
         LOG_WARN << "createUserTeamRole: обязательны userId, teamId и roleId";
@@ -100,7 +110,8 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::createUserTeamRole(const d
         << "UserTeamRole создан: id=" << newId
         << ", userId=" << *utr.userId
         << ", teamId=" << *utr.teamId
-        << ", roleId=" << *utr.roleId;
+        << ", roleId=" << *utr.roleId
+        << ", пользователь=" << userId;
 
     // Инвалидируем кэш для этого пользователя
     invalidateUserCache(*utr.userId);
@@ -108,8 +119,18 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::createUserTeamRole(const d
     return m_utrRepo->findById(newId);
 }
 
-std::optional<dto::UserTeamRole> UserTeamRoleService::updateUserTeamRole(const dto::UserTeamRole& utr)
+std::optional<dto::UserTeamRole> UserTeamRoleService::updateUserTeamRole(
+    const dto::UserTeamRole& utr,
+    int64_t userId
+)
 {
+    // Только супер-админ может обновлять назначения
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateUserTeamRole: пользователь " << userId << " не имеет прав на обновление назначений";
+        return std::nullopt;
+    }
+
     if (!utr.id.has_value())
     {
         LOG_WARN << "updateUserTeamRole: отсутствует id";
@@ -123,31 +144,38 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::updateUserTeamRole(const d
         return std::nullopt;
     }
 
-    const int64_t userId = *existing->userId;
+    const int64_t originalUserId = *existing->userId;
+    int64_t targetUserId = originalUserId;
 
     // Проверяем корректность новых внешних ключей
-    if (utr.userId.has_value() && !m_userRepo->findById(*utr.userId).has_value())
+    if (utr.userId.has_value())
     {
-        LOG_WARN << "updateUserTeamRole: новый userId не найден";
-        return std::nullopt;
+        if (!m_userRepo->findById(*utr.userId).has_value())
+        {
+            LOG_WARN << "updateUserTeamRole: новый userId не найден, userId=" << *utr.userId;
+            return std::nullopt;
+        }
+        targetUserId = *utr.userId;
     }
+
     if (utr.teamId.has_value() && !m_teamRepo->exists(*utr.teamId))
     {
-        LOG_WARN << "updateUserTeamRole: новый teamId не найден";
+        LOG_WARN << "updateUserTeamRole: новый teamId не найден, teamId=" << *utr.teamId;
         return std::nullopt;
     }
+
     if (utr.roleId.has_value() && !m_roleRepo->exists(*utr.roleId))
     {
-        LOG_WARN << "updateUserTeamRole: новый roleId не найден";
+        LOG_WARN << "updateUserTeamRole: новый roleId не найден, roleId=" << *utr.roleId;
         return std::nullopt;
     }
 
     // Если меняется пара (userId, teamId), проверяем уникальность
     bool needCheck = false;
-    int64_t newUserId = userId;
+    int64_t newUserId = *existing->userId;
     int64_t newTeamId = *existing->teamId;
 
-    if (utr.userId.has_value() && *utr.userId != userId)
+    if (utr.userId.has_value() && *utr.userId != newUserId)
     {
         newUserId = *utr.userId;
         needCheck = true;
@@ -170,20 +198,29 @@ std::optional<dto::UserTeamRole> UserTeamRoleService::updateUserTeamRole(const d
         return std::nullopt;
     }
 
-    LOG_INFO << "UserTeamRole обновлен: id=" << *utr.id;
+    LOG_INFO
+        << "UserTeamRole обновлен: id=" << *utr.id
+        << ", пользователь=" << userId;
 
     // Инвалидируем кэш для пользователя
-    invalidateUserCache(userId);
-    if (utr.userId.has_value() && *utr.userId != userId)
+    invalidateUserCache(originalUserId);
+    if (targetUserId != originalUserId)
     {
-        invalidateUserCache(*utr.userId);
+        invalidateUserCache(targetUserId);
     }
 
     return m_utrRepo->findById(*utr.id);
 }
 
-bool UserTeamRoleService::deleteUserTeamRole(int64_t id)
+bool UserTeamRoleService::deleteUserTeamRole(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять назначения
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteUserTeamRole: пользователь " << userId << " не имеет прав на удаление назначений";
+        return false;
+    }
+
     auto existing = m_utrRepo->findById(id);
     if (!existing)
     {
@@ -191,7 +228,7 @@ bool UserTeamRoleService::deleteUserTeamRole(int64_t id)
         return false;
     }
 
-    const int64_t userId = *existing->userId;
+    const int64_t targetUserId = *existing->userId;
 
     if (!m_utrRepo->remove(id))
     {
@@ -199,10 +236,12 @@ bool UserTeamRoleService::deleteUserTeamRole(int64_t id)
         return false;
     }
 
-    LOG_INFO << "UserTeamRole удален: id=" << id;
+    LOG_INFO
+        << "UserTeamRole удален: id=" << id
+        << ", пользователь=" << userId;
 
     // Инвалидируем кэш для этого пользователя
-    invalidateUserCache(userId);
+    invalidateUserCache(targetUserId);
 
     return true;
 }

@@ -68,19 +68,28 @@ struct TokenExpirationFixture
 
         dto::User user1;
         user1.id = 1;
-        user1.login = "test_user";
-        user1.email = "test@example.com";
-        user1.firstName = "Test";
+        user1.login = "admin";
+        user1.email = "admin@example.com";
+        user1.firstName = "Admin";
         user1.lastName = "User";
+        user1.isSuperAdmin = true;
 
-        testPage.users = { user1 };
-        testPage.totalCount = 1;
+        dto::User user2;
+        user2.id = 2;
+        user2.login = "test_user";
+        user2.email = "test@example.com";
+        user2.firstName = "Test";
+        user2.lastName = "User";
+        user2.isSuperAdmin = false;
+
+        testPage.users = { user1, user2 };
+        testPage.totalCount = 2;
 
         m_mockUserService->setGetUsersResult(testPage);
         m_mockUserService->setGetUserResult(user1);
 
         dto::User newUser;
-        newUser.id = 2;
+        newUser.id = 3;
         newUser.login = "newuser";
         newUser.email = "new@test.com";
         m_mockUserService->setCreateUserResult(newUser);
@@ -99,7 +108,7 @@ struct TokenExpirationFixture
 
     std::string generateShortLivedToken(int ttlSeconds = 2)
     {
-        return m_authMiddleware->generateToken("test_user", ttlSeconds);
+        return m_authMiddleware->generateToken("100", ttlSeconds);
     }
 
     pplx::task<web::http::http_response> makeAuthenticatedRequest(
@@ -135,6 +144,11 @@ BOOST_FIXTURE_TEST_CASE(test_token_expiration, TokenExpirationFixture)
     {
         auto response = makeAuthenticatedRequest("/api/users", shortLivedToken).get();
         BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
+
+        auto json = response.extract_json().get();
+        BOOST_CHECK(json.has_field(U("items")));
+        BOOST_CHECK(json.has_field(U("totalCount")));
+        BOOST_CHECK_EQUAL(json.at(U("totalCount")).as_integer(), 2);
     }
 
     // Ожидаем истечения срока действия токена
@@ -161,6 +175,8 @@ BOOST_FIXTURE_TEST_CASE(test_valid_token_works, TokenExpirationFixture)
 
     auto json = response.extract_json().get();
     BOOST_CHECK(json.has_field(U("items")));
+    BOOST_CHECK(json.has_field(U("totalCount")));
+    BOOST_CHECK_EQUAL(json.at(U("totalCount")).as_integer(), 2);
 }
 
 /**

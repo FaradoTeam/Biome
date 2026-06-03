@@ -26,7 +26,10 @@ struct TeamsTestFixture
         mockAuthService = std::make_shared<MockAuthService>();
         mockTeamService = std::make_shared<MockTeamService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Используем супер-админа (userId=1)
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
+
+        setupDefaultTeamService();
 
         server = std::make_unique<RestServer>("127.0.0.1", 18090);
         server->setAuthMiddleware(mockAuthMiddleware);
@@ -38,6 +41,31 @@ struct TeamsTestFixture
         serverThread = std::thread([this]()
                                    { server->start(); });
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    void setupDefaultTeamService()
+    {
+        services::TeamsPage testPage;
+        dto::Team t1;
+        t1.id = 1;
+        t1.caption = "Team Alpha";
+        dto::Team t2;
+        t2.id = 2;
+        t2.caption = "Team Beta";
+        testPage.teams = { t1, t2 };
+        testPage.totalCount = 2;
+        mockTeamService->setGetTeamsResult(testPage);
+        mockTeamService->setGetTeamResult(t1);
+
+        dto::Team newTeam;
+        newTeam.id = 10;
+        newTeam.caption = "New Team";
+        mockTeamService->setCreateTeamResult(newTeam);
+
+        dto::Team updatedTeam = t1;
+        updatedTeam.caption = "Updated Team";
+        mockTeamService->setUpdateTeamResult(updatedTeam);
+        mockTeamService->setDeleteTeamResult(true);
     }
 
     ~TeamsTestFixture()
@@ -102,20 +130,10 @@ BOOST_FIXTURE_TEST_SUITE(TeamsCrudTestSuite, TeamsTestFixture)
 // GET /api/teams
 BOOST_AUTO_TEST_CASE(test_get_teams_returns_list)
 {
-    services::TeamsPage testPage;
-    dto::Team t1;
-    t1.id = 1;
-    t1.caption = "Team Alpha";
-    dto::Team t2;
-    t2.id = 2;
-    t2.caption = "Team Beta";
-    testPage.teams = { t1, t2 };
-    testPage.totalCount = 2;
-    mockTeamService->setGetTeamsResult(testPage);
-
     auto response = makeGetRequest("/api/teams").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getGetTeamsCallCount(), 1);
+    BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamsUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("totalCount")).as_integer(), 2);
@@ -154,6 +172,7 @@ BOOST_AUTO_TEST_CASE(test_get_team_by_id_success)
     auto response = makeGetRequest("/api/teams/5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamId(), 5);
+    BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 5);
@@ -182,7 +201,8 @@ BOOST_AUTO_TEST_CASE(test_create_team_success)
     auto response = makePostRequest("/api/teams", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockTeamService->getCreateTeamCallCount(), 1);
-    BOOST_CHECK_EQUAL(*mockTeamService->getLastCreatedTeam().caption, "New Team");
+    BOOST_CHECK_EQUAL(mockTeamService->getLastCreatedTeam().caption.value_or(""), "New Team");
+    BOOST_CHECK_EQUAL(mockTeamService->getLastCreateTeamUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_team_missing_caption)
@@ -209,7 +229,8 @@ BOOST_AUTO_TEST_CASE(test_update_team_success)
     auto response = makePutRequest("/api/teams/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getUpdateTeamCallCount(), 1);
-    BOOST_CHECK_EQUAL(*mockTeamService->getLastUpdatedTeam().id, 1);
+    BOOST_CHECK_EQUAL(mockTeamService->getLastUpdatedTeam().id.value_or(0), 1);
+    BOOST_CHECK_EQUAL(mockTeamService->getLastUpdateTeamUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_update_team_not_found)
@@ -230,7 +251,9 @@ BOOST_AUTO_TEST_CASE(test_delete_team_success)
 
     auto response = makeDeleteRequest("/api/teams/2").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
+    BOOST_CHECK_EQUAL(mockTeamService->getDeleteTeamCallCount(), 1);
     BOOST_CHECK_EQUAL(mockTeamService->getLastDeletedTeamId(), 2);
+    BOOST_CHECK_EQUAL(mockTeamService->getLastDeleteTeamUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_team_not_found)
@@ -239,6 +262,13 @@ BOOST_AUTO_TEST_CASE(test_delete_team_not_found)
 
     auto response = makeDeleteRequest("/api/teams/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
+}
+
+BOOST_AUTO_TEST_CASE(test_delete_team_requires_auth)
+{
+    auto response = makeDeleteRequest("/api/teams/1", "").get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
+    BOOST_CHECK_EQUAL(mockTeamService->getDeleteTeamCallCount(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
