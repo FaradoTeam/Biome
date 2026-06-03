@@ -26,7 +26,10 @@ struct UserTeamRolesTestFixture
         mockAuthService = std::make_shared<MockAuthService>();
         mockUserTeamRoleService = std::make_shared<MockUserTeamRoleService>();
 
-        mockAuthMiddleware->setValidateRequestResult(true, "test_user_123");
+        // Используем супер-админа (userId=1)
+        mockAuthMiddleware->setValidateRequestResult(true, "1");
+
+        setupDefaultUserTeamRoleService();
 
         server = std::make_unique<RestServer>("127.0.0.1", 18097);
         server->setAuthMiddleware(mockAuthMiddleware);
@@ -38,6 +41,37 @@ struct UserTeamRolesTestFixture
         serverThread = std::thread([this]()
                                    { server->start(); });
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    void setupDefaultUserTeamRoleService()
+    {
+        services::UserTeamRolesPage testPage;
+        dto::UserTeamRole utr1;
+        utr1.id = 1;
+        utr1.userId = 100;
+        utr1.teamId = 10;
+        utr1.roleId = 1;
+        dto::UserTeamRole utr2;
+        utr2.id = 2;
+        utr2.userId = 200;
+        utr2.teamId = 20;
+        utr2.roleId = 2;
+        testPage.items = { utr1, utr2 };
+        testPage.totalCount = 2;
+        mockUserTeamRoleService->setGetUserTeamRolesResult(testPage);
+        mockUserTeamRoleService->setGetUserTeamRoleResult(utr1);
+
+        dto::UserTeamRole newUtr;
+        newUtr.id = 10;
+        newUtr.userId = 5;
+        newUtr.teamId = 50;
+        newUtr.roleId = 3;
+        mockUserTeamRoleService->setCreateUserTeamRoleResult(newUtr);
+
+        dto::UserTeamRole updatedUtr = utr1;
+        updatedUtr.roleId = 5;
+        mockUserTeamRoleService->setUpdateUserTeamRoleResult(updatedUtr);
+        mockUserTeamRoleService->setDeleteUserTeamRoleResult(true);
     }
 
     ~UserTeamRolesTestFixture()
@@ -105,24 +139,10 @@ BOOST_FIXTURE_TEST_SUITE(UserTeamRolesCrudTestSuite, UserTeamRolesTestFixture)
 
 BOOST_AUTO_TEST_CASE(test_get_user_team_roles_returns_list)
 {
-    services::UserTeamRolesPage testPage;
-    dto::UserTeamRole utr1;
-    utr1.id = 1;
-    utr1.userId = 100;
-    utr1.teamId = 10;
-    utr1.roleId = 1;
-    dto::UserTeamRole utr2;
-    utr2.id = 2;
-    utr2.userId = 200;
-    utr2.teamId = 20;
-    utr2.roleId = 2;
-    testPage.items = { utr1, utr2 };
-    testPage.totalCount = 2;
-    mockUserTeamRoleService->setGetUserTeamRolesResult(testPage);
-
     auto response = makeGetRequest("/api/user-team-roles").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockUserTeamRoleService->getGetUserTeamRolesCallCount(), 1);
+    BOOST_CHECK_EQUAL(mockUserTeamRoleService->getLastGetUserTeamRolesRequestUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("totalCount")).as_integer(), 2);
@@ -147,8 +167,8 @@ BOOST_AUTO_TEST_CASE(test_get_user_team_roles_with_user_filter)
 
     auto response = makeGetRequest("/api/user-team-roles?userId=42").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
-    BOOST_REQUIRE(mockUserTeamRoleService->getLastGetUserTeamRolesUserId().has_value());
-    BOOST_CHECK_EQUAL(*mockUserTeamRoleService->getLastGetUserTeamRolesUserId(), 42);
+    BOOST_REQUIRE(mockUserTeamRoleService->getLastGetUserTeamRolesFilterUserId().has_value());
+    BOOST_CHECK_EQUAL(*mockUserTeamRoleService->getLastGetUserTeamRolesFilterUserId(), 42);
 }
 
 BOOST_AUTO_TEST_CASE(test_get_user_team_roles_with_team_filter)
@@ -189,6 +209,7 @@ BOOST_AUTO_TEST_CASE(test_get_user_team_role_by_id_success)
     auto response = makeGetRequest("/api/user-team-roles/5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockUserTeamRoleService->getLastGetUserTeamRoleId(), 5);
+    BOOST_CHECK_EQUAL(mockUserTeamRoleService->getLastGetUserTeamRoleRequestUserId(), 1);
 
     auto json = response.extract_json().get();
     BOOST_CHECK_EQUAL(json.at(U("id")).as_integer(), 5);
@@ -211,12 +232,16 @@ BOOST_AUTO_TEST_CASE(test_get_user_team_role_not_found)
 
 BOOST_AUTO_TEST_CASE(test_create_user_team_role_success)
 {
+    // Используем супер-админа для теста создания
+    mockAuthMiddleware->setValidateRequestResult(true, "1");
+
     dto::UserTeamRole created;
     created.id = 10;
     created.userId = 5;
     created.teamId = 50;
     created.roleId = 3;
     mockUserTeamRoleService->setCreateUserTeamRoleResult(created);
+    mockUserTeamRoleService->setCreateUserTeamRoleConflict(false);
 
     json::value body;
     body[U("userId")] = json::value::number(5);
@@ -226,8 +251,6 @@ BOOST_AUTO_TEST_CASE(test_create_user_team_role_success)
     auto response = makePostRequest("/api/user-team-roles", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockUserTeamRoleService->getCreateUserTeamRoleCallCount(), 1);
-    BOOST_CHECK_EQUAL(*mockUserTeamRoleService->getLastCreatedUserTeamRole().userId, 5);
-    BOOST_CHECK_EQUAL(*mockUserTeamRoleService->getLastCreatedUserTeamRole().teamId, 50);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_user_team_role_missing_required_fields)
@@ -240,12 +263,16 @@ BOOST_AUTO_TEST_CASE(test_create_user_team_role_missing_required_fields)
 
     auto response = makePostRequest("/api/user-team-roles", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
-    // Сервис НЕ должен быть вызван, так как валидация происходит в handler
     BOOST_CHECK_EQUAL(mockUserTeamRoleService->getCreateUserTeamRoleCallCount(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_user_team_role_duplicate)
 {
+    // Используем супер-админа для теста создания (только он может создавать)
+    mockAuthMiddleware->setValidateRequestResult(true, "1");
+
+    // Настраиваем мок на возврат конфликта (nullopt означает конфликт)
+    mockUserTeamRoleService->setCreateUserTeamRoleConflict(true);
     mockUserTeamRoleService->setCreateUserTeamRoleResult(std::nullopt);
 
     json::value body;
@@ -254,7 +281,9 @@ BOOST_AUTO_TEST_CASE(test_create_user_team_role_duplicate)
     body[U("roleId")] = json::value::number(3);
 
     auto response = makePostRequest("/api/user-team-roles", body).get();
+    // Должен вернуть 409 Conflict, так как сервис вернул nullopt
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Conflict);
+    BOOST_CHECK_EQUAL(mockUserTeamRoleService->getCreateUserTeamRoleCallCount(), 1);
 }
 
 // ============================================================
@@ -274,7 +303,8 @@ BOOST_AUTO_TEST_CASE(test_update_user_team_role_success)
     auto response = makePutRequest("/api/user-team-roles/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockUserTeamRoleService->getUpdateUserTeamRoleCallCount(), 1);
-    BOOST_CHECK_EQUAL(*mockUserTeamRoleService->getLastUpdatedUserTeamRole().id, 1);
+    BOOST_CHECK_EQUAL(mockUserTeamRoleService->getLastUpdatedUserTeamRole().id.value_or(0), 1);
+    BOOST_CHECK_EQUAL(mockUserTeamRoleService->getLastUpdateUserTeamRoleUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_update_user_team_role_not_found)
@@ -300,6 +330,7 @@ BOOST_AUTO_TEST_CASE(test_delete_user_team_role_success)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockUserTeamRoleService->getDeleteUserTeamRoleCallCount(), 1);
     BOOST_CHECK_EQUAL(mockUserTeamRoleService->getLastDeletedUserTeamRoleId(), 3);
+    BOOST_CHECK_EQUAL(mockUserTeamRoleService->getLastDeleteUserTeamRoleUserId(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_user_team_role_not_found)

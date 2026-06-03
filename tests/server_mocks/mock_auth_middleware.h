@@ -91,10 +91,13 @@ public:
     int getValidateCallCount() const { return m_validateCallCount; }
     int getGenerateCallCount() const { return m_generateCallCount; }
     int getInvalidateCallCount() const { return m_invalidateCallCount; }
+    int getIsInvalidatedCallCount() const { return m_isInvalidatedCallCount; }
 
     const std::string& getLastAuthHeader() const { return m_lastAuthHeader; }
     const std::string& getLastGenerateUserId() const { return m_lastGenerateUserId; }
+    int getLastExpiresIn() const { return m_lastExpiresIn; }
     const std::string& getLastInvalidateToken() const { return m_lastInvalidateToken; }
+    const std::string& getLastCheckToken() const { return m_lastCheckToken; }
 
     void reset()
     {
