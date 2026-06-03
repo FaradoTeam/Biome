@@ -8,12 +8,14 @@
 
 #include "logic/iuser_team_role_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
 {
 
-class UserTeamRolesHandler final
+class UserTeamRolesHandler final : public BaseHandler
 {
 public:
     explicit UserTeamRolesHandler(std::shared_ptr<services::IUserTeamRoleService> service);
@@ -24,9 +26,6 @@ public:
     void handleDeleteItem(const web::http::http_request& request, const std::string& userId);
 
 private:
-    int64_t extractId(const web::http::http_request& request);
-    std::map<std::string, std::string> extractQueryParams(const web::http::http_request& request);
-    void sendErrorResponse(web::http::http_response& response, int code, const std::string& message);
     std::shared_ptr<services::IUserTeamRoleService> m_service;
 };
 

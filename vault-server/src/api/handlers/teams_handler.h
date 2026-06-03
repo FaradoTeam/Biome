@@ -8,6 +8,8 @@
 
 #include "logic/iteam_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
@@ -16,7 +18,7 @@ namespace handlers
 /**
  * @brief Обработчик запросов для работы с командами.
  */
-class TeamsHandler final
+class TeamsHandler final : public BaseHandler
 {
 public:
     explicit TeamsHandler(std::shared_ptr<services::ITeamService> teamService);
@@ -44,17 +46,6 @@ public:
     void handleDeleteTeam(
         const web::http::http_request& request,
         const std::string& userId
-    );
-
-private:
-    int64_t extractTeamIdFromPath(const web::http::http_request& request);
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
     );
 
 private:

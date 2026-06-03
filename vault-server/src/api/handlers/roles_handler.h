@@ -9,10 +9,12 @@
 
 #include "logic/irole_service.h"
 
+#include "base_handler.h"
+
 namespace server::handlers
 {
 
-class RolesHandler final
+class RolesHandler final : public BaseHandler
 {
 public:
     explicit RolesHandler(std::shared_ptr<services::IRoleService> roleService);
@@ -43,20 +45,6 @@ public:
     );
 
 private:
-    int64_t extractRoleIdFromPath(const web::http::http_request& request);
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
-    );
-    std::optional<int64_t> parseUserId(
-        const std::string& userIdStr,
-        web::http::http_response& response
-    );
-
     std::shared_ptr<services::IRoleService> m_roleService;
 };
 

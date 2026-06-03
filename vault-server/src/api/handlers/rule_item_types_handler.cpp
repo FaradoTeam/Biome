@@ -68,7 +68,7 @@ void RuleItemTypesHandler::handleGetItem(
     const std::string& /*userId*/
 )
 {
-    int64_t id = extractId(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -165,9 +165,9 @@ void RuleItemTypesHandler::handleUpdateItem(
         request.reply(errorResponse);
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
-    int64_t id = extractId(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -229,9 +229,9 @@ void RuleItemTypesHandler::handleDeleteItem(
         request.reply(errorResponse);
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
-    int64_t id = extractId(request);
+    const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
         web::http::http_response resp(web::http::status_codes::BadRequest);
@@ -249,67 +249,6 @@ void RuleItemTypesHandler::handleDeleteItem(
         web::http::http_response resp(web::http::status_codes::NotFound);
         sendErrorResponse(resp, 404, "RuleItemType not found or insufficient permissions");
         request.reply(resp);
-    }
-}
-
-int64_t RuleItemTypesHandler::extractId(const web::http::http_request& request)
-{
-    std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/rule-item-types/(\d+))");
-    std::smatch matches;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
-        return std::stoll(matches[1].str());
-    return -1;
-}
-
-std::map<std::string, std::string> RuleItemTypesHandler::extractQueryParams(
-    const web::http::http_request& request
-)
-{
-    std::map<std::string, std::string> params;
-    auto query = web::uri::split_query(request.request_uri().query());
-    for (const auto& p : query)
-        params[p.first] = p.second;
-    return params;
-}
-
-void RuleItemTypesHandler::sendErrorResponse(
-    web::http::http_response& response,
-    int code,
-    const std::string& message
-)
-{
-    web::json::value error;
-    error["code"] = web::json::value::number(code);
-    error["message"] = web::json::value::string(message);
-    response.set_body(error);
-}
-
-std::optional<int64_t> RuleItemTypesHandler::parseUserId(
-    const std::string& userIdStr,
-    web::http::http_response& response
-)
-{
-    if (userIdStr.empty())
-    {
-        sendErrorResponse(response, 401, "User not authenticated");
-        return std::nullopt;
-    }
-
-    try
-    {
-        int64_t userId = std::stoll(userIdStr);
-        if (userId <= 0)
-        {
-            sendErrorResponse(response, 400, "Invalid user ID");
-            return std::nullopt;
-        }
-        return userId;
-    }
-    catch (const std::exception&)
-    {
-        sendErrorResponse(response, 400, "Invalid user ID format");
-        return std::nullopt;
     }
 }
 

@@ -9,6 +9,8 @@
 
 #include "logic/iproject_service.h"
 
+#include "base_handler.h"
+
 namespace server
 {
 namespace handlers
@@ -17,7 +19,7 @@ namespace handlers
 /**
  * @brief Обработчик запросов для работы с проектами (CRUD операции).
  */
-class ProjectsHandler final
+class ProjectsHandler final : public BaseHandler
 {
 public:
     /**
@@ -66,41 +68,6 @@ public:
     void handleDeleteProject(
         const web::http::http_request& request,
         const std::string& userId
-    );
-
-private:
-    /**
-     * @brief Извлекает ID проекта из пути запроса.
-     * @param request HTTP-запрос
-     * @return ID проекта или -1 при ошибке
-     */
-    int64_t extractProjectIdFromPath(const web::http::http_request& request);
-
-    /**
-     * @brief Извлекает userId из строки и конвертирует в число.
-     * @param userIdStr Строковый ID пользователя
-     * @param response HTTP-ответ для отправки ошибки
-     * @return ID пользователя или std::nullopt при ошибке
-     */
-    std::optional<int64_t> parseUserId(
-        const std::string& userIdStr,
-        web::http::http_response& response
-    );
-
-    /**
-     * @brief Извлекает query-параметры из запроса.
-     */
-    std::map<std::string, std::string> extractQueryParams(
-        const web::http::http_request& request
-    );
-
-    /**
-     * @brief Формирует и отправляет JSON-ответ с ошибкой.
-     */
-    void sendErrorResponse(
-        web::http::http_response& response,
-        int code,
-        const std::string& message
     );
 
 private:
