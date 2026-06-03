@@ -29,7 +29,7 @@ UserService::UserService(
     }
 }
 
-UsersPage UserService::users(int page, int pageSize)
+UsersPage UserService::users(int page, int pageSize, int64_t /*userId*/)
 {
     if (page < 1)
         page = 1;
@@ -40,16 +40,24 @@ UsersPage UserService::users(int page, int pageSize)
     return { users, total };
 }
 
-std::optional<dto::User> UserService::user(int64_t id)
+std::optional<dto::User> UserService::user(int64_t id, int64_t userId)
 {
     return m_userRepo->findById(id);
 }
 
 std::optional<dto::User> UserService::createUser(
     const dto::User& user,
-    const std::string& password
+    const std::string& password,
+    int64_t userId
 )
 {
+    // Только супер-админ может создавать пользователей
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "createUser: пользователь " << userId << " не имеет прав на создание пользователей";
+        return std::nullopt;
+    }
+
     if (!user.login.has_value()
         || user.login->empty()
         || !user.email.has_value()
@@ -78,13 +86,26 @@ std::optional<dto::User> UserService::createUser(
         return std::nullopt;
     }
 
-    LOG_INFO << "Пользователь создан: id=" << newId << ", логин=" << *user.login;
+    LOG_INFO
+        << "Пользователь создан: id=" << newId
+        << ", логин=" << *user.login
+        << ", пользователь=" << userId;
 
     return m_userRepo->findById(newId);
 }
 
-std::optional<dto::User> UserService::updateUser(const dto::User& user)
+std::optional<dto::User> UserService::updateUser(
+    const dto::User& user,
+    int64_t userId
+)
 {
+    // Только супер-админ может обновлять пользователей
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "updateUser: пользователь " << userId << " не имеет прав на обновление пользователей";
+        return std::nullopt;
+    }
+
     if (!user.id.has_value())
     {
         LOG_WARN << "updateUser: отсутствует id";
@@ -109,7 +130,9 @@ std::optional<dto::User> UserService::updateUser(const dto::User& user)
         return std::nullopt;
     }
 
-    LOG_INFO << "Пользователь обновлен: id=" << *user.id;
+    LOG_INFO
+        << "Пользователь обновлен: id=" << *user.id
+        << ", пользователь=" << userId;
 
     // Проверяем, изменились ли права доступа
     const bool isSuperAdminChanged = user.isSuperAdmin.has_value() && *user.isSuperAdmin != wasSuperAdmin;
@@ -128,12 +151,26 @@ std::optional<dto::User> UserService::updateUser(const dto::User& user)
     return m_userRepo->findById(*user.id);
 }
 
-bool UserService::deleteUser(int64_t id)
+bool UserService::deleteUser(int64_t id, int64_t userId)
 {
+    // Только супер-админ может удалять пользователей
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "deleteUser: пользователь " << userId << " не имеет прав на удаление пользователей";
+        return false;
+    }
+
     auto existing = m_userRepo->findById(id);
     if (!existing)
     {
         LOG_WARN << "deleteUser: пользователь не найден, id=" << id;
+        return false;
+    }
+
+    // Нельзя удалить супер-админа
+    if (existing->isSuperAdmin.value_or(false))
+    {
+        LOG_WARN << "deleteUser: нельзя удалить супер-администратора id=" << id;
         return false;
     }
 
@@ -143,7 +180,9 @@ bool UserService::deleteUser(int64_t id)
         return false;
     }
 
-    LOG_INFO << "Пользователь удален: id=" << id;
+    LOG_INFO
+        << "Пользователь удален: id=" << id
+        << ", пользователь=" << userId;
 
     // Инвалидируем кэш удалённого пользователя
     m_authzService->invalidateCache(id);
