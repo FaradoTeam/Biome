@@ -21,6 +21,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/base_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/edges_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_types_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_type_possible_values_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/items_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/phases_handler.cpp
@@ -41,6 +42,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/authorization_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/edge_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_possible_value_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/phase_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/project_service.cpp
@@ -58,6 +60,7 @@ set(SERVER_SOURCES
     # Repo Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_edge_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_possible_value_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_phase_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_repository.cpp

@@ -1,6 +1,5 @@
 #include <chrono>
 #include <memory>
-#include <regex>
 
 #include <cpprest/http_msg.h>
 #include <cpprest/uri.h>
@@ -9,6 +8,7 @@
 
 #include "api/handlers/auth_handler.h"
 #include "api/handlers/edges_handler.h"
+#include "api/handlers/field_type_possible_values_handler.h"
 #include "api/handlers/field_types_handler.h"
 #include "api/handlers/item_types_handler.h"
 #include "api/handlers/items_handler.h"
@@ -27,6 +27,7 @@
 #include "api/handlers/workflows_handler.h"
 
 #include "logic/iauth_service.h"
+#include "logic/ifield_type_possible_value_service.h"
 #include "logic/ifield_type_service.h"
 #include "logic/iitem_type_service.h"
 #include "logic/iproject_service.h"
@@ -125,6 +126,11 @@ void RestServer::setAuthService(std::shared_ptr<services::IAuthService> authServ
 void RestServer::setFieldTypeService(std::shared_ptr<services::IFieldTypeService> fieldTypeService)
 {
     m_fieldTypeService = fieldTypeService;
+}
+
+void RestServer::setFieldTypePossibleValueService(std::shared_ptr<services::IFieldTypePossibleValueService> service)
+{
+    m_fieldTypePossibleValueService = service;
 }
 
 void RestServer::setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService)
@@ -451,6 +457,68 @@ void RestServer::registerRoutes()
             [fieldTypesHandler](const auto& request, const auto& userId)
             {
                 fieldTypesHandler->handleDeleteFieldType(request, userId);
+            }
+        );
+    }
+
+    // ===== Возможные значения типов полей =====
+    if (m_fieldTypePossibleValueService)
+    {
+        auto handler = std::make_shared<handlers::FieldTypePossibleValuesHandler>(
+            m_fieldTypePossibleValueService
+        );
+
+        // GET /api/field-type-values — список с пагинацией
+        addRouteGet(
+            "/api/field-type-values",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetValues(request, userId);
+            }
+        );
+
+        // POST /api/field-type-values — создание
+        addRoutePost(
+            "/api/field-type-values",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateValue(request, userId);
+            }
+        );
+
+        // GET /api/field-type-values/{id} — получение по ID
+        addRouteGet(
+            R"(/api/field-type-values/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetValue(request, userId);
+            }
+        );
+
+        // PUT /api/field-type-values/{id} — обновление
+        addRoutePut(
+            R"(/api/field-type-values/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleUpdateValue(request, userId);
+            }
+        );
+
+        // DELETE /api/field-type-values/{id} — удаление
+        addRouteDel(
+            R"(/api/field-type-values/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteValue(request, userId);
+            }
+        );
+
+        // GET /api/field-type-values/by-field-type/{fieldTypeId} — значения по типу поля
+        addRouteGet(
+            R"(/api/field-type-values/by-field-type/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetValuesByFieldType(request, userId);
             }
         );
     }
