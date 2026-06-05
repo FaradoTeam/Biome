@@ -899,7 +899,49 @@ domain_entities:
       - Может формироваться автоматически (напоминания, дедлайны)
       - Пользователь может добавлять произвольные задачи
 
-  - name: ItemPlanning
+  # =====================================================
+  # 12. Планирование
+  # =====================================================
+
+  - name: Plan
+    description: План в рамках фазы
+    attributes:
+      - name: id
+        type: int
+        description: Уникальный идентификатор
+      - name: phaseId
+        type: int
+        description: Идентификатор фазы
+      - name: basePlanId
+        type: int
+        description: Идентификатор плана, от которого создан данный (NULL для первого)
+      - name: caption
+        type: string
+        description: Название плана
+      - name: description
+        type: string
+        description: Описание плана
+      - name: isActive
+        type: bool
+        description: Флаг, только один экземпляр плана может быть активным в рамках фазы
+      - name: createdAt
+        type: datetime
+        description: Дата и время создания
+      - name: createdByUserId
+        type: int
+        description: Идентификатор пользователя, кто создал
+      - name: activatedAt
+        type: datetime
+        description: Дата и время активации
+      - name: activatedByUserId
+        type: int
+        description: Идентификатор пользователя, кто активировал
+    business_rules:
+      - При активации другого плана (isActive становится true), все остальные планы этой фазы должны стать isActive = false
+      - План нельзя изменить (update) после активации, только создать новую версию (форк)
+      - При создании новой версии (форке) данные PlanItem копируются из basePlanId, после чего их можно редактировать
+
+  - name: PlanItem
     description: Планирование элемента на пользователя
     attributes:
       - name: id
@@ -910,7 +952,11 @@ domain_entities:
         description: Идентификатор элемента
       - name: userId
         type: int
+        nullable: true
         description: Идентификатор пользователя
+      - name: planId
+        type: int
+        description: Идентификатор экземпляра плана
       - name: startDate
         type: datetime
         description: Плановая дата начала
@@ -918,11 +964,13 @@ domain_entities:
         type: datetime
         description: Плановая дата окончания
     business_rules:
-      - Уникальность пары (itemId, userId) - элемент может быть назначен пользователю только один раз
+      - Уникальность пары (itemId, planId) - элемент не может быть дважды в одном плане
+      - startDate не может быть позже endDate (если оба заполнены)
+      - Даты должны быть в пределах дат фазы (phase.beginDate, phase.endDate), если они заданы
       - Используется для расчета загрузки и формирования календаря
 
   # =====================================================
-  # 12. СПРАВОЧНИКИ (Directories)
+  # 13. СПРАВОЧНИКИ (Directories)
   # =====================================================
 
   - name: RoleMenuItem
