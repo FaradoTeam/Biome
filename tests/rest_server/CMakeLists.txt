@@ -33,6 +33,7 @@ set(SERVER_SOURCES
 )
 
 set(COMMON_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/activate_plan_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/auth_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/auth_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/board.cpp
@@ -45,6 +46,7 @@ set(COMMON_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/error_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/field_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/field_type_possible_value.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/fork_plan_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/item.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/item_document.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/item_field.cpp
@@ -55,6 +57,8 @@ set(COMMON_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/link_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/page_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/phase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/plan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/plan_item.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/private_message.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/project.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/project_team.cpp

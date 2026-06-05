@@ -6,77 +6,30 @@
 #include <boost/test/unit_test.hpp>
 #include <nlohmann/json.hpp>
 
-#include "common/dto/user_todo.h"
+#include "common/dto/fork_plan_request.h"
 
 #include <optional>
 #include "common/helpers/time_helpers.h"
 
 using namespace dto;
 
-BOOST_AUTO_TEST_SUITE(UserTodoTests)
+BOOST_AUTO_TEST_SUITE(ForkPlanRequestTests)
 
 // Тест: Конструктор по умолчанию
 BOOST_AUTO_TEST_CASE(DefaultConstructor)
 {
-    UserTodo dto;
+    ForkPlanRequest dto;
 
     // Все optional поля должны быть пустыми
-    BOOST_TEST(!dto.id.has_value());
-    BOOST_TEST(!dto.userId.has_value());
-    BOOST_TEST(!dto.isDone.has_value());
     BOOST_TEST(!dto.caption.has_value());
+    BOOST_TEST(!dto.description.has_value());
 }
 
 // Тест: Прямой доступ к полям
 BOOST_AUTO_TEST_CASE(FieldAccess)
 {
-    UserTodo dto;
+    ForkPlanRequest dto;
 
-    // Проверка поля: id
-    {
-        BOOST_TEST(!dto.id.has_value());
-
-        int64_t testValue =42;
-        dto.id = testValue;
-
-        BOOST_TEST(dto.id.has_value());
-
-        BOOST_TEST(dto.id.value() == testValue);
-
-        // Проверка сброса значения
-        dto.id = std::nullopt;
-        BOOST_TEST(!dto.id.has_value());
-    }
-    // Проверка поля: userId
-    {
-        BOOST_TEST(!dto.userId.has_value());
-
-        int64_t testValue =42;
-        dto.userId = testValue;
-
-        BOOST_TEST(dto.userId.has_value());
-
-        BOOST_TEST(dto.userId.value() == testValue);
-
-        // Проверка сброса значения
-        dto.userId = std::nullopt;
-        BOOST_TEST(!dto.userId.has_value());
-    }
-    // Проверка поля: isDone
-    {
-        BOOST_TEST(!dto.isDone.has_value());
-
-        bool testValue =true;
-        dto.isDone = testValue;
-
-        BOOST_TEST(dto.isDone.has_value());
-
-        BOOST_TEST(dto.isDone.value() == testValue);
-
-        // Проверка сброса значения
-        dto.isDone = std::nullopt;
-        BOOST_TEST(!dto.isDone.has_value());
-    }
     // Проверка поля: caption
     {
         BOOST_TEST(!dto.caption.has_value());
@@ -92,73 +45,70 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
         dto.caption = std::nullopt;
         BOOST_TEST(!dto.caption.has_value());
     }
+    // Проверка поля: description
+    {
+        BOOST_TEST(!dto.description.has_value());
+
+        std::string testValue ="test_value";
+        dto.description = testValue;
+
+        BOOST_TEST(dto.description.has_value());
+
+        BOOST_TEST(dto.description.value() == testValue);
+
+        // Проверка сброса значения
+        dto.description = std::nullopt;
+        BOOST_TEST(!dto.description.has_value());
+    }
 }
 
 // Тест: сериализация в JSON
 BOOST_AUTO_TEST_CASE(ToJsonSerialization)
 {
-    UserTodo dto;
+    ForkPlanRequest dto;
 
-    // Поле: id
-    dto.id = 42;
-    // Поле: userId
-    dto.userId = 42;
-    // Поле: isDone
-    dto.isDone = true;
     // Поле: caption
     dto.caption = "test_caption";
+    // Поле: description
+    dto.description = "test_description";
 
     nlohmann::json json = dto.toJson();
 
     // Проверка полей JSON
-    BOOST_TEST(json.contains("id"));
-    BOOST_TEST(json["id"].get<int64_t>() == 42);
-    BOOST_TEST(json.contains("userId"));
-    BOOST_TEST(json["userId"].get<int64_t>() == 42);
-    BOOST_TEST(json.contains("isDone"));
-    BOOST_TEST(json["isDone"].get<bool>() == true);
     BOOST_TEST(json.contains("caption"));
     BOOST_TEST(json["caption"].get<std::string>() == "test_caption");
+    BOOST_TEST(json.contains("description"));
+    BOOST_TEST(json["description"].get<std::string>() == "test_description");
 }
 
 // Тест: десериализация из JSON
 BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
 {
     nlohmann::json json = nlohmann::json::object();
-    json["id"] = 42;
-    json["userId"] = 42;
-    json["isDone"] = true;
     json["caption"] = "test_caption";
+    json["description"] = "test_description";
 
-    UserTodo dto(json);
+    ForkPlanRequest dto(json);
 
     // Проверка десериализованных значений
-    BOOST_TEST(dto.id.has_value());
-    BOOST_TEST(dto.id.value() == 42);
-    BOOST_TEST(dto.userId.has_value());
-    BOOST_TEST(dto.userId.value() == 42);
-    BOOST_TEST(dto.isDone.has_value());
-    BOOST_TEST(dto.isDone.value() == true);
     BOOST_TEST(dto.caption.has_value());
     BOOST_TEST(dto.caption.value() == "test_caption");
+    BOOST_TEST(dto.description.has_value());
+    BOOST_TEST(dto.description.value() == "test_description");
 }
 
 // Тест: Сериализация в оба конца
 BOOST_AUTO_TEST_CASE(RoundTripSerialization)
 {
-    UserTodo original;
+    ForkPlanRequest original;
 
-    // Поле: id
-    original.id = 42;
-    // Поле: userId
-    original.userId = 42;
-    // Поле: isDone
-    original.isDone = true;
     // Поле: caption
     original.caption = "test_caption";
+    // Поле: description
+    original.description = "test_description";
 
     nlohmann::json json = original.toJson();
-    UserTodo deserialized(json);
+    ForkPlanRequest deserialized(json);
 
     // Сравнение исходного и десериализованного
     BOOST_TEST(original == deserialized);
@@ -167,7 +117,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
 // Тест: проверка isValid
 BOOST_AUTO_TEST_CASE(Validation)
 {
-    UserTodo dto;
+    ForkPlanRequest dto;
 
     // Проверяем, есть ли обязательные поля
 
@@ -176,8 +126,6 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.userId = 42;
-    dto.isDone = true;
     dto.caption = "test_caption";
 
     // Теперь должен быть валидным
@@ -188,15 +136,15 @@ BOOST_AUTO_TEST_CASE(Validation)
 // Тест: Операторы сравнения
 BOOST_AUTO_TEST_CASE(ComparisonOperators)
 {
-    UserTodo dto1;
-    UserTodo dto2;
+    ForkPlanRequest dto1;
+    ForkPlanRequest dto2;
 
     // Изначально они должны быть равны (оба пустые)
     BOOST_TEST(dto1 == dto2);
     BOOST_TEST(!(dto1 != dto2));
 
-    // Изменим поле userId, чтобы сделать их разными
-    dto1.userId = 999;
+    // Изменим поле caption, чтобы сделать их разными
+    dto1.caption = "different_value";
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -206,10 +154,8 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
 // Тест: Оператор потокового вывода
 BOOST_AUTO_TEST_CASE(StreamOutput)
 {
-    UserTodo dto;
+    ForkPlanRequest dto;
 
-    dto.userId = 42;
-    dto.isDone = true;
     dto.caption = "test_value";
 
     std::stringstream ss;
