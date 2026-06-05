@@ -24,25 +24,20 @@ nlohmann::json UserTodo::toJson() const
     {
         result["id"] = id.value();
     }
-    // Идентификатор элемента
-    if (itemId.has_value())
-    {
-        result["itemId"] = itemId.value();
-    }
     // Идентификатор пользователя
     if (userId.has_value())
     {
         result["userId"] = userId.value();
     }
-    // Плановая дата начала
-    if (startDate.has_value())
+    // Флаг выполнения
+    if (isDone.has_value())
     {
-        result["startDate"] = timePointToSeconds(startDate.value());
+        result["isDone"] = isDone.value();
     }
-    // Плановая дата окончания
-    if (endDate.has_value())
+    // Текст задачи
+    if (caption.has_value())
     {
-        result["endDate"] = timePointToSeconds(endDate.value());
+        result["caption"] = caption.value();
     }
 
     return result;
@@ -68,22 +63,6 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     {
         id = std::nullopt;
     }
-    // Идентификатор элемента
-    if (json.contains("itemId") && !json["itemId"].is_null())
-    {
-        try
-        {
-            itemId = json["itemId"].get<int64_t>();
-        }
-        catch (const std::exception& e)
-        {
-            success = false;
-        }
-    }
-    else
-    {
-        itemId = std::nullopt;
-    }
     // Идентификатор пользователя
     if (json.contains("userId") && !json["userId"].is_null())
     {
@@ -100,13 +79,12 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     {
         userId = std::nullopt;
     }
-    // Плановая дата начала
-    if (json.contains("startDate") && !json["startDate"].is_null())
+    // Флаг выполнения
+    if (json.contains("isDone") && !json["isDone"].is_null())
     {
         try
         {
-            auto timestampValue = json["startDate"].get<int64_t>();
-            startDate = secondsToTimePoint(timestampValue);
+            isDone = json["isDone"].get<bool>();
         }
         catch (const std::exception& e)
         {
@@ -115,15 +93,14 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     }
     else
     {
-        startDate = std::nullopt;
+        isDone = std::nullopt;
     }
-    // Плановая дата окончания
-    if (json.contains("endDate") && !json["endDate"].is_null())
+    // Текст задачи
+    if (json.contains("caption") && !json["caption"].is_null())
     {
         try
         {
-            auto timestampValue = json["endDate"].get<int64_t>();
-            endDate = secondsToTimePoint(timestampValue);
+            caption = json["caption"].get<std::string>();
         }
         catch (const std::exception& e)
         {
@@ -132,7 +109,7 @@ bool UserTodo::fromJson(const nlohmann::json& json)
     }
     else
     {
-        endDate = std::nullopt;
+        caption = std::nullopt;
     }
 
     return success;
@@ -140,47 +117,47 @@ bool UserTodo::fromJson(const nlohmann::json& json)
 
 bool UserTodo::isValid() const
 {
-    if (!itemId.has_value())
-    {
-        return false;
-    }
     if (!userId.has_value())
     {
         return false;
     }
-    if (!startDate.has_value())
+    if (!isDone.has_value())
     {
         return false;
     }
-    if (!endDate.has_value())
+    if (!caption.has_value())
     {
         return false;
     }
 
     // Дополнительные проверки для непустых значений
+    if (caption.value().empty())
+    {
+        return false;
+    }
 
     return true;
 }
 
 std::string UserTodo::validationError() const
 {
-    if (!itemId.has_value())
-    {
-        return "Поле «itemId» является обязательным для заполнения";
-    }
     if (!userId.has_value())
     {
         return "Поле «userId» является обязательным для заполнения";
     }
-    if (!startDate.has_value())
+    if (!isDone.has_value())
     {
-        return "Поле «startDate» является обязательным для заполнения";
+        return "Поле «isDone» является обязательным для заполнения";
     }
-    if (!endDate.has_value())
+    if (!caption.has_value())
     {
-        return "Поле «endDate» является обязательным для заполнения";
+        return "Поле «caption» является обязательным для заполнения";
     }
 
+    if (caption.value().empty())
+    {
+        return "Поле «caption» не может быть пустой строкой";
+    }
 
     return "";
 }
@@ -189,10 +166,9 @@ bool UserTodo::operator==(const UserTodo& other) const
 {
     return
         id == other.id
-        && itemId == other.itemId
         && userId == other.userId
-        && startDate == other.startDate
-        && endDate == other.endDate
+        && isDone == other.isDone
+        && caption == other.caption
 ;
 }
 
