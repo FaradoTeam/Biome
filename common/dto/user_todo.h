@@ -51,17 +51,14 @@ public:
     /// Уникальный идентификатор
     std::optional<int64_t> id;
 
-    /// Идентификатор элемента
-    std::optional<int64_t> itemId;
-
     /// Идентификатор пользователя
     std::optional<int64_t> userId;
 
-    /// Плановая дата начала
-    std::optional<std::chrono::system_clock::time_point> startDate;
+    /// Флаг выполнения
+    std::optional<bool> isDone;
 
-    /// Плановая дата окончания
-    std::optional<std::chrono::system_clock::time_point> endDate;
+    /// Текст задачи
+    std::optional<std::string> caption;
 
 };
 

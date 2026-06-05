@@ -9,6 +9,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${nlohmann_json_INCLUDE_DIRS})
 
 set(DTO_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/activate_plan_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/auth_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/auth_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/board.cpp
@@ -21,6 +22,7 @@ set(DTO_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/error_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/field_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/field_type_possible_value.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/fork_plan_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/item.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/item_document.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/item_field.cpp
@@ -31,6 +33,8 @@ set(DTO_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/link_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/page_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/phase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/plan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/plan_item.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/private_message.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/project.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dto/project_team.cpp
@@ -55,6 +59,7 @@ set(DTO_SOURCES
 )
 
 set(DTO_TEST_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_activate_plan_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_auth_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_auth_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_board.cpp
@@ -67,6 +72,7 @@ set(DTO_TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_error_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_field_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_field_type_possible_value.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_fork_plan_request.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_item.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_item_document.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_item_field.cpp
@@ -78,6 +84,8 @@ set(DTO_TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_page_response.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_phase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_plan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_plan_item.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_private_message.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_project.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_project_team.cpp

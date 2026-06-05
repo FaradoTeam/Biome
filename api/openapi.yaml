@@ -404,18 +404,52 @@ components:
         userId: { type: integer, description: Идентификатор пользователя }
         isDone: { type: boolean, description: Флаг выполнения }
         caption: { type: string, description: Текст задачи }
-      ItemPlanning:
+
+    # =====================================================
+    # 12. ПЛАНИРОВАНИЕ (Plans and PlanItems)
+    # =====================================================
+    Plan:
       type: object
-      required: [itemId, userId, startDate, endDate]
+      required: [phaseId, caption]
+      properties:
+        id: { type: integer, description: Уникальный идентификатор }
+        phaseId: { type: integer, description: Идентификатор фазы }
+        basePlanId: { type: integer, nullable: true, description: Идентификатор плана, от которого создан данный (NULL для первого) }
+        caption: { type: string, description: Название плана }
+        description: { type: string, description: Описание плана }
+        isActive: { type: boolean, description: Флаг, только один экземпляр плана может быть активным в рамках фазы }
+        createdAt: { type: string, format: date-time, description: Дата и время создания }
+        createdByUserId: { type: integer, description: Идентификатор пользователя, кто создал }
+        activatedAt: { type: string, format: date-time, nullable: true, description: Дата и время активации }
+        activatedByUserId: { type: integer, nullable: true, description: Идентификатор пользователя, кто активировал }
+    PlanItem:
+      type: object
+      required: [itemId, planId, startDate, endDate]
       properties:
         id: { type: integer, description: Уникальный идентификатор }
         itemId: { type: integer, description: Идентификатор элемента }
-        userId: { type: integer, description: Идентификатор пользователя }
+        userId: { type: integer, nullable: true, description: Идентификатор пользователя (null для родительских задач) }
+        planId: { type: integer, description: Идентификатор экземпляра плана }
         startDate: { type: string, format: date-time, description: Плановая дата начала }
         endDate: { type: string, format: date-time, description: Плановая дата окончания }
+    ForkPlanRequest:
+      type: object
+      required: [caption]
+      properties:
+        caption: { type: string, description: Название нового плана }
+        description: { type: string, description: Описание нового плана }
+        # TODO : Добавить и сохранить причину если это потребуется:
+        # reasonCode: { type: string, enum: [BUSINESS_REQUEST, UNDER_ESTIMATE, OVER_ESTIMATE, RESOURCE_LOSS, RESOURCE_GAIN, TECH_DEBT, NEW_REQUIREMENT, OTHER], description: Код причины создания новой версии }
+        # reasonDetails: { type: string, description: Свободное пояснение причины }
+        # decisionMakerUserId: { type: integer, description: Кто принял решение о создании новой версии }
+    ActivatePlanRequest:
+      type: object
+      required: [activatedByUserId]
+      properties:
+        activatedByUserId: { type: integer, description: Кто активирует план }
 
     # =====================================================
-    # 12. СПРАВОЧНИКИ (Directories)
+    # 13. СПРАВОЧНИКИ (Directories)
     # =====================================================
     RoleMenuItem:
       type: object
@@ -3917,33 +3951,28 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: Задача не найдена }
 
-  /item-plannings:
+  # =====================================================
+  # 12. ПЛАНИРОВАНИЕ (Plans and PlanItems)
+  # =====================================================
+  /phases/{phaseId}/plans:
     get:
       tags: [Planning]
-      summary: Получить список планирований
+      summary: Получить список планов фазы
       parameters:
+        - name: phaseId
+          in: path
+          required: true
+          schema: { type: integer }
         - name: page
           in: query
           schema: { type: integer, default: 1 }
         - name: pageSize
           in: query
           schema: { type: integer, default: 20 }
-        - name: itemId
+        - name: isActive
           in: query
-          schema: { type: integer }
-          description: Фильтр по элементу
-        - name: userId
-          in: query
-          schema: { type: integer }
-          description: Фильтр по пользователю
-        - name: dateFrom
-          in: query
-          schema: { type: string, format: date-time }
-          description: Дата начала периода
-        - name: dateTo
-          in: query
-          schema: { type: string, format: date-time }
-          description: Дата окончания периода
+          schema: { type: boolean }
+          description: Фильтр по статусу активности
       responses:
         '200':
           description: Успешный ответ
@@ -3956,41 +3985,80 @@ paths:
                     properties:
                       items:
                         type: array
-                        items: { $ref: '#/components/schemas/ItemPlanning' }
+                        items: { $ref: '#/components/schemas/Plan' }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
+        '404': { description: Фаза не найдена }
     post:
       tags: [Planning]
-      summary: Создать планирование
+      summary: Создать первый план в фазе
+      description: Создаёт базовый план (basePlanId = null). План автоматически становится активным.
+      parameters:
+        - name: phaseId
+          in: path
+          required: true
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ItemPlanning'
+              type: object
+              required: [caption]
+              properties:
+                caption: { type: string }
+                description: { type: string }
       responses:
-        '201': { description: Планирование создано, content: { application/json: { schema: { $ref: '#/components/schemas/ItemPlanning' } } } }
-        '400': { description: Некорректный запрос }
+        '201':
+          description: План создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '400': { description: Некорректный запрос (план уже существует) }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
-        '409': { description: Конфликт (элемент уже запланирован для этого пользователя) }
-  /item-plannings/{id}:
+        '404': { description: Фаза не найдена }
+
+  /plans/{id}:
     get:
       tags: [Planning]
-      summary: Получить планирование по ID
+      summary: Получить план по ID
       parameters:
         - name: id
           in: path
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemPlanning' } } } }
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
-        '404': { description: Планирование не найдено }
-    put:
+        '404': { description: План не найден }
+    delete:
       tags: [Planning]
-      summary: Обновить планирование
+      summary: Удалить план (только черновик, неактивный)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: План удалён }
+        '400': { description: Нельзя удалить активный план }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: План не найден }
+
+  /plans/{id}/fork:
+    post:
+      tags: [Planning]
+      summary: Создать новую версию плана (форк)
+      description: Копирует PlanItems из текущего плана в новый. Новый план создаётся неактивным.
       parameters:
         - name: id
           in: path
@@ -4001,29 +4069,171 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ItemPlanning'
+              $ref: '#/components/schemas/ForkPlanRequest'
       responses:
-        '200': { description: Планирование обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/ItemPlanning' } } } }
+        '201':
+          description: Новая версия плана создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
         '400': { description: Некорректный запрос }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
-        '404': { description: Планирование не найдено }
-    delete:
+        '404': { description: Исходный план не найден }
+
+  /plans/{id}/activate:
+    post:
       tags: [Planning]
-      summary: Удалить планирование
+      summary: Активировать план
+      description: Деактивирует все остальные планы фазы и активирует указанный.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivatePlanRequest'
+      responses:
+        '200':
+          description: План активирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '400': { description: Некорректный запрос (план содержит незаполненные PlanItem) }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: План не найден }
+
+  /plans/{planId}/items:
+    get:
+      tags: [Planning]
+      summary: Получить все PlanItem для плана
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: userId
+          in: query
+          schema: { type: integer }
+          description: Фильтр по исполнителю
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PageResponse'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/PlanItem' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: План не найден }
+    post:
+      tags: [Planning]
+      summary: Добавить элемент в план
+      description: Создаёт PlanItem. Работает только для неактивных планов (черновиков).
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanItem'
+      responses:
+        '201':
+          description: PlanItem создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanItem'
+        '400': { description: Некорректный запрос (даты вне фазы, startDate > endDate, элемент уже в плане) }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен (план активен) }
+        '404': { description: План или элемент не найден }
+
+  /plan-items/{id}:
+    get:
+      tags: [Planning]
+      summary: Получить PlanItem по ID
       parameters:
         - name: id
           in: path
           required: true
           schema: { type: integer }
       responses:
-        '204': { description: Планирование удалено }
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanItem'
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
-        '404': { description: Планирование не найдено }
+        '404': { description: PlanItem не найден }
+    put:
+      tags: [Planning]
+      summary: Обновить PlanItem
+      description: Работает только для неактивных планов (черновиков).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanItem'
+      responses:
+        '200':
+          description: PlanItem обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanItem'
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен (план активен) }
+        '404': { description: PlanItem не найден }
+    delete:
+      tags: [Planning]
+      summary: Удалить PlanItem
+      description: Работает только для неактивных планов (черновиков).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: PlanItem удалён }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен (план активен) }
+        '404': { description: PlanItem не найден }
 
   # =====================================================
-  # 12. СПРАВОЧНИКИ (Directories)
+  # 13. СПРАВОЧНИКИ (Directories)
   # =====================================================
   /role-menu-items:
     get:
