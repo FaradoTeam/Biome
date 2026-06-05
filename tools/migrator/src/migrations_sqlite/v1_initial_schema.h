@@ -513,15 +513,36 @@ public:
         );
 
         connection->execute(
-            "CREATE TABLE ItemPlanning ("
+            "CREATE TABLE Plan ("
+            "    id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "    phaseId INTEGER NOT NULL,"
+            "    basePlanId INTEGER,"
+            "    caption TEXT NOT NULL,"
+            "    description TEXT,"
+            "    isActive INTEGER NOT NULL DEFAULT 0,"
+            "    createdAt INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),"
+            "    createdByUserId INTEGER NOT NULL,"
+            "    activatedAt INTEGER,"
+            "    activatedByUserId INTEGER,"
+            "    FOREIGN KEY (phaseId) REFERENCES Phase(id) ON DELETE CASCADE,"
+            "    FOREIGN KEY (basePlanId) REFERENCES Plan(id) ON DELETE SET NULL,"
+            "    FOREIGN KEY (createdByUserId) REFERENCES User(id),"
+            "    FOREIGN KEY (activatedByUserId) REFERENCES User(id)"
+            ")"
+        );
+
+        connection->execute(
+            "CREATE TABLE PlanItem ("
             "    id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "    itemId INTEGER NOT NULL,"
-            "    userId INTEGER NOT NULL,"
-            "    startDate INTEGER,"
-            "    endDate INTEGER,"
+            "    userId INTEGER,"
+            "    planId INTEGER NOT NULL,"
+            "    startDate INTEGER NOT NULL,"
+            "    endDate INTEGER NOT NULL,"
             "    FOREIGN KEY (itemId) REFERENCES Item(id) ON DELETE CASCADE,"
-            "    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,"
-            "    UNIQUE(itemId, userId)"
+            "    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE SET NULL,"
+            "    FOREIGN KEY (planId) REFERENCES Plan(id) ON DELETE CASCADE,"
+            "    UNIQUE(planId, itemId)"
             ")"
         );
 
@@ -550,11 +571,29 @@ public:
         connection->execute("CREATE INDEX idx_ruleItemType_itemTypeId ON RuleItemType(itemTypeId)");
         connection->execute("CREATE INDEX idx_ruleState_ruleId ON RuleState(ruleId)");
         connection->execute("CREATE INDEX idx_ruleState_stateId ON RuleState(stateId)");
+        connection->execute("CREATE INDEX idx_plan_phaseId ON Plan(phaseId)");
+        connection->execute("CREATE INDEX idx_plan_basePlanId ON Plan(basePlanId)");
+        connection->execute("CREATE INDEX idx_plan_isActive ON Plan(isActive)");
+        connection->execute("CREATE INDEX idx_plan_createdByUserId ON Plan(createdByUserId)");
+        connection->execute("CREATE INDEX idx_plan_activatedByUserId ON Plan(activatedByUserId)");
+        connection->execute("CREATE INDEX idx_planItem_planId ON PlanItem(planId)");
+        connection->execute("CREATE INDEX idx_planItem_itemId ON PlanItem(itemId)");
+        connection->execute("CREATE INDEX idx_planItem_userId ON PlanItem(userId)");
+        connection->execute("CREATE INDEX idx_planItem_dates ON PlanItem(startDate, endDate)");
     }
 
     void down(std::shared_ptr<IConnection> connection) override
     {
         // Удаляем индексы
+        connection->execute("DROP INDEX IF EXISTS idx_planItem_dates");
+        connection->execute("DROP INDEX IF EXISTS idx_planItem_userId");
+        connection->execute("DROP INDEX IF EXISTS idx_planItem_itemId");
+        connection->execute("DROP INDEX IF EXISTS idx_planItem_planId");
+        connection->execute("DROP INDEX IF EXISTS idx_plan_activatedByUserId");
+        connection->execute("DROP INDEX IF EXISTS idx_plan_createdByUserId");
+        connection->execute("DROP INDEX IF EXISTS idx_plan_isActive");
+        connection->execute("DROP INDEX IF EXISTS idx_plan_basePlanId");
+        connection->execute("DROP INDEX IF EXISTS idx_plan_phaseId");
         connection->execute("DROP INDEX IF EXISTS idx_ruleState_stateId");
         connection->execute("DROP INDEX IF EXISTS idx_ruleState_ruleId");
         connection->execute("DROP INDEX IF EXISTS idx_ruleItemType_itemTypeId");
@@ -581,7 +620,8 @@ public:
         connection->execute("DROP INDEX IF EXISTS idx_item_itemTypeId");
 
         // Удаляем таблицы в обратном порядке (с учётом внешних ключей)
-        connection->execute("DROP TABLE IF EXISTS ItemPlanning");
+        connection->execute("DROP TABLE IF EXISTS PlanItem");
+        connection->execute("DROP TABLE IF EXISTS Plan");
         connection->execute("DROP TABLE IF EXISTS UserTodo");
         connection->execute("DROP TABLE IF EXISTS UserAction");
         connection->execute("DROP TABLE IF EXISTS UserNotification");

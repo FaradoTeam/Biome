@@ -487,18 +487,41 @@ CREATE TABLE UserTodo (
     FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
 );
 
--- Планирование элементов на пользователей
-CREATE TABLE ItemPlanning (
+
+-- 13. Планирование
+-- =====================================================
+
+-- Таблица планов
+CREATE TABLE Plan (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    itemId INTEGER NOT NULL,
-    userId INTEGER NOT NULL,
-    startDate INTEGER,
-    endDate INTEGER,
-    FOREIGN KEY (itemId) REFERENCES Item(id) ON DELETE CASCADE,
-    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
-    UNIQUE(itemId, userId)
+    phaseId INTEGER NOT NULL,
+    basePlanId INTEGER,
+    caption TEXT NOT NULL,
+    description TEXT,
+    isActive INTEGER NOT NULL DEFAULT 0,
+    createdAt INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    createdByUserId INTEGER NOT NULL,
+    activatedAt INTEGER,
+    activatedByUserId INTEGER,
+    FOREIGN KEY (phaseId) REFERENCES Phase(id) ON DELETE CASCADE,
+    FOREIGN KEY (basePlanId) REFERENCES Plan(id) ON DELETE SET NULL,
+    FOREIGN KEY (createdByUserId) REFERENCES User(id),
+    FOREIGN KEY (activatedByUserId) REFERENCES User(id)
 );
 
+-- Таблица плановых элементов
+CREATE TABLE PlanItem (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    itemId INTEGER NOT NULL,
+    userId INTEGER,
+    planId INTEGER NOT NULL,
+    startDate INTEGER NOT NULL,
+    endDate INTEGER NOT NULL,
+    FOREIGN KEY (itemId) REFERENCES Item(id) ON DELETE CASCADE,
+    FOREIGN KEY (userId) REFERENCES User(id) ON DELETE SET NULL,
+    FOREIGN KEY (planId) REFERENCES Plan(id) ON DELETE CASCADE,
+    UNIQUE(planId, itemId)
+);
 
 -- =====================================================
 -- Индексы для оптимизации запросов
@@ -536,3 +559,14 @@ CREATE INDEX idx_ruleItemType_itemTypeId ON RuleItemType(itemTypeId);
 
 CREATE INDEX idx_ruleState_ruleId ON RuleState(ruleId);
 CREATE INDEX idx_ruleState_stateId ON RuleState(stateId);
+
+CREATE INDEX idx_plan_phaseId ON Plan(phaseId);
+CREATE INDEX idx_plan_basePlanId ON Plan(basePlanId);
+CREATE INDEX idx_plan_isActive ON Plan(isActive);
+CREATE INDEX idx_plan_createdByUserId ON Plan(createdByUserId);
+CREATE INDEX idx_plan_activatedByUserId ON Plan(activatedByUserId);
+
+CREATE INDEX idx_planItem_planId ON PlanItem(planId);
+CREATE INDEX idx_planItem_itemId ON PlanItem(itemId);
+CREATE INDEX idx_planItem_userId ON PlanItem(userId);
+CREATE INDEX idx_planItem_dates ON PlanItem(startDate, endDate);
