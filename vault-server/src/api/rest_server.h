@@ -21,6 +21,7 @@ class IAuthService;
 class IEdgeService;
 class IFieldTypeService;
 class IFieldTypePossibleValueService;
+class IItemService;
 class IItemTypeService;
 class IPhaseService;
 class IProjectService;
@@ -91,6 +92,7 @@ public:
     void setAuthService(std::shared_ptr<services::IAuthService> authService);
     void setFieldTypeService(std::shared_ptr<services::IFieldTypeService> fieldTypeService);
     void setFieldTypePossibleValueService(std::shared_ptr<services::IFieldTypePossibleValueService> service);
+    void setItemService(std::shared_ptr<services::IItemService> itemService);
     void setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService);
     void setEdgeService(std::shared_ptr<services::IEdgeService> edgeService);
     void setPhaseService(std::shared_ptr<services::IPhaseService> phaseService);
@@ -247,6 +249,7 @@ private:
     std::shared_ptr<services::IAuthService> m_authService;
     std::shared_ptr<services::IFieldTypeService> m_fieldTypeService;
     std::shared_ptr<services::IFieldTypePossibleValueService> m_fieldTypePossibleValueService;
+    std::shared_ptr<services::IItemService> m_itemService;
     std::shared_ptr<services::IItemTypeService> m_itemTypeService;
     std::shared_ptr<services::IEdgeService> m_edgeService;
     std::shared_ptr<services::IPhaseService> m_phaseService;

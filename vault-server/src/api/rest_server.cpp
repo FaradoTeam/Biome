@@ -29,6 +29,7 @@
 #include "logic/iauth_service.h"
 #include "logic/ifield_type_possible_value_service.h"
 #include "logic/ifield_type_service.h"
+#include "logic/iitem_service.h"
 #include "logic/iitem_type_service.h"
 #include "logic/iproject_service.h"
 #include "logic/iuser_service.h"
@@ -131,6 +132,11 @@ void RestServer::setFieldTypeService(std::shared_ptr<services::IFieldTypeService
 void RestServer::setFieldTypePossibleValueService(std::shared_ptr<services::IFieldTypePossibleValueService> service)
 {
     m_fieldTypePossibleValueService = service;
+}
+
+void RestServer::setItemService(std::shared_ptr<services::IItemService> itemService)
+{
+    m_itemService = itemService;
 }
 
 void RestServer::setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService)
@@ -241,10 +247,12 @@ void RestServer::registerRoutes()
         );
     }
 
-    // ===== Элементы =====
+    // ===== Элементы (Items) =====
+    if (m_itemService)
     {
-        auto itemsHandler = std::make_shared<handlers::ItemsHandler>();
+        auto itemsHandler = std::make_shared<handlers::ItemsHandler>(m_itemService);
 
+        // GET /api/items - список элементов
         addRouteGet(
             "/api/items",
             [itemsHandler](const auto& request, const auto& userId)
@@ -252,6 +260,8 @@ void RestServer::registerRoutes()
                 itemsHandler->handleGetItems(request, userId);
             }
         );
+
+        // POST /api/items - создание элемента
         addRoutePost(
             "/api/items",
             [itemsHandler](const auto& request, const auto& userId)
@@ -259,29 +269,68 @@ void RestServer::registerRoutes()
                 itemsHandler->handleCreateItem(request, userId);
             }
         );
+
+        // GET /api/items/{id} - получение элемента
         addRouteGet(
             R"(/api/items/(\d+))",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleGetItem(request, userId);
-            },
-            false
+            }
         );
+
+        // PUT /api/items/{id} - обновление элемента
         addRoutePut(
             R"(/api/items/(\d+))",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleUpdateItem(request, userId);
-            },
-            false
+            }
         );
+
+        // DELETE /api/items/{id} - удаление элемента
         addRouteDel(
             R"(/api/items/(\d+))",
-            [itemsHandler](const auto& request, auto& userId)
+            [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleDeleteItem(request, userId);
-            },
-            false
+            }
+        );
+
+        // POST /api/items/{id}/restore - восстановление элемента
+        addRoutePost(
+            R"(/api/items/(\d+)/restore)",
+            [itemsHandler](const auto& request, const auto& userId)
+            {
+                itemsHandler->handleRestoreItem(request, userId);
+            }
+        );
+
+        // GET /api/items/{id}/fields - получение всех полей элемента
+        addRouteGet(
+            R"(/api/items/(\d+)/fields)",
+            [itemsHandler](const auto& request, const auto& userId)
+            {
+                itemsHandler->handleGetItemFields(request, userId);
+            }
+        );
+
+        // PUT /api/items/{id}/fields/{fieldTypeId} - установка поля
+        addRoutePut(
+            R"(/api/items/(\d+)/fields/(\d+))",
+            [itemsHandler](const auto& request, const auto& userId)
+            {
+                itemsHandler->handleSetItemField(request, userId);
+            }
+        );
+
+        // DELETE /api/items/{id}/fields/{fieldTypeId} - удаление поля
+        addRouteDel(
+            R"(/api/items/(\d+)/fields/(\d+))",
+            [itemsHandler](const auto& request, const auto& userId)
+            {
+                itemsHandler->handleDeleteItemField(request, userId);
+            }
         );
     }
 
