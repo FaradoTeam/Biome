@@ -15,6 +15,7 @@
 #include "logic/impl/edge_service.h"
 #include "logic/impl/field_type_possible_value_service.h"
 #include "logic/impl/field_type_service.h"
+#include "logic/impl/item_service.h"
 #include "logic/impl/item_type_service.h"
 #include "logic/impl/phase_service.h"
 #include "logic/impl/project_service.h"
@@ -33,6 +34,8 @@
 #include "repo/sqlite/sqlite_edge_repository.h"
 #include "repo/sqlite/sqlite_field_type_possible_value_repository.h"
 #include "repo/sqlite/sqlite_field_type_repository.h"
+#include "repo/sqlite/sqlite_item_field_repository.h"
+#include "repo/sqlite/sqlite_item_repository.h"
 #include "repo/sqlite/sqlite_item_type_repository.h"
 #include "repo/sqlite/sqlite_phase_repository.h"
 #include "repo/sqlite/sqlite_project_repository.h"
@@ -89,6 +92,8 @@ bool Application::initialize()
     auto edgeRepository = std::make_shared<repositories::SqliteEdgeRepository>(m_database);
     auto fieldTypeRepository = std::make_shared<repositories::SqliteFieldTypeRepository>(m_database);
     auto fieldTypePossibleValueRepository = std::make_shared<repositories::SqliteFieldTypePossibleValueRepository>(m_database);
+    auto itemRepository = std::make_shared<repositories::SqliteItemRepository>(m_database);
+    auto itemFieldRepository = std::make_shared<repositories::SqliteItemFieldRepository>(m_database);
     auto itemTypeRepository = std::make_shared<repositories::SqliteItemTypeRepository>(m_database);
     auto phaseRepository = std::make_shared<repositories::SqlitePhaseRepository>(m_database);
     auto projectRepository = std::make_shared<repositories::SqliteProjectRepository>(m_database);
@@ -126,6 +131,16 @@ bool Application::initialize()
     );
     auto itemTypeService = std::make_shared<services::ItemTypeService>(
         itemTypeRepository,
+        authorizationService
+    );
+    auto itemService = std::make_shared<services::ItemService>(
+        itemRepository,
+        itemFieldRepository,
+        itemTypeRepository,
+        phaseRepository,
+        projectRepository,
+        stateRepository,
+        fieldTypeRepository,
         authorizationService
     );
     auto userService = std::make_shared<services::UserService>(
@@ -205,6 +220,7 @@ bool Application::initialize()
     m_restServer->setEdgeService(edgeService);
     m_restServer->setFieldTypeService(fieldTypeService);
     m_restServer->setFieldTypePossibleValueService(fieldTypePossibleValueService);
+    m_restServer->setItemService(itemService);
     m_restServer->setItemTypeService(itemTypeService);
     m_restServer->setPhaseService(phaseService);
     m_restServer->setProjectService(projectService);

@@ -43,6 +43,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/edge_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_possible_value_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/phase_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/project_service.cpp
@@ -61,6 +62,8 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_edge_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_possible_value_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_field_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_phase_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_repository.cpp
