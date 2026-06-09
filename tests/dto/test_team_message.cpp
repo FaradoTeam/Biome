@@ -9,7 +9,8 @@
 #include "common/dto/team_message.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -82,14 +83,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.creationTimestamp.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.creationTimestamp = testValue;
 
         BOOST_TEST(dto.creationTimestamp.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.creationTimestamp.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.creationTimestamp.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -125,7 +126,7 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: teamId
     dto.teamId = 42;
     // Поле: creationTimestamp
-    dto.creationTimestamp = secondsToTimePoint(1640995200);
+    dto.creationTimestamp = common::secondsToTimePoint(1640995200);
     // Поле: content
     dto.content = "test_content";
 
@@ -164,7 +165,7 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.teamId.has_value());
     BOOST_TEST(dto.teamId.value() == 42);
     BOOST_TEST(dto.creationTimestamp.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.creationTimestamp.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.creationTimestamp.value()), 1640995200);
     BOOST_TEST(dto.content.has_value());
     BOOST_TEST(dto.content.value() == "test_content");
 }
@@ -181,7 +182,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: teamId
     original.teamId = 42;
     // Поле: creationTimestamp
-    original.creationTimestamp = secondsToTimePoint(1640995200);
+    original.creationTimestamp = common::secondsToTimePoint(1640995200);
     // Поле: content
     original.content = "test_content";
 
@@ -206,7 +207,7 @@ BOOST_AUTO_TEST_CASE(Validation)
     // Заполняем обязательные поля
     dto.senderUserId = 42;
     dto.teamId = 42;
-    dto.creationTimestamp = secondsToTimePoint(1640995200);
+    dto.creationTimestamp = common::secondsToTimePoint(1640995200);
     dto.content = "test_content";
 
     // Теперь должен быть валидным
@@ -239,7 +240,7 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 
     dto.senderUserId = 42;
     dto.teamId = 42;
-    dto.creationTimestamp = secondsToTimePoint(1640995200);
+    dto.creationTimestamp = common::secondsToTimePoint(1640995200);
     dto.content = "test_value";
 
     std::stringstream ss;

@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "document.h"
 
@@ -57,7 +57,7 @@ nlohmann::json Document::toJson() const
     // Время загрузки
     if (uploadedAt.has_value())
     {
-        result["uploadedAt"] = timePointToSeconds(uploadedAt.value());
+        result["uploadedAt"] = common::timePointToSeconds(uploadedAt.value());
     }
     // Идентификатор пользователя
     if (uploadedByUserId.has_value())
@@ -190,7 +190,7 @@ bool Document::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["uploadedAt"].get<int64_t>();
-            uploadedAt = secondsToTimePoint(timestampValue);
+            uploadedAt = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

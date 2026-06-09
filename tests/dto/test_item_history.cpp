@@ -9,7 +9,8 @@
 #include "common/dto/item_history.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -82,14 +83,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.timestamp.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.timestamp = testValue;
 
         BOOST_TEST(dto.timestamp.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.timestamp.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.timestamp.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -125,7 +126,7 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: userId
     dto.userId = 42;
     // Поле: timestamp
-    dto.timestamp = secondsToTimePoint(1640995200);
+    dto.timestamp = common::secondsToTimePoint(1640995200);
     // Поле: diff
     dto.diff = "test_diff";
 
@@ -164,7 +165,7 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.userId.has_value());
     BOOST_TEST(dto.userId.value() == 42);
     BOOST_TEST(dto.timestamp.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.timestamp.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.timestamp.value()), 1640995200);
     BOOST_TEST(dto.diff.has_value());
     BOOST_TEST(dto.diff.value() == "test_diff");
 }
@@ -181,7 +182,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: userId
     original.userId = 42;
     // Поле: timestamp
-    original.timestamp = secondsToTimePoint(1640995200);
+    original.timestamp = common::secondsToTimePoint(1640995200);
     // Поле: diff
     original.diff = "test_diff";
 
@@ -206,7 +207,7 @@ BOOST_AUTO_TEST_CASE(Validation)
     // Заполняем обязательные поля
     dto.itemId = 42;
     dto.userId = 42;
-    dto.timestamp = secondsToTimePoint(1640995200);
+    dto.timestamp = common::secondsToTimePoint(1640995200);
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -238,7 +239,7 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 
     dto.itemId = 42;
     dto.userId = 42;
-    dto.timestamp = secondsToTimePoint(1640995200);
+    dto.timestamp = common::secondsToTimePoint(1640995200);
 
     std::stringstream ss;
     ss << dto;

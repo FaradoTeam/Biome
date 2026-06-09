@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "project.h"
 
@@ -42,12 +42,12 @@ nlohmann::json Project::toJson() const
     // Дата и время создания
     if (createdAt.has_value())
     {
-        result["createdAt"] = timePointToSeconds(createdAt.value());
+        result["createdAt"] = common::timePointToSeconds(createdAt.value());
     }
     // Дата и время последнего обновления
     if (updatedAt.has_value())
     {
-        result["updatedAt"] = timePointToSeconds(updatedAt.value());
+        result["updatedAt"] = common::timePointToSeconds(updatedAt.value());
     }
     // Флаг архивации (мягкое удаление)
     if (isArchive.has_value())
@@ -132,7 +132,7 @@ bool Project::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["createdAt"].get<int64_t>();
-            createdAt = secondsToTimePoint(timestampValue);
+            createdAt = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -149,7 +149,7 @@ bool Project::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["updatedAt"].get<int64_t>();
-            updatedAt = secondsToTimePoint(timestampValue);
+            updatedAt = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

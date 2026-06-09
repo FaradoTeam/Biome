@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "plan_item.h"
 
@@ -42,12 +42,12 @@ nlohmann::json PlanItem::toJson() const
     // Плановая дата начала
     if (startDate.has_value())
     {
-        result["startDate"] = timePointToSeconds(startDate.value());
+        result["startDate"] = common::timePointToSeconds(startDate.value());
     }
     // Плановая дата окончания
     if (endDate.has_value())
     {
-        result["endDate"] = timePointToSeconds(endDate.value());
+        result["endDate"] = common::timePointToSeconds(endDate.value());
     }
 
     return result;
@@ -127,7 +127,7 @@ bool PlanItem::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["startDate"].get<int64_t>();
-            startDate = secondsToTimePoint(timestampValue);
+            startDate = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -144,7 +144,7 @@ bool PlanItem::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["endDate"].get<int64_t>();
-            endDate = secondsToTimePoint(timestampValue);
+            endDate = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

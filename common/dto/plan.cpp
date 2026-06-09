@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "plan.h"
 
@@ -52,7 +52,7 @@ nlohmann::json Plan::toJson() const
     // Дата и время создания
     if (createdAt.has_value())
     {
-        result["createdAt"] = timePointToSeconds(createdAt.value());
+        result["createdAt"] = common::timePointToSeconds(createdAt.value());
     }
     // Идентификатор пользователя
     if (createdByUserId.has_value())
@@ -62,7 +62,7 @@ nlohmann::json Plan::toJson() const
     // Дата и время активации
     if (activatedAt.has_value())
     {
-        result["activatedAt"] = timePointToSeconds(activatedAt.value());
+        result["activatedAt"] = common::timePointToSeconds(activatedAt.value());
     }
     // Идентификатор пользователя
     if (activatedByUserId.has_value())
@@ -179,7 +179,7 @@ bool Plan::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["createdAt"].get<int64_t>();
-            createdAt = secondsToTimePoint(timestampValue);
+            createdAt = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -212,7 +212,7 @@ bool Plan::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["activatedAt"].get<int64_t>();
-            activatedAt = secondsToTimePoint(timestampValue);
+            activatedAt = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

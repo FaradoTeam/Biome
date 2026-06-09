@@ -9,7 +9,8 @@
 #include "common/dto/plan.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -132,14 +133,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.createdAt.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.createdAt = testValue;
 
         BOOST_TEST(dto.createdAt.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.createdAt.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.createdAt.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -165,14 +166,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.activatedAt.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.activatedAt = testValue;
 
         BOOST_TEST(dto.activatedAt.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.activatedAt.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.activatedAt.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -214,11 +215,11 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: isActive
     dto.isActive = true;
     // Поле: createdAt
-    dto.createdAt = secondsToTimePoint(1640995200);
+    dto.createdAt = common::secondsToTimePoint(1640995200);
     // Поле: createdByUserId
     dto.createdByUserId = 42;
     // Поле: activatedAt
-    dto.activatedAt = secondsToTimePoint(1640995200);
+    dto.activatedAt = common::secondsToTimePoint(1640995200);
     // Поле: activatedByUserId
     dto.activatedByUserId = 42;
 
@@ -278,11 +279,11 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.isActive.has_value());
     BOOST_TEST(dto.isActive.value() == true);
     BOOST_TEST(dto.createdAt.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.createdAt.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.createdAt.value()), 1640995200);
     BOOST_TEST(dto.createdByUserId.has_value());
     BOOST_TEST(dto.createdByUserId.value() == 42);
     BOOST_TEST(dto.activatedAt.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.activatedAt.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.activatedAt.value()), 1640995200);
     BOOST_TEST(dto.activatedByUserId.has_value());
     BOOST_TEST(dto.activatedByUserId.value() == 42);
 }
@@ -305,11 +306,11 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: isActive
     original.isActive = true;
     // Поле: createdAt
-    original.createdAt = secondsToTimePoint(1640995200);
+    original.createdAt = common::secondsToTimePoint(1640995200);
     // Поле: createdByUserId
     original.createdByUserId = 42;
     // Поле: activatedAt
-    original.activatedAt = secondsToTimePoint(1640995200);
+    original.activatedAt = common::secondsToTimePoint(1640995200);
     // Поле: activatedByUserId
     original.activatedByUserId = 42;
 

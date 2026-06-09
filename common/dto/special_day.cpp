@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "special_day.h"
 
@@ -27,7 +27,7 @@ nlohmann::json SpecialDay::toJson() const
     // Дата (уникальная)
     if (date.has_value())
     {
-        result["date"] = timePointToSeconds(date.value());
+        result["date"] = common::timePointToSeconds(date.value());
     }
     // Является ли день рабочим
     if (isWorkDay.has_value())
@@ -79,7 +79,7 @@ bool SpecialDay::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["date"].get<int64_t>();
-            date = secondsToTimePoint(timestampValue);
+            date = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

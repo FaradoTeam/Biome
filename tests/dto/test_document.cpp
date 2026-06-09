@@ -9,7 +9,8 @@
 #include "common/dto/document.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -146,14 +147,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.uploadedAt.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.uploadedAt = testValue;
 
         BOOST_TEST(dto.uploadedAt.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.uploadedAt.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.uploadedAt.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -197,7 +198,7 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: mimeType
     dto.mimeType = "test_mimeType";
     // Поле: uploadedAt
-    dto.uploadedAt = secondsToTimePoint(1640995200);
+    dto.uploadedAt = common::secondsToTimePoint(1640995200);
     // Поле: uploadedByUserId
     dto.uploadedByUserId = 42;
 
@@ -256,7 +257,7 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.mimeType.has_value());
     BOOST_TEST(dto.mimeType.value() == "test_mimeType");
     BOOST_TEST(dto.uploadedAt.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.uploadedAt.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.uploadedAt.value()), 1640995200);
     BOOST_TEST(dto.uploadedByUserId.has_value());
     BOOST_TEST(dto.uploadedByUserId.value() == 42);
 }
@@ -281,7 +282,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: mimeType
     original.mimeType = "test_mimeType";
     // Поле: uploadedAt
-    original.uploadedAt = secondsToTimePoint(1640995200);
+    original.uploadedAt = common::secondsToTimePoint(1640995200);
     // Поле: uploadedByUserId
     original.uploadedByUserId = 42;
 

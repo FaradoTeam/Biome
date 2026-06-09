@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "item_user_state.h"
 
@@ -47,7 +47,7 @@ nlohmann::json ItemUserState::toJson() const
     // Время перехода
     if (timestamp.has_value())
     {
-        result["timestamp"] = timePointToSeconds(timestamp.value());
+        result["timestamp"] = common::timePointToSeconds(timestamp.value());
     }
 
     return result;
@@ -143,7 +143,7 @@ bool ItemUserState::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["timestamp"].get<int64_t>();
-            timestamp = secondsToTimePoint(timestampValue);
+            timestamp = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
