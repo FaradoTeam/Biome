@@ -200,6 +200,11 @@ public:
         return m_getItemsResult;
     }
 
+    void setGetItemResultForUser(int64_t userId, std::optional<dto::Item> item)
+    {
+        m_getItemResultForUser[userId] = std::move(item);
+    }
+
     std::optional<dto::Item> item(int64_t id, int64_t userId) override
     {
         m_lastGetItemId = id;
@@ -211,7 +216,17 @@ public:
             return m_getItemCallback(id, userId);
         }
 
-        // Если результат установлен, проверяем соответствие ID
+        // Проверяем, есть ли специальный результат для этого пользователя
+        auto it = m_getItemResultForUser.find(userId);
+        if (it != m_getItemResultForUser.end())
+        {
+            if (it->second.has_value() && it->second->id.has_value() && *it->second->id == id)
+            {
+                return it->second;
+            }
+            return std::nullopt;
+        }
+
         if (m_getItemResult.has_value() && m_getItemResult->id.has_value())
         {
             if (*m_getItemResult->id == id)
@@ -725,6 +740,8 @@ private:
     int64_t m_lastDeletedItemFieldItemId = 0;
     int64_t m_lastDeletedItemFieldFieldTypeId = 0;
     int64_t m_lastDeleteItemFieldUserId = 0;
+
+    std::unordered_map<int64_t, std::optional<dto::Item>> m_getItemResultForUser;
 };
 
 } // namespace tests
