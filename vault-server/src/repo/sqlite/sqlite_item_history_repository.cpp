@@ -2,7 +2,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 #include "common/log/log.h"
 
 #include "storage/idatabase.h"
@@ -27,7 +27,7 @@ dto::ItemHistory SqliteItemHistoryRepository::mapRowToItemHistory(db::IResultSet
     if (!rs.isNull("timestamp"))
     {
         const int64_t timestamp = rs.valueInt64("timestamp");
-        history.timestamp = dto::secondsToTimePoint(timestamp);
+        history.timestamp = common::secondsToTimePoint(timestamp);
     }
 
     return history;
@@ -92,9 +92,9 @@ ItemHistoriesPage SqliteItemHistoryRepository::findAll(
         if (userId.has_value())
             countStmt->bindInt64("userId", *userId);
         if (dateFrom.has_value())
-            countStmt->bindInt64("dateFrom", dto::timePointToSeconds(*dateFrom));
+            countStmt->bindInt64("dateFrom", common::timePointToSeconds(*dateFrom));
         if (dateTo.has_value())
-            countStmt->bindInt64("dateTo", dto::timePointToSeconds(*dateTo));
+            countStmt->bindInt64("dateTo", common::timePointToSeconds(*dateTo));
 
         auto countRs = countStmt->executeQuery();
         if (countRs->next())
@@ -127,9 +127,9 @@ ItemHistoriesPage SqliteItemHistoryRepository::findAll(
         if (userId.has_value())
             stmt->bindInt64("userId", *userId);
         if (dateFrom.has_value())
-            stmt->bindInt64("dateFrom", dto::timePointToSeconds(*dateFrom));
+            stmt->bindInt64("dateFrom", common::timePointToSeconds(*dateFrom));
         if (dateTo.has_value())
-            stmt->bindInt64("dateTo", dto::timePointToSeconds(*dateTo));
+            stmt->bindInt64("dateTo", common::timePointToSeconds(*dateTo));
 
         stmt->bindInt64("limit", pageSize);
         stmt->bindInt64("offset", offset);
@@ -312,8 +312,8 @@ int64_t SqliteItemHistoryRepository::create(const dto::ItemHistory& history)
             stmt->bindNull("diff");
 
         const int64_t timestamp = history.timestamp.has_value()
-            ? dto::timePointToSeconds(*history.timestamp)
-            : dto::timePointToSeconds(std::chrono::system_clock::now());
+            ? common::timePointToSeconds(*history.timestamp)
+            : common::timePointToSeconds(std::chrono::system_clock::now());
 
         stmt->bindInt64("timestamp", timestamp);
 
@@ -374,7 +374,7 @@ bool SqliteItemHistoryRepository::update(const dto::ItemHistory& history)
             stmt->bindString("diff", *history.diff);
 
         if (history.timestamp.has_value())
-            stmt->bindInt64("timestamp", dto::timePointToSeconds(*history.timestamp));
+            stmt->bindInt64("timestamp", common::timePointToSeconds(*history.timestamp));
 
         stmt->bindInt64("id", *history.id);
 
