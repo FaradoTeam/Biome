@@ -10,8 +10,10 @@
 #include "api/handlers/edges_handler.h"
 #include "api/handlers/field_type_possible_values_handler.h"
 #include "api/handlers/field_types_handler.h"
-#include "api/handlers/item_types_handler.h"
 #include "api/handlers/items_handler.h"
+#include "api/handlers/item_histories_handler.h"
+#include "api/handlers/item_types_handler.h"
+#include "api/handlers/item_user_states_handler.h"
 #include "api/handlers/phases_handler.h"
 #include "api/handlers/projects_handler.h"
 #include "api/handlers/role_menu_items_handler.h"
@@ -139,9 +141,19 @@ void RestServer::setItemService(std::shared_ptr<services::IItemService> itemServ
     m_itemService = itemService;
 }
 
+void RestServer::setItemHistoryService(std::shared_ptr<services::IItemHistoryService> service)
+{
+    m_itemHistoryService = service;
+}
+
 void RestServer::setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService)
 {
     m_itemTypeService = itemTypeService;
+}
+
+void RestServer::setItemUserStateService(std::shared_ptr<services::IItemUserStateService> service)
+{
+    m_itemUserStateService = service;
 }
 
 void RestServer::setEdgeService(std::shared_ptr<services::IEdgeService> edgeService)
@@ -330,6 +342,108 @@ void RestServer::registerRoutes()
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleDeleteItemField(request, userId);
+            }
+        );
+    }
+
+    // ===== ItemUserState (история состояний) =====
+    if (m_itemUserStateService)
+    {
+        auto handler = std::make_shared<handlers::ItemUserStatesHandler>(m_itemUserStateService);
+
+        // GET /api/items/user-states - список с фильтрацией
+        addRouteGet(
+            "/api/items/user-states",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetItemUserStates(request, userId);
+            }
+        );
+
+        // GET /api/items/user-states/{id} - получение по ID
+        addRouteGet(
+            R"(/api/items/user-states/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetItemUserState(request, userId);
+            }
+        );
+
+        // DELETE /api/items/user-states/{id} - удаление
+        addRouteDel(
+            R"(/api/items/user-states/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteItemUserState(request, userId);
+            }
+        );
+
+        // GET /api/items/{itemId}/user-states/last - последняя запись
+        addRouteGet(
+            R"(/api/items/(\d+)/user-states/last)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetLastItemUserState(request, userId);
+            }
+        );
+
+        // POST /api/items/{itemId}/user-states - создание
+        addRoutePost(
+            R"(/api/items/(\d+)/user-states)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateItemUserState(request, userId);
+            }
+        );
+    }
+
+    // ===== ItemHistory (история изменений) =====
+    if (m_itemHistoryService)
+    {
+        auto handler = std::make_shared<handlers::ItemHistoriesHandler>(m_itemHistoryService);
+
+        // GET /api/items/histories - список с фильтрацией
+        addRouteGet(
+            "/api/items/histories",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetItemHistories(request, userId);
+            }
+        );
+
+        // GET /api/items/histories/{id} - получение по ID
+        addRouteGet(
+            R"(/api/items/histories/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetItemHistory(request, userId);
+            }
+        );
+
+        // DELETE /api/items/histories/{id} - удаление
+        addRouteDel(
+            R"(/api/items/histories/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteItemHistory(request, userId);
+            }
+        );
+
+        // GET /api/items/{itemId}/histories/last - последняя запись
+        addRouteGet(
+            R"(/api/items/(\d+)/histories/last)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetLastItemHistory(request, userId);
+            }
+        );
+
+        // POST /api/items/{itemId}/histories - создание
+        addRoutePost(
+            R"(/api/items/(\d+)/histories)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateItemHistory(request, userId);
             }
         );
     }

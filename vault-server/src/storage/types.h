@@ -7,7 +7,8 @@
 #include <string>
 #include <unordered_map>
 #include <variant>
-#include <vector>
+
+#include "common/types.h"
 
 #ifdef _WIN32
 #define strptime _strptime
@@ -16,15 +17,8 @@
 namespace db
 {
 
-/**
- * @brief Тип для хранения бинарных данных (BLOB).
- */
-using Blob = std::vector<uint8_t>;
-
-/**
- * @brief Тип для хранения даты/времени (момент времени в UTC).
- */
-using DateTime = std::chrono::system_clock::time_point;
+using Blob = common::Blob;
+using DateTime = common::DateTime;
 
 /**
  * @brief Универсальное поле результата запроса.
