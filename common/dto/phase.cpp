@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "phase.h"
 
@@ -42,12 +42,12 @@ nlohmann::json Phase::toJson() const
     // Дата начала фазы
     if (beginDate.has_value())
     {
-        result["beginDate"] = timePointToSeconds(beginDate.value());
+        result["beginDate"] = common::timePointToSeconds(beginDate.value());
     }
     // Дата окончания фазы
     if (endDate.has_value())
     {
-        result["endDate"] = timePointToSeconds(endDate.value());
+        result["endDate"] = common::timePointToSeconds(endDate.value());
     }
     // Флаг архивации фазы
     if (isArchive.has_value())
@@ -132,7 +132,7 @@ bool Phase::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["beginDate"].get<int64_t>();
-            beginDate = secondsToTimePoint(timestampValue);
+            beginDate = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {
@@ -149,7 +149,7 @@ bool Phase::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["endDate"].get<int64_t>();
-            endDate = secondsToTimePoint(timestampValue);
+            endDate = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

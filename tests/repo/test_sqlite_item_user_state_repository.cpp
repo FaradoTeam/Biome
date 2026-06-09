@@ -5,7 +5,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "common/dto/item_user_state.h"
-#include "common/helpers/time_helpers.h"
 
 #include "repo/sqlite/sqlite_item_user_state_repository.h"
 

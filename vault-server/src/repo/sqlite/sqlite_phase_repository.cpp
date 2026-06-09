@@ -3,7 +3,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "common/helpers/string_helper.h"
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 #include "common/log/log.h"
 
 #include "storage/idatabase.h"
@@ -179,13 +179,13 @@ int64_t SqlitePhaseRepository::create(const dto::Phase& phase)
 
         // Поле beginDate
         if (phase.beginDate.has_value())
-            stmt->bindInt64("beginDate", dto::timePointToSeconds(phase.beginDate.value()));
+            stmt->bindInt64("beginDate", common::timePointToSeconds(phase.beginDate.value()));
         else
             stmt->bindNull("beginDate");
 
         // Поле endDate
         if (phase.endDate.has_value())
-            stmt->bindInt64("endDate", dto::timePointToSeconds(phase.endDate.value()));
+            stmt->bindInt64("endDate", common::timePointToSeconds(phase.endDate.value()));
         else
             stmt->bindNull("endDate");
 
@@ -291,10 +291,10 @@ bool SqlitePhaseRepository::update(const dto::Phase& phase)
         }
 
         if (phase.beginDate.has_value())
-            stmt->bindInt64("beginDate", dto::timePointToSeconds(phase.beginDate.value()));
+            stmt->bindInt64("beginDate", common::timePointToSeconds(phase.beginDate.value()));
 
         if (phase.endDate.has_value())
-            stmt->bindInt64("endDate", dto::timePointToSeconds(phase.endDate.value()));
+            stmt->bindInt64("endDate", common::timePointToSeconds(phase.endDate.value()));
 
         if (phase.isArchive.has_value())
             stmt->bindInt64("isArchive", phase.isArchive.value() ? 1 : 0);
@@ -451,13 +451,13 @@ dto::Phase SqlitePhaseRepository::mapRowToPhase(db::IResultSet& rs) const
     if (!rs.isNull("beginDate"))
     {
         const int64_t timestamp = rs.valueInt64("beginDate");
-        phase.beginDate = dto::secondsToTimePoint(timestamp);
+        phase.beginDate = common::secondsToTimePoint(timestamp);
     }
 
     if (!rs.isNull("endDate"))
     {
         const int64_t timestamp = rs.valueInt64("endDate");
-        phase.endDate = dto::secondsToTimePoint(timestamp);
+        phase.endDate = common::secondsToTimePoint(timestamp);
     }
 
     phase.isArchive = rs.valueInt64("isArchive") != 0;

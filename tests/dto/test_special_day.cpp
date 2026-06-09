@@ -6,10 +6,12 @@
 #include <boost/test/unit_test.hpp>
 #include <nlohmann/json.hpp>
 
+#include "common/types.h"
 #include "common/dto/special_day.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -53,14 +55,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.date.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.date = testValue;
 
         BOOST_TEST(dto.date.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.date.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.date.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -137,7 +139,7 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: id
     dto.id = 42;
     // Поле: date
-    dto.date = secondsToTimePoint(1640995200);
+    dto.date = common::secondsToTimePoint(1640995200);
     // Поле: isWorkDay
     dto.isWorkDay = true;
     // Поле: beginWorkTime
@@ -181,7 +183,7 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.id.has_value());
     BOOST_TEST(dto.id.value() == 42);
     BOOST_TEST(dto.date.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.date.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.date.value()), 1640995200);
     BOOST_TEST(dto.isWorkDay.has_value());
     BOOST_TEST(dto.isWorkDay.value() == true);
     BOOST_TEST(dto.beginWorkTime.has_value());
@@ -200,7 +202,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: id
     original.id = 42;
     // Поле: date
-    original.date = secondsToTimePoint(1640995200);
+    original.date = common::secondsToTimePoint(1640995200);
     // Поле: isWorkDay
     original.isWorkDay = true;
     // Поле: beginWorkTime
@@ -229,7 +231,7 @@ BOOST_AUTO_TEST_CASE(Validation)
     BOOST_TEST(dto.validationError().find("обязательным") != std::string::npos);
 
     // Заполняем обязательные поля
-    dto.date = secondsToTimePoint(1640995200);
+    dto.date = common::secondsToTimePoint(1640995200);
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -247,7 +249,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
     BOOST_TEST(!(dto1 != dto2));
 
     // Изменим поле date, чтобы сделать их разными
-    dto1.date = secondsToTimePoint(1735689600);
+    dto1.date = common::secondsToTimePoint(1735689600);
 
     BOOST_TEST(dto1 != dto2);
     BOOST_TEST(!(dto1 == dto2));
@@ -259,7 +261,7 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 {
     SpecialDay dto;
 
-    dto.date = secondsToTimePoint(1640995200);
+    dto.date = common::secondsToTimePoint(1640995200);
 
     std::stringstream ss;
     ss << dto;

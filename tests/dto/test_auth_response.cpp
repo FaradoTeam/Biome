@@ -9,7 +9,8 @@
 #include "common/dto/auth_response.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 

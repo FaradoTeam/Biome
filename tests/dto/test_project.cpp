@@ -9,7 +9,8 @@
 #include "common/dto/project.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -99,14 +100,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.createdAt.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.createdAt = testValue;
 
         BOOST_TEST(dto.createdAt.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.createdAt.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.createdAt.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -117,14 +118,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.updatedAt.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.updatedAt = testValue;
 
         BOOST_TEST(dto.updatedAt.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.updatedAt.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.updatedAt.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -162,9 +163,9 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: description
     dto.description = "test_description";
     // Поле: createdAt
-    dto.createdAt = secondsToTimePoint(1640995200);
+    dto.createdAt = common::secondsToTimePoint(1640995200);
     // Поле: updatedAt
-    dto.updatedAt = secondsToTimePoint(1640995200);
+    dto.updatedAt = common::secondsToTimePoint(1640995200);
     // Поле: isArchive
     dto.isArchive = true;
 
@@ -211,9 +212,9 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.description.has_value());
     BOOST_TEST(dto.description.value() == "test_description");
     BOOST_TEST(dto.createdAt.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.createdAt.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.createdAt.value()), 1640995200);
     BOOST_TEST(dto.updatedAt.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.updatedAt.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.updatedAt.value()), 1640995200);
     BOOST_TEST(dto.isArchive.has_value());
     BOOST_TEST(dto.isArchive.value() == true);
 }
@@ -232,9 +233,9 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: description
     original.description = "test_description";
     // Поле: createdAt
-    original.createdAt = secondsToTimePoint(1640995200);
+    original.createdAt = common::secondsToTimePoint(1640995200);
     // Поле: updatedAt
-    original.updatedAt = secondsToTimePoint(1640995200);
+    original.updatedAt = common::secondsToTimePoint(1640995200);
     // Поле: isArchive
     original.isArchive = true;
 

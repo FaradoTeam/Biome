@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "user_action.h"
 
@@ -32,7 +32,7 @@ nlohmann::json UserAction::toJson() const
     // Время действия
     if (timestamp.has_value())
     {
-        result["timestamp"] = timePointToSeconds(timestamp.value());
+        result["timestamp"] = common::timePointToSeconds(timestamp.value());
     }
     // Краткое описание действия
     if (caption.has_value())
@@ -90,7 +90,7 @@ bool UserAction::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["timestamp"].get<int64_t>();
-            timestamp = secondsToTimePoint(timestampValue);
+            timestamp = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

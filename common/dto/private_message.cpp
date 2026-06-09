@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "private_message.h"
 
@@ -37,7 +37,7 @@ nlohmann::json PrivateMessage::toJson() const
     // Время отправки
     if (creationTimestamp.has_value())
     {
-        result["creationTimestamp"] = timePointToSeconds(creationTimestamp.value());
+        result["creationTimestamp"] = common::timePointToSeconds(creationTimestamp.value());
     }
     // Текст сообщения
     if (content.has_value())
@@ -111,7 +111,7 @@ bool PrivateMessage::fromJson(const nlohmann::json& json)
         try
         {
             auto timestampValue = json["creationTimestamp"].get<int64_t>();
-            creationTimestamp = secondsToTimePoint(timestampValue);
+            creationTimestamp = common::secondsToTimePoint(timestampValue);
         }
         catch (const std::exception& e)
         {

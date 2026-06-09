@@ -2,7 +2,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 #include "common/log/log.h"
 
 #include "storage/idatabase.h"
@@ -28,7 +28,7 @@ dto::ItemUserState SqliteItemUserStateRepository::mapRowToItemUserState(db::IRes
     if (!rs.isNull("timestamp"))
     {
         const int64_t timestamp = rs.valueInt64("timestamp");
-        state.timestamp = dto::secondsToTimePoint(timestamp);
+        state.timestamp = common::secondsToTimePoint(timestamp);
     }
 
     return state;
@@ -300,8 +300,8 @@ int64_t SqliteItemUserStateRepository::create(const dto::ItemUserState& state)
             stmt->bindNull("comment");
 
         const int64_t timestamp = state.timestamp.has_value()
-            ? dto::timePointToSeconds(*state.timestamp)
-            : dto::timePointToSeconds(std::chrono::system_clock::now());
+            ? common::timePointToSeconds(*state.timestamp)
+            : common::timePointToSeconds(std::chrono::system_clock::now());
 
         stmt->bindInt64("timestamp", timestamp);
 
@@ -379,7 +379,7 @@ bool SqliteItemUserStateRepository::update(const dto::ItemUserState& state)
         if (state.comment.has_value())
             stmt->bindString("comment", *state.comment);
         if (state.timestamp.has_value())
-            stmt->bindInt64("timestamp", dto::timePointToSeconds(*state.timestamp));
+            stmt->bindInt64("timestamp", common::timePointToSeconds(*state.timestamp));
 
         stmt->bindInt64("id", *state.id);
 

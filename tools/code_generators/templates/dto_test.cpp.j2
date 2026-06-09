@@ -2,7 +2,8 @@
 {{ include }}
 {% endfor %}
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -42,7 +43,7 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
         {%- elif field.cpp_type == 'std::string' -%}
             "test_value"
         {%- elif field.cpp_type == 'std::chrono::system_clock::time_point' -%}
-            secondsToTimePoint(1640995200)
+            common::secondsToTimePoint(1640995200)
         {%- elif field.cpp_type.startswith('std::vector<') -%}
             {"item1", "item2"}
         {%- elif field.cpp_type in dto_names -%}
@@ -57,8 +58,8 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
 
         {% if field.cpp_type == 'std::chrono::system_clock::time_point' %}
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.{{ field.name_camel }}.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.{{ field.name_camel }}.value()),
+            common::timePointToSeconds(testValue)
         );
         {% elif field.cpp_type in dto_names %}
         // DTO объекты сравниваем через toJson()
@@ -92,7 +93,7 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
         {% elif field.cpp_type in ['double', 'float'] %}
     dto.{{ field.name_camel }} = 3.14;
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto.{{ field.name_camel }} = secondsToTimePoint(1640995200);
+    dto.{{ field.name_camel }} = common::secondsToTimePoint(1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
     dto.{{ field.name_camel }} = {"item1", "item2"};
         {% elif field.cpp_type in dto_names %}
@@ -176,7 +177,7 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
         {% elif field.cpp_type in ['double', 'float'] %}
     BOOST_CHECK_CLOSE(dto.{{ field.name_camel }}.value(), 3.14, 0.001);
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.{{ field.name_camel }}.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.{{ field.name_camel }}.value()), 1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
     BOOST_TEST(dto.{{ field.name_camel }}.value().size() == 2);
         {% endif %}
@@ -201,7 +202,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
         {% elif field.cpp_type in ['double', 'float'] %}
     original.{{ field.name_camel }} = 3.14;
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    original.{{ field.name_camel }} = secondsToTimePoint(1640995200);
+    original.{{ field.name_camel }} = common::secondsToTimePoint(1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
     original.{{ field.name_camel }} = {"item1", "item2"};
         {% elif field.cpp_type in dto_names %}
@@ -251,7 +252,7 @@ BOOST_AUTO_TEST_CASE(Validation)
         {% elif field.cpp_type in ['double', 'float'] %}
     dto.{{ field.name_camel }} = 3.14;
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto.{{ field.name_camel }} = secondsToTimePoint(1640995200);
+    dto.{{ field.name_camel }} = common::secondsToTimePoint(1640995200);
         {% elif field.cpp_type.startswith('std::vector<') %}
     dto.{{ field.name_camel }} = {"item1"};
         {% elif field.cpp_type in dto_names %}
@@ -296,7 +297,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
         {% elif field.cpp_type.startswith('std::vector<') %}
     dto1.{{ field.name_camel }} = {"different"};
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto1.{{ field.name_camel }} = secondsToTimePoint(1735689600);
+    dto1.{{ field.name_camel }} = common::secondsToTimePoint(1735689600);
         {% else %}
     // Для других типов
     dto1.{{ field.name_camel }} = {};
@@ -323,7 +324,7 @@ BOOST_AUTO_TEST_CASE(ComparisonOperators)
         {% elif field.cpp_type.startswith('std::vector<') %}
     dto1.{{ field.name_camel }} = {"different"};
         {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto1.{{ field.name_camel }} = secondsToTimePoint(1735689600);
+    dto1.{{ field.name_camel }} = common::secondsToTimePoint(1735689600);
         {% endif %}
 
     BOOST_TEST(dto1 != dto2);
@@ -351,7 +352,7 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
             {% elif field.cpp_type in ['double', 'float'] %}
     dto.{{ field.name_camel }} = 3.14;
             {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
-    dto.{{ field.name_camel }} = secondsToTimePoint(1640995200);
+    dto.{{ field.name_camel }} = common::secondsToTimePoint(1640995200);
             {% elif field.cpp_type.startswith('std::vector<') %}
     dto.{{ field.name_camel }} = {"item1"};
             {% endif %}

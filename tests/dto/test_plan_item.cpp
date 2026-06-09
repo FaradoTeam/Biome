@@ -9,7 +9,8 @@
 #include "common/dto/plan_item.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -98,14 +99,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.startDate.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.startDate = testValue;
 
         BOOST_TEST(dto.startDate.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.startDate.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.startDate.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -116,14 +117,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.endDate.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.endDate = testValue;
 
         BOOST_TEST(dto.endDate.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.endDate.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.endDate.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -146,9 +147,9 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: planId
     dto.planId = 42;
     // Поле: startDate
-    dto.startDate = secondsToTimePoint(1640995200);
+    dto.startDate = common::secondsToTimePoint(1640995200);
     // Поле: endDate
-    dto.endDate = secondsToTimePoint(1640995200);
+    dto.endDate = common::secondsToTimePoint(1640995200);
 
     nlohmann::json json = dto.toJson();
 
@@ -190,9 +191,9 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.planId.has_value());
     BOOST_TEST(dto.planId.value() == 42);
     BOOST_TEST(dto.startDate.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.startDate.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.startDate.value()), 1640995200);
     BOOST_TEST(dto.endDate.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.endDate.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.endDate.value()), 1640995200);
 }
 
 // Тест: Сериализация в оба конца
@@ -209,9 +210,9 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: planId
     original.planId = 42;
     // Поле: startDate
-    original.startDate = secondsToTimePoint(1640995200);
+    original.startDate = common::secondsToTimePoint(1640995200);
     // Поле: endDate
-    original.endDate = secondsToTimePoint(1640995200);
+    original.endDate = common::secondsToTimePoint(1640995200);
 
     nlohmann::json json = original.toJson();
     PlanItem deserialized(json);
@@ -234,8 +235,8 @@ BOOST_AUTO_TEST_CASE(Validation)
     // Заполняем обязательные поля
     dto.itemId = 42;
     dto.planId = 42;
-    dto.startDate = secondsToTimePoint(1640995200);
-    dto.endDate = secondsToTimePoint(1640995200);
+    dto.startDate = common::secondsToTimePoint(1640995200);
+    dto.endDate = common::secondsToTimePoint(1640995200);
 
     // Теперь должен быть валидным
     BOOST_TEST(dto.isValid());
@@ -267,8 +268,8 @@ BOOST_AUTO_TEST_CASE(StreamOutput)
 
     dto.itemId = 42;
     dto.planId = 42;
-    dto.startDate = secondsToTimePoint(1640995200);
-    dto.endDate = secondsToTimePoint(1640995200);
+    dto.startDate = common::secondsToTimePoint(1640995200);
+    dto.endDate = common::secondsToTimePoint(1640995200);
 
     std::stringstream ss;
     ss << dto;

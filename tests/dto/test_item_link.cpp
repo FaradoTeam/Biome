@@ -9,7 +9,8 @@
 #include "common/dto/item_link.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 

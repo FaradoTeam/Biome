@@ -9,7 +9,8 @@
 #include "common/dto/comment.h"
 
 #include <optional>
-#include "common/helpers/time_helpers.h"
+
+#include "common/types.h"
 
 using namespace dto;
 
@@ -82,14 +83,14 @@ BOOST_AUTO_TEST_CASE(FieldAccess)
     {
         BOOST_TEST(!dto.createdAt.has_value());
 
-        std::chrono::system_clock::time_point testValue =secondsToTimePoint(1640995200);
+        std::chrono::system_clock::time_point testValue =common::secondsToTimePoint(1640995200);
         dto.createdAt = testValue;
 
         BOOST_TEST(dto.createdAt.has_value());
 
         BOOST_CHECK_EQUAL(
-            timePointToSeconds(dto.createdAt.value()),
-            timePointToSeconds(testValue)
+            common::timePointToSeconds(dto.createdAt.value()),
+            common::timePointToSeconds(testValue)
         );
 
         // Проверка сброса значения
@@ -125,7 +126,7 @@ BOOST_AUTO_TEST_CASE(ToJsonSerialization)
     // Поле: itemId
     dto.itemId = 42;
     // Поле: createdAt
-    dto.createdAt = secondsToTimePoint(1640995200);
+    dto.createdAt = common::secondsToTimePoint(1640995200);
     // Поле: content
     dto.content = "test_content";
 
@@ -164,7 +165,7 @@ BOOST_AUTO_TEST_CASE(FromJsonDeserialization)
     BOOST_TEST(dto.itemId.has_value());
     BOOST_TEST(dto.itemId.value() == 42);
     BOOST_TEST(dto.createdAt.has_value());
-    BOOST_CHECK_EQUAL(timePointToSeconds(dto.createdAt.value()), 1640995200);
+    BOOST_CHECK_EQUAL(common::timePointToSeconds(dto.createdAt.value()), 1640995200);
     BOOST_TEST(dto.content.has_value());
     BOOST_TEST(dto.content.value() == "test_content");
 }
@@ -181,7 +182,7 @@ BOOST_AUTO_TEST_CASE(RoundTripSerialization)
     // Поле: itemId
     original.itemId = 42;
     // Поле: createdAt
-    original.createdAt = secondsToTimePoint(1640995200);
+    original.createdAt = common::secondsToTimePoint(1640995200);
     // Поле: content
     original.content = "test_content";
 

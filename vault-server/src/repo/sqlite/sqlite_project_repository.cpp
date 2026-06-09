@@ -3,7 +3,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "common/helpers/string_helper.h"
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 #include "common/log/log.h"
 
 #include "storage/idatabase.h"
@@ -171,7 +171,7 @@ int64_t SqliteProjectRepository::create(const dto::Project& project)
     {
         auto conn = connection();
         auto now = std::chrono::system_clock::now();
-        auto nowSeconds = dto::timePointToSeconds(now);
+        auto nowSeconds = common::timePointToSeconds(now);
 
         auto stmt = conn->prepareStatement(
             "INSERT INTO Project (parentId, caption, description, "
@@ -301,7 +301,7 @@ bool SqliteProjectRepository::update(const dto::Project& project)
         if (project.isArchive.has_value())
             stmt->bindInt64("isArchive", project.isArchive.value() ? 1 : 0);
 
-        auto nowSeconds = dto::timePointToSeconds(
+        auto nowSeconds = common::timePointToSeconds(
             std::chrono::system_clock::now()
         );
         stmt->bindInt64("updatedAt", nowSeconds);
@@ -333,7 +333,7 @@ bool SqliteProjectRepository::archive(int64_t id)
             "WHERE id = :id"
         );
 
-        stmt->bindInt64("updatedAt", dto::timePointToSeconds(std::chrono::system_clock::now()));
+        stmt->bindInt64("updatedAt", common::timePointToSeconds(std::chrono::system_clock::now()));
         stmt->bindInt64("id", id);
 
         int64_t affected = stmt->execute();
@@ -362,7 +362,7 @@ bool SqliteProjectRepository::restore(int64_t id)
             "WHERE id = :id"
         );
 
-        stmt->bindInt64("updatedAt", dto::timePointToSeconds(std::chrono::system_clock::now()));
+        stmt->bindInt64("updatedAt", common::timePointToSeconds(std::chrono::system_clock::now()));
         stmt->bindInt64("id", id);
 
         const int64_t affected = stmt->execute();
@@ -450,13 +450,13 @@ dto::Project SqliteProjectRepository::mapRowToProject(db::IResultSet& rs) const
     if (!rs.isNull("createdAt"))
     {
         const int64_t timestamp = rs.valueInt64("createdAt");
-        project.createdAt = dto::secondsToTimePoint(timestamp);
+        project.createdAt = common::secondsToTimePoint(timestamp);
     }
 
     if (!rs.isNull("updatedAt"))
     {
         const int64_t timestamp = rs.valueInt64("updatedAt");
-        project.updatedAt = dto::secondsToTimePoint(timestamp);
+        project.updatedAt = common::secondsToTimePoint(timestamp);
     }
 
     project.isArchive = rs.valueInt64("isArchive") != 0;

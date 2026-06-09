@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "common/helpers/time_helpers.h"
+#include "common/types.h"
 
 #include "{{ dto.name_snake }}.h"
 
@@ -27,7 +27,7 @@ nlohmann::json {{ dto.name }}::toJson() const
     if ({{ field.name_camel }}.has_value())
     {
         {% if field.cpp_type == 'std::chrono::system_clock::time_point' %}
-        result["{{ field.name_camel }}"] = timePointToSeconds({{ field.name_camel }}.value());
+        result["{{ field.name_camel }}"] = common::timePointToSeconds({{ field.name_camel }}.value());
         {% elif field.cpp_type.startswith('std::vector<') %}
         if (!{{ field.name_camel }}.value().empty())
         {
@@ -76,7 +76,7 @@ bool {{ dto.name }}::fromJson(const nlohmann::json& json)
             {{ field.name_camel }} = json["{{ field.name_camel }}"].get<std::string>();
             {% elif field.cpp_type == 'std::chrono::system_clock::time_point' %}
             auto timestampValue = json["{{ field.name_camel }}"].get<int64_t>();
-            {{ field.name_camel }} = secondsToTimePoint(timestampValue);
+            {{ field.name_camel }} = common::secondsToTimePoint(timestampValue);
             {% elif field.cpp_type.startswith('std::vector<') %}
             {{ field.cpp_type }} vec;
             for (const auto& item : json["{{ field.name_camel }}"])
