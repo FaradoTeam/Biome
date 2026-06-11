@@ -16,9 +16,11 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/field_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/field_type_possible_values_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/item_histories_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/item_links_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/item_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/item_user_states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/items_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/link_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/phases_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/projects_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/role_menu_items_handler.cpp
@@ -90,8 +92,10 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_field_type_possible_values_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_items_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_item_histories_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_item_links_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_item_types_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_item_user_states_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_link_types_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_phases_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_projects_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_rest_server.cpp
