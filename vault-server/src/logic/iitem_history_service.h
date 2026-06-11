@@ -1,15 +1,11 @@
 #pragma once
 
-#include <chrono>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "common/dto/item_history.h"
 #include "common/types.h"
-
-// Добавляем using для DateTime
-using DateTime = std::chrono::system_clock::time_point;
 
 namespace server
 {
