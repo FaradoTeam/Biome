@@ -23,9 +23,11 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_type_possible_values_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_histories_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_links_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_user_states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/items_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/link_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/phases_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/projects_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/role_menu_items_handler.cpp
@@ -47,8 +49,10 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_possible_value_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_history_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_link_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_user_state_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/link_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/phase_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/project_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/role_menu_item_service.cpp
@@ -68,9 +72,11 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_possible_value_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_field_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_history_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_link_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_user_state_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_link_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_phase_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_role_menu_item_repository.cpp
