@@ -10,10 +10,12 @@
 #include "api/handlers/edges_handler.h"
 #include "api/handlers/field_type_possible_values_handler.h"
 #include "api/handlers/field_types_handler.h"
-#include "api/handlers/items_handler.h"
 #include "api/handlers/item_histories_handler.h"
+#include "api/handlers/item_links_handler.h"
 #include "api/handlers/item_types_handler.h"
 #include "api/handlers/item_user_states_handler.h"
+#include "api/handlers/items_handler.h"
+#include "api/handlers/link_types_handler.h"
 #include "api/handlers/phases_handler.h"
 #include "api/handlers/projects_handler.h"
 #include "api/handlers/role_menu_items_handler.h"
@@ -144,6 +146,16 @@ void RestServer::setItemService(std::shared_ptr<services::IItemService> itemServ
 void RestServer::setItemHistoryService(std::shared_ptr<services::IItemHistoryService> service)
 {
     m_itemHistoryService = service;
+}
+
+void RestServer::setItemLinkService(std::shared_ptr<services::IItemLinkService> service)
+{
+    m_itemLinkService = service;
+}
+
+void RestServer::setLinkTypeService(std::shared_ptr<services::ILinkTypeService> service)
+{
+    m_linkTypeService = service;
 }
 
 void RestServer::setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService)
@@ -444,6 +456,117 @@ void RestServer::registerRoutes()
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleCreateItemHistory(request, userId);
+            }
+        );
+    }
+
+    // ===== Типы связей (LinkTypes) =====
+    if (m_linkTypeService)
+    {
+        auto linkTypesHandler = std::make_shared<handlers::LinkTypesHandler>(m_linkTypeService);
+
+        // GET /api/link-types - список типов связей
+        addRouteGet(
+            "/api/link-types",
+            [linkTypesHandler](const auto& request, const auto& userId)
+            {
+                linkTypesHandler->handleGetLinkTypes(request, userId);
+            }
+        );
+
+        // POST /api/link-types - создание типа связи
+        addRoutePost(
+            "/api/link-types",
+            [linkTypesHandler](const auto& request, const auto& userId)
+            {
+                linkTypesHandler->handleCreateLinkType(request, userId);
+            }
+        );
+
+        // GET /api/link-types/{id} - получение типа связи
+        addRouteGet(
+            R"(/api/link-types/(\d+))",
+            [linkTypesHandler](const auto& request, const auto& userId)
+            {
+                linkTypesHandler->handleGetLinkType(request, userId);
+            }
+        );
+
+        // PUT /api/link-types/{id} - обновление типа связи
+        addRoutePut(
+            R"(/api/link-types/(\d+))",
+            [linkTypesHandler](const auto& request, const auto& userId)
+            {
+                linkTypesHandler->handleUpdateLinkType(request, userId);
+            }
+        );
+
+        // DELETE /api/link-types/{id} - удаление типа связи
+        addRouteDel(
+            R"(/api/link-types/(\d+))",
+            [linkTypesHandler](const auto& request, const auto& userId)
+            {
+                linkTypesHandler->handleDeleteLinkType(request, userId);
+            }
+        );
+    }
+
+    // ===== Связи элементов (ItemLinks) =====
+    if (m_itemLinkService)
+    {
+        auto itemLinksHandler = std::make_shared<handlers::ItemLinksHandler>(m_itemLinkService);
+
+        // GET /api/item-links - список связей элементов
+        addRouteGet(
+            "/api/item-links",
+            [itemLinksHandler](const auto& request, const auto& userId)
+            {
+                itemLinksHandler->handleGetItemLinks(request, userId);
+            }
+        );
+
+        // POST /api/item-links - создание связи
+        addRoutePost(
+            "/api/item-links",
+            [itemLinksHandler](const auto& request, const auto& userId)
+            {
+                itemLinksHandler->handleCreateItemLink(request, userId);
+            }
+        );
+
+        // GET /api/item-links/{id} - получение связи по ID
+        addRouteGet(
+            R"(/api/item-links/(\d+))",
+            [itemLinksHandler](const auto& request, const auto& userId)
+            {
+                itemLinksHandler->handleGetItemLink(request, userId);
+            }
+        );
+
+        // DELETE /api/item-links/{id} - удаление связи
+        addRouteDel(
+            R"(/api/item-links/(\d+))",
+            [itemLinksHandler](const auto& request, const auto& userId)
+            {
+                itemLinksHandler->handleDeleteItemLink(request, userId);
+            }
+        );
+
+        // GET /api/items/{itemId}/links - все связи элемента
+        addRouteGet(
+            R"(/api/items/(\d+)/links)",
+            [itemLinksHandler](const auto& request, const auto& userId)
+            {
+                itemLinksHandler->handleGetItemLinksByItemId(request, userId);
+            }
+        );
+
+        // GET /api/link-types/{linkTypeId}/links - все связи по типу
+        addRouteGet(
+            R"(/api/link-types/(\d+)/links)",
+            [itemLinksHandler](const auto& request, const auto& userId)
+            {
+                itemLinksHandler->handleGetItemLinksByLinkTypeId(request, userId);
             }
         );
     }

@@ -17,8 +17,10 @@
 #include "logic/impl/field_type_service.h"
 #include "logic/impl/item_service.h"
 #include "logic/impl/item_history_service.h"
+#include "logic/impl/item_link_service.h"
 #include "logic/impl/item_type_service.h"
 #include "logic/impl/item_user_state_service.h"
+#include "logic/impl/link_type_service.h"
 #include "logic/impl/phase_service.h"
 #include "logic/impl/project_service.h"
 #include "logic/impl/role_menu_item_service.h"
@@ -39,8 +41,10 @@
 #include "repo/sqlite/sqlite_item_field_repository.h"
 #include "repo/sqlite/sqlite_item_repository.h"
 #include "repo/sqlite/sqlite_item_history_repository.h"
+#include "repo/sqlite/sqlite_item_link_repository.h"
 #include "repo/sqlite/sqlite_item_type_repository.h"
 #include "repo/sqlite/sqlite_item_user_state_repository.h"
+#include "repo/sqlite/sqlite_link_type_repository.h"
 #include "repo/sqlite/sqlite_phase_repository.h"
 #include "repo/sqlite/sqlite_project_repository.h"
 #include "repo/sqlite/sqlite_role_menu_item_repository.h"
@@ -99,8 +103,10 @@ bool Application::initialize()
     auto itemRepository = std::make_shared<repositories::SqliteItemRepository>(m_database);
     auto itemFieldRepository = std::make_shared<repositories::SqliteItemFieldRepository>(m_database);
     auto itemHistoryRepository = std::make_shared<repositories::SqliteItemHistoryRepository>(m_database);
+    auto itemLinkRepository = std::make_shared<repositories::SqliteItemLinkRepository>(m_database);
     auto itemTypeRepository = std::make_shared<repositories::SqliteItemTypeRepository>(m_database);
     auto itemUserStateRepository = std::make_shared<repositories::SqliteItemUserStateRepository>(m_database);
+    auto linkTypeRepository = std::make_shared<repositories::SqliteLinkTypeRepository>(m_database);
     auto phaseRepository = std::make_shared<repositories::SqlitePhaseRepository>(m_database);
     auto projectRepository = std::make_shared<repositories::SqliteProjectRepository>(m_database);
     auto roleMenuItemRepository = std::make_shared<repositories::SqliteRoleMenuItemRepository>(m_database);
@@ -114,6 +120,7 @@ bool Application::initialize()
     auto userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
     auto userTeamRoleRepository = std::make_shared<repositories::SqliteUserTeamRoleRepository>(m_database);
     auto workflowRepository = std::make_shared<repositories::SqliteWorkflowRepository>(m_database);
+
 
     // === Создаем сервисы ===
     auto authorizationService = std::make_shared<services::AuthorizationService>(
@@ -154,6 +161,13 @@ bool Application::initialize()
         itemService,
         authorizationService
     );
+    auto itemLinkService = std::make_shared<services::ItemLinkService>(
+        itemLinkRepository,
+        linkTypeRepository,
+        phaseRepository,
+        itemService,
+        authorizationService
+    );
     auto itemUserStateService = std::make_shared<services::ItemUserStateService>(
         itemUserStateRepository,
         stateRepository,
@@ -162,6 +176,10 @@ bool Application::initialize()
     );
     auto userService = std::make_shared<services::UserService>(
         userRepository,
+        authorizationService
+    );
+    auto linkTypeService = std::make_shared<services::LinkTypeService>(
+        linkTypeRepository,
         authorizationService
     );
     auto phaseService = std::make_shared<services::PhaseService>(
@@ -239,8 +257,10 @@ bool Application::initialize()
     m_restServer->setFieldTypePossibleValueService(fieldTypePossibleValueService);
     m_restServer->setItemService(itemService);
     m_restServer->setItemHistoryService(itemHistoryService);
+    m_restServer->setItemLinkService(itemLinkService);
     m_restServer->setItemTypeService(itemTypeService);
     m_restServer->setItemUserStateService(itemUserStateService);
+    m_restServer->setLinkTypeService(linkTypeService);
     m_restServer->setPhaseService(phaseService);
     m_restServer->setProjectService(projectService);
     m_restServer->setRoleService(roleService);
