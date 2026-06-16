@@ -28,6 +28,7 @@ class IItemTypeService;
 class IItemUserStateService;
 class ILinkTypeService;
 class IPhaseService;
+class IPlanService;
 class IProjectService;
 class IUserService;
 class IStateService;
@@ -104,6 +105,7 @@ public:
     void setLinkTypeService(std::shared_ptr<services::ILinkTypeService> service);
     void setEdgeService(std::shared_ptr<services::IEdgeService> edgeService);
     void setPhaseService(std::shared_ptr<services::IPhaseService> phaseService);
+    void setPlanService(std::shared_ptr<services::IPlanService> planService);
     void setProjectService(std::shared_ptr<services::IProjectService> projectService);
     void setUserService(std::shared_ptr<services::IUserService> userService);
     void setStateService(std::shared_ptr<services::IStateService> stateService);
@@ -265,6 +267,7 @@ private:
     std::shared_ptr<services::ILinkTypeService> m_linkTypeService;
     std::shared_ptr<services::IEdgeService> m_edgeService;
     std::shared_ptr<services::IPhaseService> m_phaseService;
+    std::shared_ptr<services::IPlanService> m_planService;
     std::shared_ptr<services::IProjectService> m_projectService;
     std::shared_ptr<services::IUserService> m_userService;
     std::shared_ptr<services::IStateService> m_stateService;

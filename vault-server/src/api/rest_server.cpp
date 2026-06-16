@@ -17,6 +17,7 @@
 #include "api/handlers/items_handler.h"
 #include "api/handlers/link_types_handler.h"
 #include "api/handlers/phases_handler.h"
+#include "api/handlers/plans_handler.h"
 #include "api/handlers/projects_handler.h"
 #include "api/handlers/role_menu_items_handler.h"
 #include "api/handlers/roles_handler.h"
@@ -153,11 +154,6 @@ void RestServer::setItemLinkService(std::shared_ptr<services::IItemLinkService> 
     m_itemLinkService = service;
 }
 
-void RestServer::setLinkTypeService(std::shared_ptr<services::ILinkTypeService> service)
-{
-    m_linkTypeService = service;
-}
-
 void RestServer::setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService)
 {
     m_itemTypeService = itemTypeService;
@@ -168,6 +164,11 @@ void RestServer::setItemUserStateService(std::shared_ptr<services::IItemUserStat
     m_itemUserStateService = service;
 }
 
+void RestServer::setLinkTypeService(std::shared_ptr<services::ILinkTypeService> service)
+{
+    m_linkTypeService = service;
+}
+
 void RestServer::setEdgeService(std::shared_ptr<services::IEdgeService> edgeService)
 {
     m_edgeService = edgeService;
@@ -176,6 +177,11 @@ void RestServer::setEdgeService(std::shared_ptr<services::IEdgeService> edgeServ
 void RestServer::setPhaseService(std::shared_ptr<services::IPhaseService> phaseService)
 {
     m_phaseService = phaseService;
+}
+
+void RestServer::setPlanService(std::shared_ptr<services::IPlanService> service)
+{
+    m_planService = service;
 }
 
 void RestServer::setProjectService(std::shared_ptr<services::IProjectService> projectService)
@@ -567,6 +573,111 @@ void RestServer::registerRoutes()
             [itemLinksHandler](const auto& request, const auto& userId)
             {
                 itemLinksHandler->handleGetItemLinksByLinkTypeId(request, userId);
+            }
+        );
+    }
+
+    // ===== Планы и элементы планов =====
+    if (m_planService)
+    {
+        auto plansHandler = std::make_shared<handlers::PlansHandler>(m_planService);
+
+        // GET /api/phases/{phaseId}/plans - список планов фазы
+        addRouteGet(
+            R"(/api/phases/(\d+)/plans)",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleGetPlansByPhase(request, userId);
+            }
+        );
+
+        // POST /api/phases/{phaseId}/plans - создание первого плана в фазе
+        addRoutePost(
+            R"(/api/phases/(\d+)/plans)",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleCreateFirstPlan(request, userId);
+            }
+        );
+
+        // GET /api/plans/{id} - получение плана
+        addRouteGet(
+            R"(/api/plans/(\d+))",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleGetPlan(request, userId);
+            }
+        );
+
+        // DELETE /api/plans/{id} - удаление плана
+        addRouteDel(
+            R"(/api/plans/(\d+))",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleDeletePlan(request, userId);
+            }
+        );
+
+        // POST /api/plans/{id}/fork - форк плана
+        addRoutePost(
+            R"(/api/plans/(\d+)/fork)",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleForkPlan(request, userId);
+            }
+        );
+
+        // POST /api/plans/{id}/activate - активация плана
+        addRoutePost(
+            R"(/api/plans/(\d+)/activate)",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleActivatePlan(request, userId);
+            }
+        );
+
+        // GET /api/plans/{planId}/items - получение элементов плана
+        addRouteGet(
+            R"(/api/plans/(\d+)/items)",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleGetPlanItems(request, userId);
+            }
+        );
+
+        // POST /api/plans/{planId}/items - добавление элемента в план
+        addRoutePost(
+            R"(/api/plans/(\d+)/items)",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleAddPlanItem(request, userId);
+            }
+        );
+
+        // GET /api/plan-items/{id} - получение элемента плана
+        addRouteGet(
+            R"(/api/plan-items/(\d+))",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleGetPlanItem(request, userId);
+            }
+        );
+
+        // PUT /api/plan-items/{id} - обновление элемента плана
+        addRoutePut(
+            R"(/api/plan-items/(\d+))",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleUpdatePlanItem(request, userId);
+            }
+        );
+
+        // DELETE /api/plan-items/{id} - удаление элемента плана
+        addRouteDel(
+            R"(/api/plan-items/(\d+))",
+            [plansHandler](const auto& request, const auto& userId)
+            {
+                plansHandler->handleDeletePlanItem(request, userId);
             }
         );
     }
