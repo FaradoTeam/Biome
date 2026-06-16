@@ -22,6 +22,7 @@
 #include "logic/impl/item_user_state_service.h"
 #include "logic/impl/link_type_service.h"
 #include "logic/impl/phase_service.h"
+#include "logic/impl/plan_service.h"
 #include "logic/impl/project_service.h"
 #include "logic/impl/role_menu_item_service.h"
 #include "logic/impl/role_service.h"
@@ -46,6 +47,8 @@
 #include "repo/sqlite/sqlite_item_user_state_repository.h"
 #include "repo/sqlite/sqlite_link_type_repository.h"
 #include "repo/sqlite/sqlite_phase_repository.h"
+#include "repo/sqlite/sqlite_plan_repository.h"
+#include "repo/sqlite/sqlite_plan_item_repository.h"
 #include "repo/sqlite/sqlite_project_repository.h"
 #include "repo/sqlite/sqlite_role_menu_item_repository.h"
 #include "repo/sqlite/sqlite_role_repository.h"
@@ -108,6 +111,8 @@ bool Application::initialize()
     auto itemUserStateRepository = std::make_shared<repositories::SqliteItemUserStateRepository>(m_database);
     auto linkTypeRepository = std::make_shared<repositories::SqliteLinkTypeRepository>(m_database);
     auto phaseRepository = std::make_shared<repositories::SqlitePhaseRepository>(m_database);
+    auto planRepository = std::make_shared<repositories::SqlitePlanRepository>(m_database);
+    auto planItemRepository = std::make_shared<repositories::SqlitePlanItemRepository>(m_database);
     auto projectRepository = std::make_shared<repositories::SqliteProjectRepository>(m_database);
     auto roleMenuItemRepository = std::make_shared<repositories::SqliteRoleMenuItemRepository>(m_database);
     auto roleRepository = std::make_shared<repositories::SqliteRoleRepository>(m_database);
@@ -186,6 +191,13 @@ bool Application::initialize()
         phaseRepository,
         authorizationService
     );
+    auto planService = std::make_shared<services::PlanService>(
+        planRepository,
+        planItemRepository,
+        phaseRepository,
+        itemRepository,
+        authorizationService
+    );
     auto projectService = std::make_shared<services::ProjectService>(
         projectRepository,
         authorizationService
@@ -262,6 +274,7 @@ bool Application::initialize()
     m_restServer->setItemUserStateService(itemUserStateService);
     m_restServer->setLinkTypeService(linkTypeService);
     m_restServer->setPhaseService(phaseService);
+    m_restServer->setPlanService(planService);
     m_restServer->setProjectService(projectService);
     m_restServer->setRoleService(roleService);
     m_restServer->setRoleMenuItemService(roleMenuItemService);
