@@ -54,7 +54,7 @@ void LinkTypesHandler::handleGetLinkTypes(
         destinationItemTypeId = std::stoll(params["destinationItemTypeId"]);
 
     LOG_DEBUG
-        << "GET /api/link-types: user=" << *userIdOpt
+        << "GET /link-types: user=" << *userIdOpt
         << ", page=" << page << ", pageSize=" << pageSize
         << ", sourceItemTypeId=" << (sourceItemTypeId.has_value() ? std::to_string(*sourceItemTypeId) : "none")
         << ", destinationItemTypeId=" << (destinationItemTypeId.has_value() ? std::to_string(*destinationItemTypeId) : "none");
@@ -111,7 +111,7 @@ void LinkTypesHandler::handleGetLinkType(
         return;
     }
 
-    LOG_DEBUG << "GET /api/link-types/" << id << " from user " << *userIdOpt;
+    LOG_DEBUG << "GET /link-types/" << id << " from user " << *userIdOpt;
 
     try
     {
@@ -152,7 +152,7 @@ void LinkTypesHandler::handleCreateLinkType(
     }
     const int64_t userId = *userIdOpt;
 
-    LOG_DEBUG << "POST /api/link-types from user " << userId;
+    LOG_DEBUG << "POST /link-types from user " << userId;
 
     request
         .extract_json()
@@ -250,7 +250,7 @@ void LinkTypesHandler::handleUpdateLinkType(
         return;
     }
 
-    LOG_DEBUG << "PUT /api/link-types/" << id << " from user " << userId;
+    LOG_DEBUG << "PUT /link-types/" << id << " from user " << userId;
 
     request
         .extract_json()
@@ -325,7 +325,7 @@ void LinkTypesHandler::handleDeleteLinkType(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/link-types/" << id << " from user " << userId;
+    LOG_DEBUG << "DELETE /link-types/" << id << " from user " << userId;
 
     try
     {

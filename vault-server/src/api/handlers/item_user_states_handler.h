@@ -27,8 +27,8 @@ public:
 
     /**
      * @brief Получает список записей истории состояний.
-     * GET /api/items/{itemId}/user-states
-     * GET /api/items/user-states (с фильтрацией)
+     * GET /items/{itemId}/user-states
+     * GET /items/user-states (с фильтрацией)
      */
     void handleGetItemUserStates(
         const web::http::http_request& request,
@@ -37,7 +37,7 @@ public:
 
     /**
      * @brief Получает запись истории по ID.
-     * GET /api/items/user-states/{id}
+     * GET /items/user-states/{id}
      */
     void handleGetItemUserState(
         const web::http::http_request& request,
@@ -46,7 +46,7 @@ public:
 
     /**
      * @brief Получает последнюю запись истории для элемента.
-     * GET /api/items/{itemId}/user-states/last
+     * GET /items/{itemId}/user-states/last
      */
     void handleGetLastItemUserState(
         const web::http::http_request& request,
@@ -55,7 +55,7 @@ public:
 
     /**
      * @brief Создаёт новую запись истории состояния.
-     * POST /api/items/{itemId}/user-states
+     * POST /items/{itemId}/user-states
      */
     void handleCreateItemUserState(
         const web::http::http_request& request,
@@ -64,7 +64,7 @@ public:
 
     /**
      * @brief Удаляет запись истории.
-     * DELETE /api/items/user-states/{id}
+     * DELETE /items/user-states/{id}
      */
     void handleDeleteItemUserState(
         const web::http::http_request& request,

@@ -134,7 +134,7 @@ void ItemHistoriesHandler::handleGetItemHistories(
     }
 
     LOG_DEBUG
-        << "GET /api/items/histories: user=" << userId
+        << "GET /items/histories: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
         << ", itemId=" << (itemId.has_value() ? std::to_string(*itemId) : "none")
         << ", filterUserId=" << (filterUserId.has_value() ? std::to_string(*filterUserId) : "none");
@@ -192,7 +192,7 @@ void ItemHistoriesHandler::handleGetItemHistory(
         return;
     }
 
-    LOG_DEBUG << "GET /api/items/histories/" << id << " from user " << userId;
+    LOG_DEBUG << "GET /items/histories/" << id << " from user " << userId;
 
     try
     {
@@ -233,13 +233,13 @@ void ItemHistoriesHandler::handleGetLastItemHistory(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем itemId из пути: /api/items/{itemId}/histories/last
+    // Извлекаем itemId из пути: /items/{itemId}/histories/last
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+)/histories/last)");
+    std::regex pattern(R"(/items/(\d+)/histories/last)");
     std::smatch matches;
 
     int64_t itemId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -262,7 +262,7 @@ void ItemHistoriesHandler::handleGetLastItemHistory(
         return;
     }
 
-    LOG_DEBUG << "GET /api/items/" << itemId << "/histories/last from user " << userId;
+    LOG_DEBUG << "GET /items/" << itemId << "/histories/last from user " << userId;
 
     try
     {
@@ -303,13 +303,13 @@ void ItemHistoriesHandler::handleCreateItemHistory(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем itemId из пути: /api/items/{itemId}/histories
+    // Извлекаем itemId из пути: /items/{itemId}/histories
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+)/histories)");
+    std::regex pattern(R"(/items/(\d+)/histories)");
     std::smatch matches;
 
     int64_t itemId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -332,7 +332,7 @@ void ItemHistoriesHandler::handleCreateItemHistory(
         return;
     }
 
-    LOG_DEBUG << "POST /api/items/" << itemId << "/histories from user " << userId;
+    LOG_DEBUG << "POST /items/" << itemId << "/histories from user " << userId;
 
     request
         .extract_json()
@@ -406,7 +406,7 @@ void ItemHistoriesHandler::handleDeleteItemHistory(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/items/histories/" << id << " from user " << userId;
+    LOG_DEBUG << "DELETE /items/histories/" << id << " from user " << userId;
 
     try
     {

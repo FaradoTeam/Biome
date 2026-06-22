@@ -22,7 +22,7 @@ ItemsHandler::ItemsHandler(std::shared_ptr<services::IItemService> itemService)
 }
 
 // ============================================================
-// GET /api/items
+// GET /items
 // ============================================================
 
 void ItemsHandler::handleGetItems(
@@ -159,7 +159,7 @@ void ItemsHandler::handleGetItems(
     }
 
     LOG_DEBUG
-        << "GET /api/items: user=" << userId
+        << "GET /items: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
         << ", itemTypeId=" << (itemTypeId.has_value() ? std::to_string(*itemTypeId) : "none")
         << ", parentId=" << (parentId.has_value() ? std::to_string(*parentId) : "none")
@@ -200,7 +200,7 @@ void ItemsHandler::handleGetItems(
 }
 
 // ============================================================
-// GET /api/items/{id}
+// GET /items/{id}
 // ============================================================
 
 void ItemsHandler::handleGetItem(
@@ -226,7 +226,7 @@ void ItemsHandler::handleGetItem(
         return;
     }
 
-    LOG_DEBUG << "GET /api/items/" << itemId << " from user " << userId;
+    LOG_DEBUG << "GET /items/" << itemId << " from user " << userId;
 
     try
     {
@@ -254,7 +254,7 @@ void ItemsHandler::handleGetItem(
 }
 
 // ============================================================
-// POST /api/items
+// POST /items
 // ============================================================
 
 void ItemsHandler::handleCreateItem(
@@ -271,7 +271,7 @@ void ItemsHandler::handleCreateItem(
     }
     const int64_t userId = *userIdOpt;
 
-    LOG_DEBUG << "POST /api/items from user " << userId;
+    LOG_DEBUG << "POST /items from user " << userId;
 
     request
         .extract_json()
@@ -352,7 +352,7 @@ void ItemsHandler::handleCreateItem(
 }
 
 // ============================================================
-// PUT /api/items/{id}
+// PUT /items/{id}
 // ============================================================
 
 void ItemsHandler::handleUpdateItem(
@@ -378,7 +378,7 @@ void ItemsHandler::handleUpdateItem(
         return;
     }
 
-    LOG_DEBUG << "PUT /api/items/" << itemId << " from user " << userId;
+    LOG_DEBUG << "PUT /items/" << itemId << " from user " << userId;
 
     request
         .extract_json()
@@ -435,7 +435,7 @@ void ItemsHandler::handleUpdateItem(
 }
 
 // ============================================================
-// DELETE /api/items/{id}
+// DELETE /items/{id}
 // ============================================================
 
 void ItemsHandler::handleDeleteItem(
@@ -461,7 +461,7 @@ void ItemsHandler::handleDeleteItem(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/items/" << itemId << " from user " << userId;
+    LOG_DEBUG << "DELETE /items/" << itemId << " from user " << userId;
 
     try
     {
@@ -492,7 +492,7 @@ void ItemsHandler::handleDeleteItem(
 }
 
 // ============================================================
-// POST /api/items/{id}/restore
+// POST /items/{id}/restore
 // ============================================================
 
 void ItemsHandler::handleRestoreItem(
@@ -518,7 +518,7 @@ void ItemsHandler::handleRestoreItem(
         return;
     }
 
-    LOG_DEBUG << "POST /api/items/" << itemId << "/restore from user " << userId;
+    LOG_DEBUG << "POST /items/" << itemId << "/restore from user " << userId;
 
     try
     {
@@ -549,7 +549,7 @@ void ItemsHandler::handleRestoreItem(
 }
 
 // ============================================================
-// GET /api/items/{id}/fields
+// GET /items/{id}/fields
 // ============================================================
 
 void ItemsHandler::handleGetItemFields(
@@ -575,7 +575,7 @@ void ItemsHandler::handleGetItemFields(
         return;
     }
 
-    LOG_DEBUG << "GET /api/items/" << itemId << "/fields from user " << userId;
+    LOG_DEBUG << "GET /items/" << itemId << "/fields from user " << userId;
 
     try
     {
@@ -599,7 +599,7 @@ void ItemsHandler::handleGetItemFields(
 }
 
 // ============================================================
-// PUT /api/items/{id}/fields/{fieldTypeId}
+// PUT /items/{id}/fields/{fieldTypeId}
 // ============================================================
 
 void ItemsHandler::handleSetItemField(
@@ -617,15 +617,15 @@ void ItemsHandler::handleSetItemField(
     const int64_t userId = *userIdOpt;
 
     // Извлекаем itemId и fieldTypeId из пути
-    // Ожидаем формат: /api/items/{itemId}/fields/{fieldTypeId}
+    // Ожидаем формат: /items/{itemId}/fields/{fieldTypeId}
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+)/fields/(\d+))");
+    std::regex pattern(R"(/items/(\d+)/fields/(\d+))");
     std::smatch matches;
 
     int64_t itemId = -1;
     int64_t fieldTypeId = -1;
 
-    if (std::regex_match(path, matches, pattern) && matches.size() >= 3)
+    if (std::regex_search(path, matches, pattern) && matches.size() >= 3)
     {
         try
         {
@@ -650,7 +650,7 @@ void ItemsHandler::handleSetItemField(
     }
 
     LOG_DEBUG
-        << "PUT /api/items/" << itemId << "/fields/" << fieldTypeId
+        << "PUT /items/" << itemId << "/fields/" << fieldTypeId
         << " from user " << userId;
 
     request
@@ -708,7 +708,7 @@ void ItemsHandler::handleSetItemField(
 }
 
 // ============================================================
-// DELETE /api/items/{id}/fields/{fieldTypeId}
+// DELETE /items/{id}/fields/{fieldTypeId}
 // ============================================================
 
 void ItemsHandler::handleDeleteItemField(
@@ -727,13 +727,13 @@ void ItemsHandler::handleDeleteItemField(
 
     // Извлекаем itemId и fieldTypeId из пути
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+)/fields/(\d+))");
+    std::regex pattern(R"(/items/(\d+)/fields/(\d+))");
     std::smatch matches;
 
     int64_t itemId = -1;
     int64_t fieldTypeId = -1;
 
-    if (std::regex_match(path, matches, pattern) && matches.size() >= 3)
+    if (std::regex_search(path, matches, pattern) && matches.size() >= 3)
     {
         try
         {
@@ -758,7 +758,7 @@ void ItemsHandler::handleDeleteItemField(
     }
 
     LOG_DEBUG
-        << "DELETE /api/items/" << itemId << "/fields/" << fieldTypeId
+        << "DELETE /items/" << itemId << "/fields/" << fieldTypeId
         << " from user " << userId;
 
     try

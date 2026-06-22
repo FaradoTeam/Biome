@@ -27,7 +27,7 @@ PlansHandler::PlansHandler(std::shared_ptr<services::IPlanService> planService)
 }
 
 // ============================================================
-// GET /api/phases/{phaseId}/plans
+// GET /phases/{phaseId}/plans
 // ============================================================
 
 void PlansHandler::handleGetPlansByPhase(
@@ -44,13 +44,13 @@ void PlansHandler::handleGetPlansByPhase(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем phaseId из пути: /api/phases/{phaseId}/plans
+    // Извлекаем phaseId из пути: /phases/{phaseId}/plans
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/phases/(\d+)/plans)");
+    std::regex pattern(R"(/phases/(\d+)/plans)");
     std::smatch matches;
 
     int64_t phaseId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -114,7 +114,7 @@ void PlansHandler::handleGetPlansByPhase(
     }
 
     LOG_DEBUG
-        << "GET /api/phases/" << phaseId << "/plans: user=" << userId
+        << "GET /phases/" << phaseId << "/plans: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
         << ", isActive=" << (isActive.has_value() ? (*isActive ? "true" : "false") : "none");
 
@@ -149,7 +149,7 @@ void PlansHandler::handleGetPlansByPhase(
 }
 
 // ============================================================
-// POST /api/phases/{phaseId}/plans
+// POST /phases/{phaseId}/plans
 // ============================================================
 
 void PlansHandler::handleCreateFirstPlan(
@@ -168,11 +168,11 @@ void PlansHandler::handleCreateFirstPlan(
 
     // Извлекаем phaseId из пути
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/phases/(\d+)/plans)");
+    std::regex pattern(R"(/phases/(\d+)/plans)");
     std::smatch matches;
 
     int64_t phaseId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -195,7 +195,7 @@ void PlansHandler::handleCreateFirstPlan(
         return;
     }
 
-    LOG_DEBUG << "POST /api/phases/" << phaseId << "/plans from user " << userId;
+    LOG_DEBUG << "POST /phases/" << phaseId << "/plans from user " << userId;
 
     request
         .extract_json()
@@ -272,7 +272,7 @@ void PlansHandler::handleCreateFirstPlan(
 }
 
 // ============================================================
-// GET /api/plans/{id}
+// GET /plans/{id}
 // ============================================================
 
 void PlansHandler::handleGetPlan(
@@ -298,7 +298,7 @@ void PlansHandler::handleGetPlan(
         return;
     }
 
-    LOG_DEBUG << "GET /api/plans/" << planId << " from user " << userId;
+    LOG_DEBUG << "GET /plans/" << planId << " from user " << userId;
 
     try
     {
@@ -326,7 +326,7 @@ void PlansHandler::handleGetPlan(
 }
 
 // ============================================================
-// DELETE /api/plans/{id}
+// DELETE /plans/{id}
 // ============================================================
 
 void PlansHandler::handleDeletePlan(
@@ -352,7 +352,7 @@ void PlansHandler::handleDeletePlan(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/plans/" << planId << " from user " << userId;
+    LOG_DEBUG << "DELETE /plans/" << planId << " from user " << userId;
 
     try
     {
@@ -380,7 +380,7 @@ void PlansHandler::handleDeletePlan(
 }
 
 // ============================================================
-// POST /api/plans/{id}/fork
+// POST /plans/{id}/fork
 // ============================================================
 
 void PlansHandler::handleForkPlan(
@@ -406,7 +406,7 @@ void PlansHandler::handleForkPlan(
         return;
     }
 
-    LOG_DEBUG << "POST /api/plans/" << planId << "/fork from user " << userId;
+    LOG_DEBUG << "POST /plans/" << planId << "/fork from user " << userId;
 
     request
         .extract_json()
@@ -469,7 +469,7 @@ void PlansHandler::handleForkPlan(
 }
 
 // ============================================================
-// POST /api/plans/{id}/activate
+// POST /plans/{id}/activate
 // ============================================================
 
 void PlansHandler::handleActivatePlan(
@@ -495,7 +495,7 @@ void PlansHandler::handleActivatePlan(
         return;
     }
 
-    LOG_DEBUG << "POST /api/plans/" << planId << "/activate from user " << userId;
+    LOG_DEBUG << "POST /plans/" << planId << "/activate from user " << userId;
 
     request
         .extract_json()
@@ -555,7 +555,7 @@ void PlansHandler::handleActivatePlan(
 }
 
 // ============================================================
-// GET /api/plans/{planId}/items
+// GET /plans/{planId}/items
 // ============================================================
 
 void PlansHandler::handleGetPlanItems(
@@ -572,13 +572,13 @@ void PlansHandler::handleGetPlanItems(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем planId из пути: /api/plans/{planId}/items
+    // Извлекаем planId из пути: /plans/{planId}/items
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/plans/(\d+)/items)");
+    std::regex pattern(R"(/plans/(\d+)/items)");
     std::smatch matches;
 
     int64_t planId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -649,7 +649,7 @@ void PlansHandler::handleGetPlanItems(
     }
 
     LOG_DEBUG
-        << "GET /api/plans/" << planId << "/items: user=" << userId
+        << "GET /plans/" << planId << "/items: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize;
 
     try
@@ -684,7 +684,7 @@ void PlansHandler::handleGetPlanItems(
 }
 
 // ============================================================
-// POST /api/plans/{planId}/items
+// POST /plans/{planId}/items
 // ============================================================
 
 void PlansHandler::handleAddPlanItem(
@@ -703,11 +703,11 @@ void PlansHandler::handleAddPlanItem(
 
     // Извлекаем planId из пути
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/plans/(\d+)/items)");
+    std::regex pattern(R"(/plans/(\d+)/items)");
     std::smatch matches;
 
     int64_t planId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -730,7 +730,7 @@ void PlansHandler::handleAddPlanItem(
         return;
     }
 
-    LOG_DEBUG << "POST /api/plans/" << planId << "/items from user " << userId;
+    LOG_DEBUG << "POST /plans/" << planId << "/items from user " << userId;
 
     request
         .extract_json()
@@ -806,7 +806,7 @@ void PlansHandler::handleAddPlanItem(
 }
 
 // ============================================================
-// GET /api/plan-items/{id}
+// GET /plan-items/{id}
 // ============================================================
 
 void PlansHandler::handleGetPlanItem(
@@ -832,7 +832,7 @@ void PlansHandler::handleGetPlanItem(
         return;
     }
 
-    LOG_DEBUG << "GET /api/plan-items/" << planItemId << " from user " << userId;
+    LOG_DEBUG << "GET /plan-items/" << planItemId << " from user " << userId;
 
     try
     {
@@ -861,7 +861,7 @@ void PlansHandler::handleGetPlanItem(
 }
 
 // ============================================================
-// PUT /api/plan-items/{id}
+// PUT /plan-items/{id}
 // ============================================================
 
 void PlansHandler::handleUpdatePlanItem(
@@ -887,7 +887,7 @@ void PlansHandler::handleUpdatePlanItem(
         return;
     }
 
-    LOG_DEBUG << "PUT /api/plan-items/" << planItemId << " from user " << userId;
+    LOG_DEBUG << "PUT /plan-items/" << planItemId << " from user " << userId;
 
     request
         .extract_json()
@@ -937,7 +937,7 @@ void PlansHandler::handleUpdatePlanItem(
 }
 
 // ============================================================
-// DELETE /api/plan-items/{id}
+// DELETE /plan-items/{id}
 // ============================================================
 
 void PlansHandler::handleDeletePlanItem(
@@ -963,7 +963,7 @@ void PlansHandler::handleDeletePlanItem(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/plan-items/" << planItemId << " from user " << userId;
+    LOG_DEBUG << "DELETE /plan-items/" << planItemId << " from user " << userId;
 
     try
     {

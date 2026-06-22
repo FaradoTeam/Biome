@@ -88,7 +88,7 @@ void FieldTypePossibleValuesHandler::handleGetValues(
     }
 
     LOG_DEBUG
-        << "GET /api/field-type-values: user=" << userId
+        << "GET /field-type-values: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
         << ", fieldTypeId=" << (fieldTypeId.has_value() ? std::to_string(*fieldTypeId) : "none");
 
@@ -148,7 +148,7 @@ void FieldTypePossibleValuesHandler::handleGetValue(
         return;
     }
 
-    LOG_DEBUG << "GET /api/field-type-values/" << id << " from user " << userId;
+    LOG_DEBUG << "GET /field-type-values/" << id << " from user " << userId;
 
     try
     {
@@ -189,7 +189,7 @@ void FieldTypePossibleValuesHandler::handleCreateValue(
     }
     const int64_t userId = *userIdOpt;
 
-    LOG_DEBUG << "POST /api/field-type-values from user " << userId;
+    LOG_DEBUG << "POST /field-type-values from user " << userId;
 
     request
         .extract_json()
@@ -280,7 +280,7 @@ void FieldTypePossibleValuesHandler::handleUpdateValue(
         return;
     }
 
-    LOG_DEBUG << "PUT /api/field-type-values/" << id << " from user " << userId;
+    LOG_DEBUG << "PUT /field-type-values/" << id << " from user " << userId;
 
     request
         .extract_json()
@@ -376,7 +376,7 @@ void FieldTypePossibleValuesHandler::handleDeleteValue(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/field-type-values/" << id << " from user " << userId;
+    LOG_DEBUG << "DELETE /field-type-values/" << id << " from user " << userId;
 
     try
     {
@@ -427,7 +427,7 @@ void FieldTypePossibleValuesHandler::handleGetValuesByFieldType(
     }
 
     LOG_DEBUG
-        << "GET /api/field-type-values/by-field-type/" << fieldTypeId
+        << "GET /field-type-values/by-field-type/" << fieldTypeId
         << " from user " << userId;
 
     try

@@ -59,7 +59,7 @@ void ItemLinksHandler::handleGetItemLinks(
         destinationItemId = std::stoll(params["destinationItemId"]);
 
     LOG_DEBUG
-        << "GET /api/item-links: user=" << userId
+        << "GET /item-links: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
         << ", linkTypeId=" << (linkTypeId.has_value() ? std::to_string(*linkTypeId) : "none")
         << ", sourceItemId=" << (sourceItemId.has_value() ? std::to_string(*sourceItemId) : "none")
@@ -118,7 +118,7 @@ void ItemLinksHandler::handleGetItemLink(
         return;
     }
 
-    LOG_DEBUG << "GET /api/item-links/" << id << " from user " << userId;
+    LOG_DEBUG << "GET /item-links/" << id << " from user " << userId;
 
     try
     {
@@ -159,13 +159,13 @@ void ItemLinksHandler::handleGetItemLinksByItemId(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем itemId из пути: /api/items/{itemId}/links
+    // Извлекаем itemId из пути: /items/{itemId}/links
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+)/links)");
+    std::regex pattern(R"(/items/(\d+)/links)");
     std::smatch matches;
 
     int64_t itemId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -188,7 +188,7 @@ void ItemLinksHandler::handleGetItemLinksByItemId(
         return;
     }
 
-    LOG_DEBUG << "GET /api/items/" << itemId << "/links from user " << userId;
+    LOG_DEBUG << "GET /items/" << itemId << "/links from user " << userId;
 
     try
     {
@@ -225,13 +225,13 @@ void ItemLinksHandler::handleGetItemLinksByLinkTypeId(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем linkTypeId из пути: /api/link-types/{linkTypeId}/links
+    // Извлекаем linkTypeId из пути: /link-types/{linkTypeId}/links
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/link-types/(\d+)/links)");
+    std::regex pattern(R"(/link-types/(\d+)/links)");
     std::smatch matches;
 
     int64_t linkTypeId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -254,7 +254,7 @@ void ItemLinksHandler::handleGetItemLinksByLinkTypeId(
         return;
     }
 
-    LOG_DEBUG << "GET /api/link-types/" << linkTypeId << "/links from user " << userId;
+    LOG_DEBUG << "GET /link-types/" << linkTypeId << "/links from user " << userId;
 
     try
     {
@@ -291,7 +291,7 @@ void ItemLinksHandler::handleCreateItemLink(
     }
     const int64_t userId = *userIdOpt;
 
-    LOG_DEBUG << "POST /api/item-links from user " << userId;
+    LOG_DEBUG << "POST /item-links from user " << userId;
 
     request
         .extract_json()
@@ -392,7 +392,7 @@ void ItemLinksHandler::handleDeleteItemLink(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/item-links/" << id << " from user " << userId;
+    LOG_DEBUG << "DELETE /item-links/" << id << " from user " << userId;
 
     try
     {
