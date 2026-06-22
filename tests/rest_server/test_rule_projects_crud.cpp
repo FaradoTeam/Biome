@@ -103,7 +103,7 @@ struct RuleProjectsTestFixture
 BOOST_FIXTURE_TEST_SUITE(RuleProjectsCrudTestSuite, RuleProjectsTestFixture)
 
 // ============================================================
-// GET /api/rule-projects — Получение списка прав на проекты
+// GET /api/v1/rule-projects — Получение списка прав на проекты
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_rule_projects_returns_list)
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_projects_returns_list)
     testPage.totalCount = 2;
     mockRuleProjectService->setGetRuleProjectsResult(testPage);
 
-    auto response = makeGetRequest("/api/rule-projects").get();
+    auto response = makeGetRequest("/api/v1/rule-projects").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getGetRuleProjectsCallCount(), 1);
 
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_projects_with_pagination)
     services::RuleProjectsPage emptyPage;
     mockRuleProjectService->setGetRuleProjectsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-projects?page=2&pageSize=15").get();
+    auto response = makeGetRequest("/api/v1/rule-projects?page=2&pageSize=15").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getLastGetRuleProjectsPage(), 2);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getLastGetRuleProjectsPageSize(), 15);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_projects_with_rule_filter)
     services::RuleProjectsPage emptyPage;
     mockRuleProjectService->setGetRuleProjectsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-projects?ruleId=42").get();
+    auto response = makeGetRequest("/api/v1/rule-projects?ruleId=42").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockRuleProjectService->getLastGetRuleProjectsRuleId().has_value());
     BOOST_CHECK_EQUAL(*mockRuleProjectService->getLastGetRuleProjectsRuleId(), 42);
@@ -159,14 +159,14 @@ BOOST_AUTO_TEST_CASE(test_get_rule_projects_with_project_filter)
     services::RuleProjectsPage emptyPage;
     mockRuleProjectService->setGetRuleProjectsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-projects?projectId=100").get();
+    auto response = makeGetRequest("/api/v1/rule-projects?projectId=100").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockRuleProjectService->getLastGetRuleProjectsProjectId().has_value());
     BOOST_CHECK_EQUAL(*mockRuleProjectService->getLastGetRuleProjectsProjectId(), 100);
 }
 
 // ============================================================
-// GET /api/rule-projects/{id} — Получение права по ID
+// GET /api/v1/rule-projects/{id} — Получение права по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_rule_project_by_id_success)
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_project_by_id_success)
     rp.isWriter = true;
     mockRuleProjectService->setGetRuleProjectResult(rp);
 
-    auto response = makeGetRequest("/api/rule-projects/5").get();
+    auto response = makeGetRequest("/api/v1/rule-projects/5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getLastGetRuleProjectId(), 5);
 
@@ -192,12 +192,12 @@ BOOST_AUTO_TEST_CASE(test_get_rule_project_not_found)
 {
     mockRuleProjectService->setGetRuleProjectResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/rule-projects/999").get();
+    auto response = makeGetRequest("/api/v1/rule-projects/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/rule-projects — Создание права на проект
+// POST /api/v1/rule-projects — Создание права на проект
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_rule_project_success)
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(test_create_rule_project_success)
     body[U("isReader")] = json::value::boolean(true);
     body[U("isWriter")] = json::value::boolean(true);
 
-    auto response = makePostRequest("/api/rule-projects", body).get();
+    auto response = makePostRequest("/api/v1/rule-projects", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getCreateRuleProjectCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRuleProjectService->getLastCreatedRuleProject().ruleId, 5);
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(test_create_rule_project_missing_required_fields)
     json::value body;
     body[U("ruleId")] = json::value::number(5);
 
-    auto response = makePostRequest("/api/rule-projects", body).get();
+    auto response = makePostRequest("/api/v1/rule-projects", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     // Сервис НЕ должен быть вызван, так как валидация происходит в handler
     BOOST_CHECK_EQUAL(mockRuleProjectService->getCreateRuleProjectCallCount(), 0);
@@ -242,12 +242,12 @@ BOOST_AUTO_TEST_CASE(test_create_rule_project_duplicate)
     body[U("ruleId")] = json::value::number(5);
     body[U("projectId")] = json::value::number(50);
 
-    auto response = makePostRequest("/api/rule-projects", body).get();
+    auto response = makePostRequest("/api/v1/rule-projects", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden); // TODO: status_codes::Conflict
 }
 
 // ============================================================
-// PUT /api/rule-projects/{id} — Обновление права на проект
+// PUT /api/v1/rule-projects/{id} — Обновление права на проект
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_rule_project_success)
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(test_update_rule_project_success)
     body[U("isReader")] = json::value::boolean(true);
     body[U("isWriter")] = json::value::boolean(false);
 
-    auto response = makePutRequest("/api/rule-projects/1", body).get();
+    auto response = makePutRequest("/api/v1/rule-projects/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getUpdateRuleProjectCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRuleProjectService->getLastUpdatedRuleProject().id, 1);
@@ -275,19 +275,19 @@ BOOST_AUTO_TEST_CASE(test_update_rule_project_not_found)
     json::value body;
     body[U("isReader")] = json::value::boolean(true);
 
-    auto response = makePutRequest("/api/rule-projects/999", body).get();
+    auto response = makePutRequest("/api/v1/rule-projects/999", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/rule-projects/{id} — Удаление права на проект
+// DELETE /api/v1/rule-projects/{id} — Удаление права на проект
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_rule_project_success)
 {
     mockRuleProjectService->setDeleteRuleProjectResult(true);
 
-    auto response = makeDeleteRequest("/api/rule-projects/3").get();
+    auto response = makeDeleteRequest("/api/v1/rule-projects/3").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getDeleteRuleProjectCallCount(), 1);
     BOOST_CHECK_EQUAL(mockRuleProjectService->getLastDeletedRuleProjectId(), 3);
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(test_delete_rule_project_not_found)
 {
     mockRuleProjectService->setDeleteRuleProjectResult(false);
 
-    auto response = makeDeleteRequest("/api/rule-projects/999").get();
+    auto response = makeDeleteRequest("/api/v1/rule-projects/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
@@ -318,12 +318,12 @@ BOOST_AUTO_TEST_CASE(test_full_rule_project_lifecycle)
     createBody[U("ruleId")] = json::value::number(50);
     createBody[U("projectId")] = json::value::number(500);
 
-    auto createResponse = makePostRequest("/api/rule-projects", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/rule-projects", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение
     mockRuleProjectService->setGetRuleProjectResult(newRp);
-    auto getResponse = makeGetRequest("/api/rule-projects/100").get();
+    auto getResponse = makeGetRequest("/api/v1/rule-projects/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление
@@ -334,12 +334,12 @@ BOOST_AUTO_TEST_CASE(test_full_rule_project_lifecycle)
     json::value updateBody;
     updateBody[U("isReader")] = json::value::boolean(true);
 
-    auto updateResponse = makePutRequest("/api/rule-projects/100", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/rule-projects/100", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Удаление
     mockRuleProjectService->setDeleteRuleProjectResult(true);
-    auto deleteResponse = makeDeleteRequest("/api/rule-projects/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/rule-projects/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 }
 

@@ -183,12 +183,12 @@ struct FieldTypePossibleValuesTestFixture
 BOOST_FIXTURE_TEST_SUITE(FieldTypePossibleValuesCrudTestSuite, FieldTypePossibleValuesTestFixture)
 
 // ============================================================
-// GET /api/field-type-values — Получение списка возможных значений
+// GET /api/v1/field-type-values — Получение списка возможных значений
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_values_returns_list)
 {
-    auto response = makeGetRequest("/api/field-type-values").get();
+    auto response = makeGetRequest("/api/v1/field-type-values").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getValuesCallCount(), 1);
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(test_get_values_with_pagination_params)
     services::FieldTypePossibleValuesPage emptyPage;
     mockFieldTypePossibleValueService->setGetValuesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/field-type-values?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/field-type-values?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getLastGetValuesPage(), 3);
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(test_get_values_with_field_type_filter)
     filteredPage.totalCount = 1;
     mockFieldTypePossibleValueService->setGetValuesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/field-type-values?fieldTypeId=42").get();
+    auto response = makeGetRequest("/api/v1/field-type-values?fieldTypeId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK(mockFieldTypePossibleValueService->getLastGetValuesFieldTypeId().has_value());
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(test_get_values_empty_list)
     services::FieldTypePossibleValuesPage emptyPage;
     mockFieldTypePossibleValueService->setGetValuesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/field-type-values").get();
+    auto response = makeGetRequest("/api/v1/field-type-values").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -252,14 +252,14 @@ BOOST_AUTO_TEST_CASE(test_get_values_empty_list)
 
 BOOST_AUTO_TEST_CASE(test_get_values_requires_auth)
 {
-    auto response = makeGetRequest("/api/field-type-values", "").get();
+    auto response = makeGetRequest("/api/v1/field-type-values", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getValuesCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/field-type-values/{id} — Получение значения по ID
+// GET /api/v1/field-type-values/{id} — Получение значения по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_value_by_id_success)
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(test_get_value_by_id_success)
     value.value = "Конкретное значение";
     mockFieldTypePossibleValueService->setGetValueResult(value);
 
-    auto response = makeGetRequest("/api/field-type-values/42").get();
+    auto response = makeGetRequest("/api/v1/field-type-values/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getValueCallCount(), 1);
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(test_get_value_not_found)
 {
     mockFieldTypePossibleValueService->setGetValueResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/field-type-values/999").get();
+    auto response = makeGetRequest("/api/v1/field-type-values/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getValueCallCount(), 1);
@@ -295,18 +295,18 @@ BOOST_AUTO_TEST_CASE(test_get_value_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_value_invalid_id)
 {
-    auto response = makeGetRequest("/api/field-type-values/invalid").get();
+    auto response = makeGetRequest("/api/v1/field-type-values/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_get_value_negative_id)
 {
-    auto response = makeGetRequest("/api/field-type-values/-1").get();
+    auto response = makeGetRequest("/api/v1/field-type-values/-1").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// GET /api/field-type-values/by-field-type/{fieldTypeId}
+// GET /api/v1/field-type-values/by-field-type/{fieldTypeId}
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_values_by_field_type_id_success)
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(test_get_values_by_field_type_id_success)
 
     mockFieldTypePossibleValueService->setValuesByFieldTypeIdResult(expectedValues);
 
-    auto response = makeGetRequest("/api/field-type-values/by-field-type/1").get();
+    auto response = makeGetRequest("/api/v1/field-type-values/by-field-type/1").get();
 
     BOOST_CHECK_MESSAGE(
         response.status_code() == status_codes::OK,
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(test_get_values_by_field_type_id_empty)
 {
     mockFieldTypePossibleValueService->setValuesByFieldTypeIdResult({});
 
-    auto response = makeGetRequest("/api/field-type-values/by-field-type/999").get();
+    auto response = makeGetRequest("/api/v1/field-type-values/by-field-type/999").get();
 
     BOOST_CHECK_MESSAGE(
         response.status_code() == status_codes::OK,
@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(test_get_values_by_field_type_id_empty)
 }
 
 // ============================================================
-// POST /api/field-type-values — Создание возможного значения
+// POST /api/v1/field-type-values — Создание возможного значения
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_value_success)
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_success)
     body[U("fieldTypeId")] = web::json::value::number(1);
     body[U("value")] = web::json::value::string(U("Новое значение"));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->createValueCallCount(), 1);
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_missing_required_fields)
     web::json::value body;
     body[U("fieldTypeId")] = web::json::value::number(1);
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->createValueCallCount(), 0);
@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_missing_field_type_id)
     web::json::value body;
     body[U("value")] = web::json::value::string(U("Только значение"));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->createValueCallCount(), 0);
@@ -429,7 +429,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_empty_value_fails)
     body[U("fieldTypeId")] = web::json::value::number(1);
     body[U("value")] = web::json::value::string(U(""));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->createValueCallCount(), 0);
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_field_type_not_found)
     body[U("fieldTypeId")] = web::json::value::number(999);
     body[U("value")] = web::json::value::string(U("Значение"));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->createValueCallCount(), 1);
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_duplicate_fails)
     body[U("fieldTypeId")] = web::json::value::number(1);
     body[U("value")] = web::json::value::string(U("Высокий"));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     // Значение уже существует, сервис должен вернуть ошибку
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
@@ -476,7 +476,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_regular_user_forbidden)
     body[U("fieldTypeId")] = web::json::value::number(1);
     body[U("value")] = web::json::value::string(U("Новое значение"));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     // Должен быть 403 Forbidden
     BOOST_CHECK(response.status_code() == status_codes::Forbidden || response.status_code() == status_codes::NotFound);
@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE(test_create_value_regular_user_forbidden)
 }
 
 // ============================================================
-// PUT /api/field-type-values/{id} — Обновление значения
+// PUT /api/v1/field-type-values/{id} — Обновление значения
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_value_success)
@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE(test_update_value_success)
     web::json::value body;
     body[U("value")] = web::json::value::string(U("Обновленное значение"));
 
-    auto response = makePutRequest("/api/field-type-values/1", body).get();
+    auto response = makePutRequest("/api/v1/field-type-values/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->updateValueCallCount(), 1);
@@ -529,7 +529,7 @@ BOOST_AUTO_TEST_CASE(test_update_value_partial)
     web::json::value body;
     body[U("value")] = web::json::value::string(U("Только значение"));
 
-    auto response = makePutRequest("/api/field-type-values/1", body).get();
+    auto response = makePutRequest("/api/v1/field-type-values/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->updateValueCallCount(), 1);
@@ -547,7 +547,7 @@ BOOST_AUTO_TEST_CASE(test_update_value_change_field_type)
     body[U("fieldTypeId")] = web::json::value::number(2);
     body[U("value")] = web::json::value::string(U("Перемещенное значение"));
 
-    auto response = makePutRequest("/api/field-type-values/1", body).get();
+    auto response = makePutRequest("/api/v1/field-type-values/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(
@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(test_update_value_not_found)
     web::json::value body;
     body[U("value")] = web::json::value::string(U("Несуществующее"));
 
-    auto response = makePutRequest("/api/field-type-values/999", body).get();
+    auto response = makePutRequest("/api/v1/field-type-values/999", body).get();
 
     // Должен быть 404 Not Found
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
@@ -577,7 +577,7 @@ BOOST_AUTO_TEST_CASE(test_update_value_duplicate_fails)
     web::json::value body;
     body[U("value")] = web::json::value::string(U("Высокий")); // Уже существующее значение
 
-    auto response = makePutRequest("/api/field-type-values/2", body).get();
+    auto response = makePutRequest("/api/v1/field-type-values/2", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->updateValueCallCount(), 1);
@@ -594,21 +594,21 @@ BOOST_AUTO_TEST_CASE(test_update_value_regular_user_forbidden)
     web::json::value body;
     body[U("value")] = web::json::value::string(U("Попытка обновления"));
 
-    auto response = makePutRequest("/api/field-type-values/1", body).get();
+    auto response = makePutRequest("/api/v1/field-type-values/1", body).get();
 
     // Должен быть 403 Forbidden
     BOOST_CHECK(response.status_code() == status_codes::Forbidden || response.status_code() == status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/field-type-values/{id} — Удаление значения
+// DELETE /api/v1/field-type-values/{id} — Удаление значения
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_value_success)
 {
     mockFieldTypePossibleValueService->setDeleteValueResult(true);
 
-    auto response = makeDeleteRequest("/api/field-type-values/3").get();
+    auto response = makeDeleteRequest("/api/v1/field-type-values/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->deleteValueCallCount(), 1);
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(test_delete_value_not_found)
     // Настройка результата через отдельный метод
     mockFieldTypePossibleValueService->setDeleteValueResult(false);
 
-    auto response = makeDeleteRequest("/api/field-type-values/999").get();
+    auto response = makeDeleteRequest("/api/v1/field-type-values/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->deleteValueCallCount(), 1);
@@ -649,7 +649,7 @@ BOOST_AUTO_TEST_CASE(test_regular_user_cannot_create_value_detailed)
     body[U("fieldTypeId")] = web::json::value::number(1);
     body[U("value")] = web::json::value::string(U("Попытка создания"));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     // Должен быть 403 Forbidden
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE(test_delete_value_regular_user_forbidden)
     // Настраиваем сервис на возврат false
     mockFieldTypePossibleValueService->setDeleteValueResult(false);
 
-    auto response = makeDeleteRequest("/api/field-type-values/1").get();
+    auto response = makeDeleteRequest("/api/v1/field-type-values/1").get();
 
     // Должен быть 403 Forbidden
     BOOST_CHECK(response.status_code() == status_codes::Forbidden || response.status_code() == status_codes::NotFound);
@@ -671,7 +671,7 @@ BOOST_AUTO_TEST_CASE(test_delete_value_regular_user_forbidden)
 
 BOOST_AUTO_TEST_CASE(test_delete_value_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/field-type-values/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/field-type-values/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->deleteValueCallCount(), 0);
@@ -694,12 +694,12 @@ BOOST_AUTO_TEST_CASE(test_full_value_lifecycle)
     createBody[U("fieldTypeId")] = web::json::value::number(1);
     createBody[U("value")] = web::json::value::string(U("Жизненный цикл значения"));
 
-    auto createResponse = makePostRequest("/api/field-type-values", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/field-type-values", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение созданного значения
     mockFieldTypePossibleValueService->setGetValueResult(newValue);
-    auto getResponse = makeGetRequest("/api/field-type-values/100").get();
+    auto getResponse = makeGetRequest("/api/v1/field-type-values/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
     auto getJson = getResponse.extract_json().get();
     BOOST_CHECK_EQUAL(getJson.at(U("value")).as_string(), U("Жизненный цикл значения"));
@@ -712,19 +712,19 @@ BOOST_AUTO_TEST_CASE(test_full_value_lifecycle)
     web::json::value updateBody;
     updateBody[U("value")] = web::json::value::string(U("Обновленный жизненный цикл"));
 
-    auto updateResponse = makePutRequest("/api/field-type-values/100", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/field-type-values/100", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
     auto updateJson = updateResponse.extract_json().get();
     BOOST_CHECK_EQUAL(updateJson.at(U("value")).as_string(), U("Обновленный жизненный цикл"));
 
     // 4. Удаление значения
     mockFieldTypePossibleValueService->setDeleteValueResult(true);
-    auto deleteResponse = makeDeleteRequest("/api/field-type-values/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/field-type-values/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка, что значение удалено
     mockFieldTypePossibleValueService->setGetValueResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/field-type-values/100").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/field-type-values/100").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 
@@ -737,7 +737,7 @@ BOOST_AUTO_TEST_CASE(test_regular_user_can_read_values)
     // Обычный пользователь может читать возможные значения
     mockAuthMiddleware->setValidateRequestResult(true, "100");
 
-    auto response = makeGetRequest("/api/field-type-values").get();
+    auto response = makeGetRequest("/api/v1/field-type-values").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getValuesCallCount(), 1);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getLastGetValuesUserId(), 100);
@@ -753,7 +753,7 @@ BOOST_AUTO_TEST_CASE(test_regular_user_can_read_single_value)
     value.value = "Доступное значение";
     mockFieldTypePossibleValueService->setGetValueResult(value);
 
-    auto response = makeGetRequest("/api/field-type-values/42").get();
+    auto response = makeGetRequest("/api/v1/field-type-values/42").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getValueCallCount(), 1);
     BOOST_CHECK_EQUAL(mockFieldTypePossibleValueService->getLastGetValueUserId(), 100);
@@ -771,7 +771,7 @@ BOOST_AUTO_TEST_CASE(test_regular_user_cannot_create_value)
     body[U("fieldTypeId")] = web::json::value::number(1);
     body[U("value")] = web::json::value::string(U("Попытка создания"));
 
-    auto response = makePostRequest("/api/field-type-values", body).get();
+    auto response = makePostRequest("/api/v1/field-type-values", body).get();
 
     // Должен быть 403 Forbidden или 404 Not Found
     // В зависимости от реализации, может быть 403
@@ -785,7 +785,7 @@ BOOST_AUTO_TEST_CASE(test_regular_user_cannot_update_value)
     web::json::value body;
     body[U("value")] = web::json::value::string(U("Попытка обновления"));
 
-    auto response = makePutRequest("/api/field-type-values/1", body).get();
+    auto response = makePutRequest("/api/v1/field-type-values/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
@@ -793,7 +793,7 @@ BOOST_AUTO_TEST_CASE(test_regular_user_cannot_delete_value)
 {
     mockAuthMiddleware->setValidateRequestResult(true, "100");
 
-    auto response = makeDeleteRequest("/api/field-type-values/1").get();
+    auto response = makeDeleteRequest("/api/v1/field-type-values/1").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
@@ -812,7 +812,7 @@ BOOST_AUTO_TEST_CASE(test_super_admin_can_create_update_delete)
     createBody[U("fieldTypeId")] = web::json::value::number(1);
     createBody[U("value")] = web::json::value::string(U("Admin создал"));
 
-    auto createResponse = makePostRequest("/api/field-type-values", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/field-type-values", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // Обновление
@@ -823,12 +823,12 @@ BOOST_AUTO_TEST_CASE(test_super_admin_can_create_update_delete)
     web::json::value updateBody;
     updateBody[U("value")] = web::json::value::string(U("Admin обновил"));
 
-    auto updateResponse = makePutRequest("/api/field-type-values/200", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/field-type-values/200", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // Удаление
     mockFieldTypePossibleValueService->setDeleteValueResult(true);
-    auto deleteResponse = makeDeleteRequest("/api/field-type-values/200").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/field-type-values/200").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 }
 

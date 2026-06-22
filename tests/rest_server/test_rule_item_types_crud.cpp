@@ -103,7 +103,7 @@ struct RuleItemTypesTestFixture
 BOOST_FIXTURE_TEST_SUITE(RuleItemTypesCrudTestSuite, RuleItemTypesTestFixture)
 
 // ============================================================
-// GET /api/rule-item-types — Получение списка прав на типы элементов
+// GET /api/v1/rule-item-types — Получение списка прав на типы элементов
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_rule_item_types_returns_list)
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_item_types_returns_list)
     testPage.totalCount = 2;
     mockRuleItemTypeService->setGetRuleItemTypesResult(testPage);
 
-    auto response = makeGetRequest("/api/rule-item-types").get();
+    auto response = makeGetRequest("/api/v1/rule-item-types").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getGetRuleItemTypesCallCount(), 1);
 
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_item_types_with_pagination)
     services::RuleItemTypesPage emptyPage;
     mockRuleItemTypeService->setGetRuleItemTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-item-types?page=2&pageSize=15").get();
+    auto response = makeGetRequest("/api/v1/rule-item-types?page=2&pageSize=15").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getLastGetRuleItemTypesPage(), 2);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getLastGetRuleItemTypesPageSize(), 15);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_item_types_with_rule_filter)
     services::RuleItemTypesPage emptyPage;
     mockRuleItemTypeService->setGetRuleItemTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-item-types?ruleId=42").get();
+    auto response = makeGetRequest("/api/v1/rule-item-types?ruleId=42").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockRuleItemTypeService->getLastGetRuleItemTypesRuleId().has_value());
     BOOST_CHECK_EQUAL(*mockRuleItemTypeService->getLastGetRuleItemTypesRuleId(), 42);
@@ -159,14 +159,14 @@ BOOST_AUTO_TEST_CASE(test_get_rule_item_types_with_item_type_filter)
     services::RuleItemTypesPage emptyPage;
     mockRuleItemTypeService->setGetRuleItemTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-item-types?itemTypeId=100").get();
+    auto response = makeGetRequest("/api/v1/rule-item-types?itemTypeId=100").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockRuleItemTypeService->getLastGetRuleItemTypesItemTypeId().has_value());
     BOOST_CHECK_EQUAL(*mockRuleItemTypeService->getLastGetRuleItemTypesItemTypeId(), 100);
 }
 
 // ============================================================
-// GET /api/rule-item-types/{id} — Получение права по ID
+// GET /api/v1/rule-item-types/{id} — Получение права по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_rule_item_type_by_id_success)
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_item_type_by_id_success)
     rit.itemTypeId = 100;
     mockRuleItemTypeService->setGetRuleItemTypeResult(rit);
 
-    auto response = makeGetRequest("/api/rule-item-types/5").get();
+    auto response = makeGetRequest("/api/v1/rule-item-types/5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getLastGetRuleItemTypeId(), 5);
 
@@ -191,12 +191,12 @@ BOOST_AUTO_TEST_CASE(test_get_rule_item_type_not_found)
 {
     mockRuleItemTypeService->setGetRuleItemTypeResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/rule-item-types/999").get();
+    auto response = makeGetRequest("/api/v1/rule-item-types/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/rule-item-types — Создание права на тип элемента
+// POST /api/v1/rule-item-types — Создание права на тип элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_rule_item_type_success)
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(test_create_rule_item_type_success)
     body[U("itemTypeId")] = json::value::number(50);
     body[U("isReader")] = json::value::boolean(true);
 
-    auto response = makePostRequest("/api/rule-item-types", body).get();
+    auto response = makePostRequest("/api/v1/rule-item-types", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getCreateRuleItemTypeCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRuleItemTypeService->getLastCreatedRuleItemType().ruleId, 5);
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(test_create_rule_item_type_missing_required_fields)
     json::value body;
     body[U("ruleId")] = json::value::number(5);
 
-    auto response = makePostRequest("/api/rule-item-types", body).get();
+    auto response = makePostRequest("/api/v1/rule-item-types", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     // Сервис НЕ должен быть вызван, так как валидация происходит в handler
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getCreateRuleItemTypeCallCount(), 0);
@@ -240,12 +240,12 @@ BOOST_AUTO_TEST_CASE(test_create_rule_item_type_duplicate)
     body[U("ruleId")] = json::value::number(5);
     body[U("itemTypeId")] = json::value::number(50);
 
-    auto response = makePostRequest("/api/rule-item-types", body).get();
+    auto response = makePostRequest("/api/v1/rule-item-types", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden); // TODO: status_codes::Conflict
 }
 
 // ============================================================
-// PUT /api/rule-item-types/{id} — Обновление права на тип элемента
+// PUT /api/v1/rule-item-types/{id} — Обновление права на тип элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_rule_item_type_success)
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(test_update_rule_item_type_success)
     body[U("isReader")] = json::value::boolean(true);
     body[U("isWriter")] = json::value::boolean(false);
 
-    auto response = makePutRequest("/api/rule-item-types/1", body).get();
+    auto response = makePutRequest("/api/v1/rule-item-types/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getUpdateRuleItemTypeCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRuleItemTypeService->getLastUpdatedRuleItemType().id, 1);
@@ -273,19 +273,19 @@ BOOST_AUTO_TEST_CASE(test_update_rule_item_type_not_found)
     json::value body;
     body[U("isReader")] = json::value::boolean(true);
 
-    auto response = makePutRequest("/api/rule-item-types/999", body).get();
+    auto response = makePutRequest("/api/v1/rule-item-types/999", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/rule-item-types/{id} — Удаление права на тип элемента
+// DELETE /api/v1/rule-item-types/{id} — Удаление права на тип элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_rule_item_type_success)
 {
     mockRuleItemTypeService->setDeleteRuleItemTypeResult(true);
 
-    auto response = makeDeleteRequest("/api/rule-item-types/3").get();
+    auto response = makeDeleteRequest("/api/v1/rule-item-types/3").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getDeleteRuleItemTypeCallCount(), 1);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getLastDeletedRuleItemTypeId(), 3);
@@ -295,13 +295,13 @@ BOOST_AUTO_TEST_CASE(test_delete_rule_item_type_not_found)
 {
     mockRuleItemTypeService->setDeleteRuleItemTypeResult(false);
 
-    auto response = makeDeleteRequest("/api/rule-item-types/999").get();
+    auto response = makeDeleteRequest("/api/v1/rule-item-types/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_rule_item_type_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/rule-item-types/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/rule-item-types/1", "").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockRuleItemTypeService->getDeleteRuleItemTypeCallCount(), 0);
 }
@@ -323,12 +323,12 @@ BOOST_AUTO_TEST_CASE(test_full_rule_item_type_lifecycle)
     createBody[U("ruleId")] = json::value::number(50);
     createBody[U("itemTypeId")] = json::value::number(500);
 
-    auto createResponse = makePostRequest("/api/rule-item-types", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/rule-item-types", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение
     mockRuleItemTypeService->setGetRuleItemTypeResult(newRit);
-    auto getResponse = makeGetRequest("/api/rule-item-types/100").get();
+    auto getResponse = makeGetRequest("/api/v1/rule-item-types/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление
@@ -339,12 +339,12 @@ BOOST_AUTO_TEST_CASE(test_full_rule_item_type_lifecycle)
     json::value updateBody;
     updateBody[U("isWriter")] = json::value::boolean(true);
 
-    auto updateResponse = makePutRequest("/api/rule-item-types/100", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/rule-item-types/100", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Удаление
     mockRuleItemTypeService->setDeleteRuleItemTypeResult(true);
-    auto deleteResponse = makeDeleteRequest("/api/rule-item-types/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/rule-item-types/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 }
 

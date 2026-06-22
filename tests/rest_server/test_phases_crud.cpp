@@ -197,12 +197,12 @@ struct PhasesTestFixture
 BOOST_FIXTURE_TEST_SUITE(PhasesCrudTestSuite, PhasesTestFixture)
 
 // ============================================================
-// GET /api/phases
+// GET /api/v1/phases
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_phases_returns_list)
 {
-    auto response = makeGetRequest("/api/phases").get();
+    auto response = makeGetRequest("/api/v1/phases").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPhaseService->getGetPhasesCallCount(), 1);
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(test_get_phases_returns_list)
 
 BOOST_AUTO_TEST_CASE(test_get_phases_with_pagination)
 {
-    auto response = makeGetRequest("/api/phases?page=2&pageSize=1").get();
+    auto response = makeGetRequest("/api/v1/phases?page=2&pageSize=1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPhaseService->getLastGetPhasesPage(), 2);
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(test_get_phases_with_pagination)
 
 BOOST_AUTO_TEST_CASE(test_get_phases_filtered_by_project)
 {
-    auto response = makeGetRequest("/api/phases?projectId=10").get();
+    auto response = makeGetRequest("/api/v1/phases?projectId=10").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockPhaseService->getLastGetPhasesProjectId().has_value());
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(test_get_phases_filtered_by_project)
 
 BOOST_AUTO_TEST_CASE(test_get_phases_filtered_by_archive)
 {
-    auto response = makeGetRequest("/api/phases?isArchive=true").get();
+    auto response = makeGetRequest("/api/v1/phases?isArchive=true").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockPhaseService->getLastGetPhasesIsArchive().has_value());
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(test_get_phases_user_with_limited_access)
 {
     mockAuthMiddleware->setValidateRequestResult(true, "200");
 
-    auto response = makeGetRequest("/api/phases").get();
+    auto response = makeGetRequest("/api/v1/phases").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(test_get_phases_user_with_no_access)
 {
     mockAuthMiddleware->setValidateRequestResult(true, "999");
 
-    auto response = makeGetRequest("/api/phases").get();
+    auto response = makeGetRequest("/api/v1/phases").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE(test_get_phases_super_admin_sees_all)
 {
     mockAuthMiddleware->setValidateRequestResult(true, "1");
 
-    auto response = makeGetRequest("/api/phases").get();
+    auto response = makeGetRequest("/api/v1/phases").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
@@ -310,19 +310,19 @@ BOOST_AUTO_TEST_CASE(test_get_phases_super_admin_sees_all)
 
 BOOST_AUTO_TEST_CASE(test_get_phases_requires_auth)
 {
-    auto response = makeGetRequest("/api/phases", "").get();
+    auto response = makeGetRequest("/api/v1/phases", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockPhaseService->getGetPhasesCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/phases/{id}
+// GET /api/v1/phases/{id}
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_phase_by_id_success)
 {
-    auto response = makeGetRequest("/api/phases/1").get();
+    auto response = makeGetRequest("/api/v1/phases/1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPhaseService->getGetPhaseCallCount(), 1);
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(test_get_phase_by_id_success)
 
 BOOST_AUTO_TEST_CASE(test_get_phase_not_found)
 {
-    auto response = makeGetRequest("/api/phases/999").get();
+    auto response = makeGetRequest("/api/v1/phases/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockPhaseService->getGetPhaseCallCount(), 1);
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(test_get_phase_access_denied)
 {
     mockAuthMiddleware->setValidateRequestResult(true, "200");
 
-    auto response = makeGetRequest("/api/phases/4").get();
+    auto response = makeGetRequest("/api/v1/phases/4").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockPhaseService->getGetPhaseCallCount(), 1);
@@ -355,12 +355,12 @@ BOOST_AUTO_TEST_CASE(test_get_phase_access_denied)
 
 BOOST_AUTO_TEST_CASE(test_get_phase_invalid_id)
 {
-    auto response = makeGetRequest("/api/phases/invalid").get();
+    auto response = makeGetRequest("/api/v1/phases/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/phases
+// POST /api/v1/phases
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_phase_success)
@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE(test_create_phase_success)
     body[U("projectId")] = web::json::value::number(10);
     body[U("description")] = web::json::value::string(U("Описание новой фазы"));
 
-    auto response = makePostRequest("/api/phases", body).get();
+    auto response = makePostRequest("/api/v1/phases", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockPhaseService->getCreatePhaseCallCount(), 1);
@@ -387,7 +387,7 @@ BOOST_AUTO_TEST_CASE(test_create_phase_missing_caption)
     web::json::value body;
     body[U("projectId")] = web::json::value::number(10);
 
-    auto response = makePostRequest("/api/phases", body).get();
+    auto response = makePostRequest("/api/v1/phases", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockPhaseService->getCreatePhaseCallCount(), 0);
@@ -398,7 +398,7 @@ BOOST_AUTO_TEST_CASE(test_create_phase_missing_project_id)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Фаза без проекта"));
 
-    auto response = makePostRequest("/api/phases", body).get();
+    auto response = makePostRequest("/api/v1/phases", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockPhaseService->getCreatePhaseCallCount(), 0);
@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(test_create_phase_access_denied)
     body[U("caption")] = web::json::value::string(U("Новая фаза"));
     body[U("projectId")] = web::json::value::number(20);
 
-    auto response = makePostRequest("/api/phases", body).get();
+    auto response = makePostRequest("/api/v1/phases", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
     BOOST_CHECK_EQUAL(mockPhaseService->getCreatePhaseCallCount(), 1);
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(test_create_phase_with_dates)
     body[U("beginDate")] = web::json::value::number(1640995200);
     body[U("endDate")] = web::json::value::number(1643673600);
 
-    auto response = makePostRequest("/api/phases", body).get();
+    auto response = makePostRequest("/api/v1/phases", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     auto json = response.extract_json().get();
@@ -435,7 +435,7 @@ BOOST_AUTO_TEST_CASE(test_create_phase_with_dates)
 }
 
 // ============================================================
-// PUT /api/phases/{id}
+// PUT /api/v1/phases/{id}
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_phase_success)
@@ -444,7 +444,7 @@ BOOST_AUTO_TEST_CASE(test_update_phase_success)
     body[U("caption")] = web::json::value::string(U("Обновлённая фаза"));
     body[U("description")] = web::json::value::string(U("Новое описание"));
 
-    auto response = makePutRequest("/api/phases/1", body).get();
+    auto response = makePutRequest("/api/v1/phases/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPhaseService->getUpdatePhaseCallCount(), 1);
@@ -460,7 +460,7 @@ BOOST_AUTO_TEST_CASE(test_update_phase_partial)
     web::json::value body;
     body[U("description")] = web::json::value::string(U("Только новое описание"));
 
-    auto response = makePutRequest("/api/phases/1", body).get();
+    auto response = makePutRequest("/api/v1/phases/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPhaseService->getUpdatePhaseCallCount(), 1);
@@ -471,7 +471,7 @@ BOOST_AUTO_TEST_CASE(test_update_phase_not_found)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Несуществующая фаза"));
 
-    auto response = makePutRequest("/api/phases/999", body).get();
+    auto response = makePutRequest("/api/v1/phases/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockPhaseService->getUpdatePhaseCallCount(), 1);
@@ -484,19 +484,19 @@ BOOST_AUTO_TEST_CASE(test_update_phase_access_denied)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Попытка обновления"));
 
-    auto response = makePutRequest("/api/phases/4", body).get();
+    auto response = makePutRequest("/api/v1/phases/4", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockPhaseService->getUpdatePhaseCallCount(), 1);
 }
 
 // ============================================================
-// DELETE /api/phases/{id}
+// DELETE /api/v1/phases/{id}
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_archive_phase_success)
 {
-    auto response = makeDeleteRequest("/api/phases/2").get();
+    auto response = makeDeleteRequest("/api/v1/phases/2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockPhaseService->getArchivePhaseCallCount(), 1);
@@ -505,7 +505,7 @@ BOOST_AUTO_TEST_CASE(test_archive_phase_success)
 
 BOOST_AUTO_TEST_CASE(test_archive_phase_not_found)
 {
-    auto response = makeDeleteRequest("/api/phases/999").get();
+    auto response = makeDeleteRequest("/api/v1/phases/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     // archivePhaseInternal не вызывается, так как phase(999) вернёт nullopt
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(test_archive_phase_access_denied)
 {
     mockAuthMiddleware->setValidateRequestResult(true, "200");
 
-    auto response = makeDeleteRequest("/api/phases/4").get();
+    auto response = makeDeleteRequest("/api/v1/phases/4").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     // archivePhaseInternal не вызывается, так как у пользователя 200 нет доступа к проекту 20
@@ -525,7 +525,7 @@ BOOST_AUTO_TEST_CASE(test_archive_phase_access_denied)
 
 BOOST_AUTO_TEST_CASE(test_archive_phase_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/phases/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/phases/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockPhaseService->getArchivePhaseCallCount(), 0);
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE(test_full_phase_lifecycle)
     createBody[U("projectId")] = web::json::value::number(10);
     createBody[U("description")] = web::json::value::string(U("Тестовая фаза"));
 
-    auto createResponse = makePostRequest("/api/phases", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/phases", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     auto createJson = createResponse.extract_json().get();
@@ -551,22 +551,22 @@ BOOST_AUTO_TEST_CASE(test_full_phase_lifecycle)
     BOOST_CHECK_GT(newPhaseId, 0);
 
     // 2. Чтение
-    auto getResponse = makeGetRequest("/api/phases/" + std::to_string(newPhaseId)).get();
+    auto getResponse = makeGetRequest("/api/v1/phases/" + std::to_string(newPhaseId)).get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление
     web::json::value updateBody;
     updateBody[U("caption")] = web::json::value::string(U("Обновлённая фаза"));
 
-    auto updateResponse = makePutRequest("/api/phases/" + std::to_string(newPhaseId), updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/phases/" + std::to_string(newPhaseId), updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Архивирование
-    auto archiveResponse = makeDeleteRequest("/api/phases/" + std::to_string(newPhaseId)).get();
+    auto archiveResponse = makeDeleteRequest("/api/v1/phases/" + std::to_string(newPhaseId)).get();
     BOOST_CHECK_EQUAL(archiveResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка, что фаза в архиве
-    getResponse = makeGetRequest("/api/phases/" + std::to_string(newPhaseId)).get();
+    getResponse = makeGetRequest("/api/v1/phases/" + std::to_string(newPhaseId)).get();
     auto getJson = getResponse.extract_json().get();
     BOOST_CHECK(getJson.at(U("isArchive")).as_bool());
 }

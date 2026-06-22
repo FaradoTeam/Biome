@@ -692,7 +692,7 @@ private:
     int m_setItemFieldCallCount = 0;
     int m_deleteItemFieldCallCount = 0;
 
-    // Параметры последних вызовов - GET /api/items
+    // Параметры последних вызовов - GET /api/v1/items
     int m_lastGetItemsPage = 0;
     int m_lastGetItemsPageSize = 0;
     int64_t m_lastGetItemsUserId = 0;
@@ -703,40 +703,40 @@ private:
     std::optional<bool> m_lastGetItemsIsDeleted;
     std::string m_lastGetItemsSearchCaption;
 
-    // Параметры последних вызовов - GET /api/items/{id}
+    // Параметры последних вызовов - GET /api/v1/items/{id}
     int64_t m_lastGetItemId = 0;
     int64_t m_lastGetItemUserId = 0;
 
-    // Параметры последних вызовов - POST /api/items
+    // Параметры последних вызовов - POST /api/v1/items
     dto::Item m_lastCreatedItem;
     int64_t m_lastCreateItemUserId = 0;
 
-    // Параметры последних вызовов - PUT /api/items/{id}
+    // Параметры последних вызовов - PUT /api/v1/items/{id}
     dto::Item m_lastUpdatedItem;
     int64_t m_lastUpdateItemUserId = 0;
 
-    // Параметры последних вызовов - DELETE /api/items/{id}
+    // Параметры последних вызовов - DELETE /api/v1/items/{id}
     int64_t m_lastDeletedItemId = 0;
     int64_t m_lastDeleteItemUserId = 0;
 
-    // Параметры последних вызовов - POST /api/items/{id}/restore
+    // Параметры последних вызовов - POST /api/v1/items/{id}/restore
     int64_t m_lastRestoredItemId = 0;
     int64_t m_lastRestoreItemUserId = 0;
 
-    // Параметры последних вызовов - GET /api/items/{id}/fields
+    // Параметры последних вызовов - GET /api/v1/items/{id}/fields
     int64_t m_lastGetItemFieldsItemId = 0;
     int64_t m_lastGetItemFieldsUserId = 0;
 
-    // Параметры последних вызовов - GET /api/items/{id}/fields/{fieldTypeId}
+    // Параметры последних вызовов - GET /api/v1/items/{id}/fields/{fieldTypeId}
     int64_t m_lastGetItemFieldItemId = 0;
     int64_t m_lastGetItemFieldFieldTypeId = 0;
     int64_t m_lastGetItemFieldUserId = 0;
 
-    // Параметры последних вызовов - PUT /api/items/{id}/fields/{fieldTypeId}
+    // Параметры последних вызовов - PUT /api/v1/items/{id}/fields/{fieldTypeId}
     dto::ItemField m_lastSetItemField;
     int64_t m_lastSetItemFieldUserId = 0;
 
-    // Параметры последних вызовов - DELETE /api/items/{id}/fields/{fieldTypeId}
+    // Параметры последних вызовов - DELETE /api/v1/items/{id}/fields/{fieldTypeId}
     int64_t m_lastDeletedItemFieldItemId = 0;
     int64_t m_lastDeletedItemFieldFieldTypeId = 0;
     int64_t m_lastDeleteItemFieldUserId = 0;

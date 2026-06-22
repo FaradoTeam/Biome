@@ -286,12 +286,12 @@ struct ProjectsTestFixture
 BOOST_FIXTURE_TEST_SUITE(ProjectsCrudTestSuite, ProjectsTestFixture)
 
 // ============================================================
-// GET /api/projects — Получение списка проектов
+// GET /api/v1/projects — Получение списка проектов
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_projects_returns_list)
 {
-    auto response = makeGetRequest("/api/projects").get();
+    auto response = makeGetRequest("/api/v1/projects").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockProjectService->getProjectsCallCount(), 1);
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(test_get_projects_returns_list)
 
 BOOST_AUTO_TEST_CASE(test_get_projects_with_pagination_params)
 {
-    auto response = makeGetRequest("/api/projects?page=2&pageSize=2").get();
+    auto response = makeGetRequest("/api/v1/projects?page=2&pageSize=2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockProjectService->getLastGetProjectsPage(), 2);
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(test_get_projects_with_pagination_params)
 
 BOOST_AUTO_TEST_CASE(test_get_projects_filter_by_parent)
 {
-    auto response = makeGetRequest("/api/projects?parentId=1").get();
+    auto response = makeGetRequest("/api/v1/projects?parentId=1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockProjectService->getLastGetProjectsParentId().has_value());
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(test_get_projects_filter_by_parent)
 
 BOOST_AUTO_TEST_CASE(test_get_projects_filter_by_archive)
 {
-    auto response = makeGetRequest("/api/projects?isArchive=true").get();
+    auto response = makeGetRequest("/api/v1/projects?isArchive=true").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockProjectService->getLastGetProjectsIsArchive().has_value());
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(test_get_projects_search_by_caption)
     mockProjectService->setAllProjects({ project1, project2, project3, project4, project5 });
 
     // Ищем слово "Project"
-    auto response = makeGetRequest("/api/projects?searchCaption=Project").get();
+    auto response = makeGetRequest("/api/v1/projects?searchCaption=Project").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
@@ -380,7 +380,7 @@ BOOST_AUTO_TEST_CASE(test_get_projects_empty_list)
     mockProjectService->setUserAccessibleProjects(100, {});
     mockProjectService->setAllProjects({});
 
-    auto response = makeGetRequest("/api/projects").get();
+    auto response = makeGetRequest("/api/v1/projects").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -393,19 +393,19 @@ BOOST_AUTO_TEST_CASE(test_get_projects_empty_list)
 
 BOOST_AUTO_TEST_CASE(test_get_projects_requires_auth)
 {
-    auto response = makeGetRequest("/api/projects", "").get();
+    auto response = makeGetRequest("/api/v1/projects", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockProjectService->getProjectsCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/projects/{id} — Получение проекта по ID
+// GET /api/v1/projects/{id} — Получение проекта по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_project_by_id_success)
 {
-    auto response = makeGetRequest("/api/projects/1").get();
+    auto response = makeGetRequest("/api/v1/projects/1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockProjectService->getProjectCallCount(), 1);
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(test_get_project_by_id_success)
 
 BOOST_AUTO_TEST_CASE(test_get_project_not_found)
 {
-    auto response = makeGetRequest("/api/projects/999").get();
+    auto response = makeGetRequest("/api/v1/projects/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockProjectService->getProjectCallCount(), 1);
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(test_get_project_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_project_invalid_id)
 {
-    auto response = makeGetRequest("/api/projects/invalid").get();
+    auto response = makeGetRequest("/api/v1/projects/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
@@ -437,14 +437,14 @@ BOOST_AUTO_TEST_CASE(test_get_project_forbidden)
     // Пользователь с ID 200 пытается получить проект 3 (у него нет прав)
     mockAuthMiddleware->setValidateRequestResult(true, "200");
 
-    auto response = makeGetRequest("/api/projects/3").get();
+    auto response = makeGetRequest("/api/v1/projects/3").get();
 
     // Должен быть 404, чтобы не раскрывать существование проекта
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/projects — Создание проекта
+// POST /api/v1/projects — Создание проекта
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_project_success)
@@ -453,7 +453,7 @@ BOOST_AUTO_TEST_CASE(test_create_project_success)
     body[U("caption")] = web::json::value::string(U("Новый проект"));
     body[U("description")] = web::json::value::string(U("Описание нового проекта"));
 
-    auto response = makePostRequest("/api/projects", body).get();
+    auto response = makePostRequest("/api/v1/projects", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockProjectService->createProjectCallCount(), 1);
@@ -470,7 +470,7 @@ BOOST_AUTO_TEST_CASE(test_create_root_project_success)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Корневой проект"));
 
-    auto response = makePostRequest("/api/projects", body).get();
+    auto response = makePostRequest("/api/v1/projects", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockProjectService->createProjectCallCount(), 1);
@@ -483,7 +483,7 @@ BOOST_AUTO_TEST_CASE(test_create_subproject_success)
     body[U("caption")] = web::json::value::string(U("Дочерний проект"));
     body[U("parentId")] = web::json::value::number(1);
 
-    auto response = makePostRequest("/api/projects", body).get();
+    auto response = makePostRequest("/api/v1/projects", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockProjectService->createProjectCallCount(), 1);
@@ -496,7 +496,7 @@ BOOST_AUTO_TEST_CASE(test_create_project_missing_caption)
     web::json::value body;
     body[U("description")] = web::json::value::string(U("Проект без названия"));
 
-    auto response = makePostRequest("/api/projects", body).get();
+    auto response = makePostRequest("/api/v1/projects", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockProjectService->createProjectCallCount(), 0);
@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE(test_create_project_empty_caption)
     body[U("caption")] = web::json::value::string(U(""));
     body[U("description")] = web::json::value::string(U("Пустое название"));
 
-    auto response = makePostRequest("/api/projects", body).get();
+    auto response = makePostRequest("/api/v1/projects", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockProjectService->createProjectCallCount(), 0);
@@ -522,7 +522,7 @@ BOOST_AUTO_TEST_CASE(test_create_project_forbidden)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Новый проект"));
 
-    auto response = makePostRequest("/api/projects", body).get();
+    auto response = makePostRequest("/api/v1/projects", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 
@@ -531,7 +531,7 @@ BOOST_AUTO_TEST_CASE(test_create_project_forbidden)
 }
 
 // ============================================================
-// PUT /api/projects/{id} — Обновление проекта
+// PUT /api/v1/projects/{id} — Обновление проекта
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_project_success)
@@ -540,7 +540,7 @@ BOOST_AUTO_TEST_CASE(test_update_project_success)
     body[U("caption")] = web::json::value::string(U("Обновленный проект"));
     body[U("description")] = web::json::value::string(U("Новое описание"));
 
-    auto response = makePutRequest("/api/projects/1", body).get();
+    auto response = makePutRequest("/api/v1/projects/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockProjectService->updateProjectCallCount(), 1);
@@ -559,7 +559,7 @@ BOOST_AUTO_TEST_CASE(test_update_project_partial)
     web::json::value body;
     body[U("description")] = web::json::value::string(U("Только новое описание"));
 
-    auto response = makePutRequest("/api/projects/1", body).get();
+    auto response = makePutRequest("/api/v1/projects/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockProjectService->updateProjectCallCount(), 1);
@@ -570,7 +570,7 @@ BOOST_AUTO_TEST_CASE(test_update_project_not_found)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Несуществующий"));
 
-    auto response = makePutRequest("/api/projects/999", body).get();
+    auto response = makePutRequest("/api/v1/projects/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE(test_update_project_forbidden)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Попытка взлома"));
 
-    auto response = makePutRequest("/api/projects/1", body).get();
+    auto response = makePutRequest("/api/v1/projects/1", body).get();
 
     // Хэндлер должен вернуть 403, потому что:
     // 1. Проект существует (getProject вернул проект)
@@ -627,18 +627,18 @@ BOOST_AUTO_TEST_CASE(test_update_project_invalid_id)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Обновление"));
 
-    auto response = makePutRequest("/api/projects/invalid", body).get();
+    auto response = makePutRequest("/api/v1/projects/invalid", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/projects/{id} — Архивирование проекта
+// DELETE /api/v1/projects/{id} — Архивирование проекта
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_archive_project_success)
 {
-    auto response = makeDeleteRequest("/api/projects/2").get();
+    auto response = makeDeleteRequest("/api/v1/projects/2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockProjectService->archiveProjectCallCount(), 1);
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(test_archive_project_success)
 
 BOOST_AUTO_TEST_CASE(test_archive_project_not_found)
 {
-    auto response = makeDeleteRequest("/api/projects/999").get();
+    auto response = makeDeleteRequest("/api/v1/projects/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
@@ -683,7 +683,7 @@ BOOST_AUTO_TEST_CASE(test_archive_project_forbidden)
         }
     );
 
-    auto response = makeDeleteRequest("/api/projects/1").get();
+    auto response = makeDeleteRequest("/api/v1/projects/1").get();
 
     // Хэндлер должен вернуть 403
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
@@ -694,14 +694,14 @@ BOOST_AUTO_TEST_CASE(test_archive_project_forbidden)
 
 BOOST_AUTO_TEST_CASE(test_archive_project_invalid_id)
 {
-    auto response = makeDeleteRequest("/api/projects/invalid").get();
+    auto response = makeDeleteRequest("/api/v1/projects/invalid").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_archive_project_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/projects/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/projects/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockProjectService->archiveProjectCallCount(), 0);
@@ -718,7 +718,7 @@ BOOST_AUTO_TEST_CASE(test_full_project_lifecycle)
     createBody[U("caption")] = web::json::value::string(U("Жизненный цикл"));
     createBody[U("description")] = web::json::value::string(U("Тестовый проект"));
 
-    auto createResponse = makePostRequest("/api/projects", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/projects", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     auto createJson = createResponse.extract_json().get();
@@ -746,7 +746,7 @@ BOOST_AUTO_TEST_CASE(test_full_project_lifecycle)
     );
 
     // 2. Чтение созданного проекта
-    auto getResponse = makeGetRequest("/api/projects/" + std::to_string(newProjectId)).get();
+    auto getResponse = makeGetRequest("/api/v1/projects/" + std::to_string(newProjectId)).get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     auto getJson = getResponse.extract_json().get();
@@ -768,7 +768,7 @@ BOOST_AUTO_TEST_CASE(test_full_project_lifecycle)
         }
     );
 
-    auto updateResponse = makePutRequest("/api/projects/" + std::to_string(newProjectId), updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/projects/" + std::to_string(newProjectId), updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Архивирование проекта
@@ -779,7 +779,7 @@ BOOST_AUTO_TEST_CASE(test_full_project_lifecycle)
         }
     );
 
-    auto archiveResponse = makeDeleteRequest("/api/projects/" + std::to_string(newProjectId)).get();
+    auto archiveResponse = makeDeleteRequest("/api/v1/projects/" + std::to_string(newProjectId)).get();
     BOOST_CHECK_EQUAL(archiveResponse.status_code(), status_codes::NoContent);
 }
 
@@ -792,7 +792,7 @@ BOOST_AUTO_TEST_CASE(test_access_denied_for_regular_user)
     // Обычный пользователь (ID 200) пытается получить доступ к проекту 3 (у него нет прав)
     mockAuthMiddleware->setValidateRequestResult(true, "200");
 
-    auto response = makeGetRequest("/api/projects/3").get();
+    auto response = makeGetRequest("/api/v1/projects/3").get();
 
     // Должен быть 404 (не раскрываем существование проекта)
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
@@ -803,7 +803,7 @@ BOOST_AUTO_TEST_CASE(test_super_admin_has_full_access)
     // Супер-администратор (ID 1) должен иметь доступ ко всем проектам
     mockAuthMiddleware->setValidateRequestResult(true, "1");
 
-    auto response = makeGetRequest("/api/projects").get();
+    auto response = makeGetRequest("/api/v1/projects").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockProjectService->getProjectsCallCount(), 1);
@@ -815,7 +815,7 @@ BOOST_AUTO_TEST_CASE(test_invalid_token_returns_unauthorized)
     // Настраиваем middleware на отклонение неверного токена
     mockAuthMiddleware->setValidateRequestResult(false, "");
 
-    auto response = makeGetRequest("/api/projects", "invalid_token").get();
+    auto response = makeGetRequest("/api/v1/projects", "invalid_token").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
 }
@@ -825,7 +825,7 @@ BOOST_AUTO_TEST_CASE(test_expired_token_returns_unauthorized)
     // Настраиваем middleware на отклонение просроченного токена
     mockAuthMiddleware->setValidateRequestResult(false, "");
 
-    auto response = makeGetRequest("/api/projects", "expired_token").get();
+    auto response = makeGetRequest("/api/v1/projects", "expired_token").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
 }

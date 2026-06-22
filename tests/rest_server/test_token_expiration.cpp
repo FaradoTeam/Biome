@@ -142,7 +142,7 @@ BOOST_FIXTURE_TEST_CASE(test_token_expiration, TokenExpirationFixture)
 
     // Сразу после генерации токен должен быть валидным
     {
-        auto response = makeAuthenticatedRequest("/api/users", shortLivedToken).get();
+        auto response = makeAuthenticatedRequest("/api/v1/users", shortLivedToken).get();
         BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
         auto json = response.extract_json().get();
@@ -156,7 +156,7 @@ BOOST_FIXTURE_TEST_CASE(test_token_expiration, TokenExpirationFixture)
 
     // Токен больше не должен работать — проверяем что сервер возвращает 401
     {
-        auto response = makeAuthenticatedRequest("/api/users", shortLivedToken).get();
+        auto response = makeAuthenticatedRequest("/api/v1/users", shortLivedToken).get();
         BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     }
 }
@@ -170,7 +170,7 @@ BOOST_FIXTURE_TEST_CASE(test_valid_token_works, TokenExpirationFixture)
     std::string validToken = generateShortLivedToken(3600);
 
     // Токен должен работать
-    auto response = makeAuthenticatedRequest("/api/users", validToken).get();
+    auto response = makeAuthenticatedRequest("/api/v1/users", validToken).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
     auto json = response.extract_json().get();
@@ -186,7 +186,7 @@ BOOST_FIXTURE_TEST_CASE(test_invalid_token_rejected, TokenExpirationFixture)
 {
     std::string invalidToken = "this.is.not.a.valid.jwt.token";
 
-    auto response = makeAuthenticatedRequest("/api/users", invalidToken).get();
+    auto response = makeAuthenticatedRequest("/api/v1/users", invalidToken).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
 }
 
@@ -202,7 +202,7 @@ BOOST_FIXTURE_TEST_CASE(test_invalidated_token_rejected, TokenExpirationFixture)
     m_authMiddleware->invalidateToken(token);
 
     // Теперь он не должен работать
-    auto response = makeAuthenticatedRequest("/api/users", token).get();
+    auto response = makeAuthenticatedRequest("/api/v1/users", token).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
 }
 

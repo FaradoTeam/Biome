@@ -580,7 +580,7 @@ private:
     int m_archiveProjectCallCount = 0;
     int m_restoreProjectCallCount = 0;
 
-    // Последние параметры вызовов - GET /api/projects
+    // Последние параметры вызовов - GET /api/v1/projects
     int m_lastGetProjectsPage = 0;
     int m_lastGetProjectsPageSize = 0;
     int64_t m_lastGetProjectsUserId = 0;
@@ -588,19 +588,19 @@ private:
     std::optional<bool> m_lastGetProjectsIsArchive;
     std::string m_lastGetProjectsSearch;
 
-    // Последние параметры вызовов - GET /api/projects/{id}
+    // Последние параметры вызовов - GET /api/v1/projects/{id}
     int64_t m_lastGetProjectId = 0;
     int64_t m_lastGetProjectUserId = 0;
 
-    // Последние параметры вызовов - POST /api/projects
+    // Последние параметры вызовов - POST /api/v1/projects
     dto::Project m_lastCreatedProject;
     int64_t m_lastCreateProjectUserId = 0;
 
-    // Последние параметры вызовов - PUT /api/projects/{id}
+    // Последние параметры вызовов - PUT /api/v1/projects/{id}
     dto::Project m_lastUpdatedProject;
     int64_t m_lastUpdateProjectUserId = 0;
 
-    // Последние параметры вызовов - DELETE /api/projects/{id} (archive)
+    // Последние параметры вызовов - DELETE /api/v1/projects/{id} (archive)
     int64_t m_lastArchivedProjectId = 0;
     int64_t m_lastArchiveProjectUserId = 0;
 

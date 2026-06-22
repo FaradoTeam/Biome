@@ -107,7 +107,7 @@ struct EdgesTestFixture
 BOOST_FIXTURE_TEST_SUITE(EdgesCrudTestSuite, EdgesTestFixture)
 
 // ============================================================
-// GET /api/edges — Получение списка переходов
+// GET /api/v1/edges — Получение списка переходов
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_edges_returns_list)
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(test_get_edges_returns_list)
     testPage.totalCount = 2;
     mockEdgeService->setEdgesResult(testPage);
 
-    auto response = makeGetRequest("/api/edges").get();
+    auto response = makeGetRequest("/api/v1/edges").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockEdgeService->getEdgesCallCount(), 1);
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE(test_get_edges_with_filters)
     services::EdgesPage emptyPage;
     mockEdgeService->setEdgesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/edges?beginStateId=10&endStateId=20").get();
+    auto response = makeGetRequest("/api/v1/edges?beginStateId=10&endStateId=20").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockEdgeService->getLastEdgesBeginStateId().has_value());
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(test_get_edges_with_pagination)
     services::EdgesPage emptyPage;
     mockEdgeService->setEdgesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/edges?page=2&pageSize=15").get();
+    auto response = makeGetRequest("/api/v1/edges?page=2&pageSize=15").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockEdgeService->getLastEdgesPage(), 2);
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(test_get_edges_with_pagination)
 }
 
 // ============================================================
-// GET /api/edges/{id} — Получение перехода по ID
+// GET /api/v1/edges/{id} — Получение перехода по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_edge_by_id_success)
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(test_get_edge_by_id_success)
     edge.endStateId = 20;
     mockEdgeService->setEdgeResult(edge);
 
-    auto response = makeGetRequest("/api/edges/7").get();
+    auto response = makeGetRequest("/api/v1/edges/7").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockEdgeService->getLastEdgeId(), 7);
@@ -190,13 +190,13 @@ BOOST_AUTO_TEST_CASE(test_get_edge_not_found)
 {
     mockEdgeService->setEdgeResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/edges/999").get();
+    auto response = makeGetRequest("/api/v1/edges/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/edges — Создание перехода
+// POST /api/v1/edges — Создание перехода
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_edge_success)
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(test_create_edge_success)
     body[U("beginStateId")] = web::json::value::number(10);
     body[U("endStateId")] = web::json::value::number(20);
 
-    auto response = makePostRequest("/api/edges", body).get();
+    auto response = makePostRequest("/api/v1/edges", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockEdgeService->getCreateEdgeCallCount(), 1);
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(test_create_edge_missing_fields)
     web::json::value body;
     body[U("beginStateId")] = web::json::value::number(10);
 
-    auto response = makePostRequest("/api/edges", body).get();
+    auto response = makePostRequest("/api/v1/edges", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockEdgeService->getCreateEdgeCallCount(), 0);
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(test_create_edge_duplicate)
     body[U("beginStateId")] = web::json::value::number(10);
     body[U("endStateId")] = web::json::value::number(20);
 
-    auto response = makePostRequest("/api/edges", body).get();
+    auto response = makePostRequest("/api/v1/edges", body).get();
 
     // Должен вернуть 409 Conflict, потому что переход уже существует
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Conflict);
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(test_create_edge_duplicate)
 }
 
 // ============================================================
-// GET /api/workflows/{id}/edges — Получение переходов workflow
+// GET /api/v1/workflows/{id}/edges — Получение переходов workflow
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_workflow_edges_success)
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(test_get_workflow_edges_success)
 
     mockEdgeService->setWorkflowEdgesResult({ e1, e2 });
 
-    auto response = makeGetRequest("/api/workflows/5/edges").get();
+    auto response = makeGetRequest("/api/v1/workflows/5/edges").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockEdgeService->getWorkflowEdgesCallCount(), 1);
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(test_get_workflow_edges_success)
 }
 
 // ============================================================
-// DELETE /api/edges/{id} — Удаление перехода
+// DELETE /api/v1/edges/{id} — Удаление перехода
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_edge_success)
@@ -298,7 +298,7 @@ BOOST_AUTO_TEST_CASE(test_delete_edge_success)
     deleteResult.success = true;
     mockEdgeService->setDeleteEdgeResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/edges/7").get();
+    auto response = makeDeleteRequest("/api/v1/edges/7").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockEdgeService->getDeleteEdgeCallCount(), 1);
@@ -314,14 +314,14 @@ BOOST_AUTO_TEST_CASE(test_delete_edge_not_found)
     deleteResult.errorMessage = "Edge not found";
     mockEdgeService->setDeleteEdgeResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/edges/999").get();
+    auto response = makeDeleteRequest("/api/v1/edges/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_edge_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/edges/7", "").get();
+    auto response = makeDeleteRequest("/api/v1/edges/7", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockEdgeService->getDeleteEdgeCallCount(), 0);
@@ -344,29 +344,29 @@ BOOST_AUTO_TEST_CASE(test_full_edge_lifecycle)
     createBody[U("beginStateId")] = web::json::value::number(10);
     createBody[U("endStateId")] = web::json::value::number(20);
 
-    auto createResponse = makePostRequest("/api/edges", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/edges", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение
     mockEdgeService->setEdgeResult(newEdge);
-    auto getResponse = makeGetRequest("/api/edges/100").get();
+    auto getResponse = makeGetRequest("/api/v1/edges/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Получение переходов workflow
     mockEdgeService->setWorkflowEdgesResult({ newEdge });
-    auto workflowEdgesResponse = makeGetRequest("/api/workflows/5/edges").get();
+    auto workflowEdgesResponse = makeGetRequest("/api/v1/workflows/5/edges").get();
     BOOST_CHECK_EQUAL(workflowEdgesResponse.status_code(), status_codes::OK);
 
     // 4. Удаление
     services::EdgeResult deleteResult;
     deleteResult.success = true;
     mockEdgeService->setDeleteEdgeResult(deleteResult);
-    auto deleteResponse = makeDeleteRequest("/api/edges/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/edges/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка после удаления
     mockEdgeService->setEdgeResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/edges/100").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/edges/100").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 

@@ -337,12 +337,12 @@ struct PlansTestFixture
 BOOST_FIXTURE_TEST_SUITE(PlansCrudTestSuite, PlansTestFixture)
 
 // ============================================================
-// GET /api/phases/{phaseId}/plans — Получение списка планов фазы
+// GET /api/v1/phases/{phaseId}/plans — Получение списка планов фазы
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_plans_by_phase_returns_list)
 {
-    auto response = makeGetRequest("/api/phases/10/plans").get();
+    auto response = makeGetRequest("/api/v1/phases/10/plans").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getGetPlansCallCount(), 1);
@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE(test_get_plans_by_phase_with_pagination)
     services::PlansPage emptyPage;
     mockPlanService->setGetPlansResult(emptyPage);
 
-    auto response = makeGetRequest("/api/phases/10/plans?page=2&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/phases/10/plans?page=2&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getLastGetPlansPage(), 2);
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(test_get_plans_by_phase_filter_by_active)
         }
     );
 
-    auto response = makeGetRequest("/api/phases/10/plans?isActive=true").get();
+    auto response = makeGetRequest("/api/v1/phases/10/plans?isActive=true").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockPlanService->getLastGetPlansIsActive().has_value());
@@ -405,21 +405,21 @@ BOOST_AUTO_TEST_CASE(test_get_plans_by_phase_filter_by_active)
 
 BOOST_AUTO_TEST_CASE(test_get_plans_by_phase_invalid_phase_id)
 {
-    auto response = makeGetRequest("/api/phases/invalid/plans").get();
+    auto response = makeGetRequest("/api/v1/phases/invalid/plans").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_get_plans_by_phase_requires_auth)
 {
-    auto response = makeGetRequest("/api/phases/10/plans", "").get();
+    auto response = makeGetRequest("/api/v1/phases/10/plans", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockPlanService->getGetPlansCallCount(), 0);
 }
 
 // ============================================================
-// POST /api/phases/{phaseId}/plans — Создание первого плана
+// POST /api/v1/phases/{phaseId}/plans — Создание первого плана
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_first_plan_success)
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(test_create_first_plan_success)
     body[U("caption")] = web::json::value::string(U("Новый план"));
     body[U("description")] = web::json::value::string(U("Описание нового плана"));
 
-    auto response = makePostRequest("/api/phases/10/plans", body).get();
+    auto response = makePostRequest("/api/v1/phases/10/plans", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockPlanService->getCreateFirstPlanCallCount(), 1);
@@ -450,7 +450,7 @@ BOOST_AUTO_TEST_CASE(test_create_first_plan_missing_caption)
     web::json::value body;
     body[U("description")] = web::json::value::string(U("Без названия"));
 
-    auto response = makePostRequest("/api/phases/10/plans", body).get();
+    auto response = makePostRequest("/api/v1/phases/10/plans", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockPlanService->getCreateFirstPlanCallCount(), 0);
@@ -500,14 +500,14 @@ BOOST_AUTO_TEST_CASE(test_create_first_plan_plan_already_exists)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("План"));
 
-    auto response = makePostRequest("/api/phases/10/plans", body).get();
+    auto response = makePostRequest("/api/v1/phases/10/plans", body).get();
 
     // TODO : Должен вернуть 400 Bad Request, так как план уже существует
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
 // ============================================================
-// GET /api/plans/{id} — Получение плана по ID
+// GET /api/v1/plans/{id} — Получение плана по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_plan_by_id_success)
@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE(test_get_plan_by_id_success)
     plan.createdByUserId = 1;
     mockPlanService->setGetPlanResult(plan);
 
-    auto response = makeGetRequest("/api/plans/42").get();
+    auto response = makeGetRequest("/api/v1/plans/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getGetPlanCallCount(), 1);
@@ -537,7 +537,7 @@ BOOST_AUTO_TEST_CASE(test_get_plan_not_found)
 {
     mockPlanService->setGetPlanResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/plans/999").get();
+    auto response = makeGetRequest("/api/v1/plans/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockPlanService->getGetPlanCallCount(), 1);
@@ -546,17 +546,17 @@ BOOST_AUTO_TEST_CASE(test_get_plan_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_plan_invalid_id)
 {
-    auto response = makeGetRequest("/api/plans/invalid").get();
+    auto response = makeGetRequest("/api/v1/plans/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/plans/{id} — Удаление плана
+// DELETE /api/v1/plans/{id} — Удаление плана
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_plan_success)
 {
-    auto response = makeDeleteRequest("/api/plans/3").get();
+    auto response = makeDeleteRequest("/api/v1/plans/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockPlanService->getDeletePlanCallCount(), 1);
@@ -585,7 +585,7 @@ BOOST_AUTO_TEST_CASE(test_delete_plan_active_fails)
         }
     );
 
-    auto response = makeDeleteRequest("/api/plans/2").get();
+    auto response = makeDeleteRequest("/api/v1/plans/2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
 }
@@ -611,21 +611,21 @@ BOOST_AUTO_TEST_CASE(test_delete_plan_not_found)
         }
     );
 
-    auto response = makeDeleteRequest("/api/plans/999").get();
+    auto response = makeDeleteRequest("/api/v1/plans/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_plan_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/plans/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/plans/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockPlanService->getDeletePlanCallCount(), 0);
 }
 
 // ============================================================
-// POST /api/plans/{id}/fork — Создание форка плана
+// POST /api/v1/plans/{id}/fork — Создание форка плана
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_fork_plan_success)
@@ -634,7 +634,7 @@ BOOST_AUTO_TEST_CASE(test_fork_plan_success)
     body[U("caption")] = web::json::value::string(U("Форк плана"));
     body[U("description")] = web::json::value::string(U("Описание форка"));
 
-    auto response = makePostRequest("/api/plans/2/fork", body).get();
+    auto response = makePostRequest("/api/v1/plans/2/fork", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockPlanService->getForkPlanCallCount(), 1);
@@ -652,7 +652,7 @@ BOOST_AUTO_TEST_CASE(test_fork_plan_missing_caption)
     web::json::value body;
     body[U("description")] = web::json::value::string(U("Без названия"));
 
-    auto response = makePostRequest("/api/plans/2/fork", body).get();
+    auto response = makePostRequest("/api/v1/plans/2/fork", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockPlanService->getForkPlanCallCount(), 0);
@@ -683,13 +683,13 @@ BOOST_AUTO_TEST_CASE(test_fork_plan_not_active)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Форк неактивного плана"));
 
-    auto response = makePostRequest("/api/plans/1/fork", body).get();
+    auto response = makePostRequest("/api/v1/plans/1/fork", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
 // ============================================================
-// POST /api/plans/{id}/activate — Активация плана
+// POST /api/v1/plans/{id}/activate — Активация плана
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_activate_plan_success)
@@ -697,7 +697,7 @@ BOOST_AUTO_TEST_CASE(test_activate_plan_success)
     web::json::value body;
     body[U("activatedByUserId")] = web::json::value::number(1);
 
-    auto response = makePostRequest("/api/plans/1/activate", body).get();
+    auto response = makePostRequest("/api/v1/plans/1/activate", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getActivatePlanCallCount(), 1);
@@ -709,7 +709,7 @@ BOOST_AUTO_TEST_CASE(test_activate_plan_missing_user_id)
 {
     web::json::value body = web::json::value::object();
 
-    auto response = makePostRequest("/api/plans/1/activate", body).get();
+    auto response = makePostRequest("/api/v1/plans/1/activate", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockPlanService->getActivatePlanCallCount(), 0);
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE(test_activate_plan_wrong_user)
     web::json::value body;
     body[U("activatedByUserId")] = web::json::value::number(200);
 
-    auto response = makePostRequest("/api/plans/1/activate", body).get();
+    auto response = makePostRequest("/api/v1/plans/1/activate", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
@@ -749,18 +749,18 @@ BOOST_AUTO_TEST_CASE(test_activate_plan_empty_plan)
     web::json::value body;
     body[U("activatedByUserId")] = web::json::value::number(1);
 
-    auto response = makePostRequest("/api/plans/3/activate", body).get();
+    auto response = makePostRequest("/api/v1/plans/3/activate", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
 }
 
 // ============================================================
-// GET /api/plans/{planId}/items — Получение элементов плана
+// GET /api/v1/plans/{planId}/items — Получение элементов плана
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_plan_items_returns_list)
 {
-    auto response = makeGetRequest("/api/plans/2/items").get();
+    auto response = makeGetRequest("/api/v1/plans/2/items").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getGetPlanItemsCallCount(), 1);
@@ -779,7 +779,7 @@ BOOST_AUTO_TEST_CASE(test_get_plan_items_with_pagination)
     services::PlanItemsPage emptyPage;
     mockPlanService->setGetPlanItemsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/plans/2/items?page=2&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/plans/2/items?page=2&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getLastGetPlanItemsPage(), 2);
@@ -798,7 +798,7 @@ BOOST_AUTO_TEST_CASE(test_get_plan_items_filter_by_user)
     filteredPage.totalCount = 1;
     mockPlanService->setGetPlanItemsResult(filteredPage);
 
-    auto response = makeGetRequest("/api/plans/2/items?userId=200").get();
+    auto response = makeGetRequest("/api/v1/plans/2/items?userId=200").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockPlanService->getLastGetPlanItemsUserIdFilter().has_value());
@@ -814,7 +814,7 @@ BOOST_AUTO_TEST_CASE(test_get_plan_items_empty)
     services::PlanItemsPage emptyPage;
     mockPlanService->setGetPlanItemsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/plans/999/items").get();
+    auto response = makeGetRequest("/api/v1/plans/999/items").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(test_get_plan_items_empty)
 }
 
 // ============================================================
-// POST /api/plans/{planId}/items — Добавление элемента в план
+// POST /api/v1/plans/{planId}/items — Добавление элемента в план
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_add_plan_item_success)
@@ -840,7 +840,7 @@ BOOST_AUTO_TEST_CASE(test_add_plan_item_success)
     );
     body[U("userId")] = web::json::value::number(1);
 
-    auto response = makePostRequest("/api/plans/1/items", body).get();
+    auto response = makePostRequest("/api/v1/plans/1/items", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockPlanService->getAddPlanItemCallCount(), 1);
@@ -857,7 +857,7 @@ BOOST_AUTO_TEST_CASE(test_add_plan_item_missing_required_fields)
     web::json::value body;
     body[U("itemId")] = web::json::value::number(102);
 
-    auto response = makePostRequest("/api/plans/1/items", body).get();
+    auto response = makePostRequest("/api/v1/plans/1/items", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockPlanService->getAddPlanItemCallCount(), 0);
@@ -870,7 +870,7 @@ BOOST_AUTO_TEST_CASE(test_add_plan_item_missing_item_id)
     body[U("startDate")] = web::json::value::number(common::timePointToSeconds(now));
     body[U("endDate")] = web::json::value::number(common::timePointToSeconds(now + std::chrono::hours(24)));
 
-    auto response = makePostRequest("/api/plans/1/items", body).get();
+    auto response = makePostRequest("/api/v1/plans/1/items", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
 }
@@ -895,13 +895,13 @@ BOOST_AUTO_TEST_CASE(test_add_plan_item_to_active_plan_fails)
     body[U("startDate")] = web::json::value::number(common::timePointToSeconds(now));
     body[U("endDate")] = web::json::value::number(common::timePointToSeconds(now + std::chrono::hours(24)));
 
-    auto response = makePostRequest("/api/plans/2/items", body).get();
+    auto response = makePostRequest("/api/v1/plans/2/items", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
 // ============================================================
-// GET /api/plan-items/{id} — Получение элемента плана по ID
+// GET /api/v1/plan-items/{id} — Получение элемента плана по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_plan_item_by_id_success)
@@ -913,7 +913,7 @@ BOOST_AUTO_TEST_CASE(test_get_plan_item_by_id_success)
     item.userId = 1;
     mockPlanService->setGetPlanItemResult(item);
 
-    auto response = makeGetRequest("/api/plan-items/42").get();
+    auto response = makeGetRequest("/api/v1/plan-items/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getGetPlanItemCallCount(), 1);
@@ -930,13 +930,13 @@ BOOST_AUTO_TEST_CASE(test_get_plan_item_not_found)
 {
     mockPlanService->setGetPlanItemResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/plan-items/999").get();
+    auto response = makeGetRequest("/api/v1/plan-items/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// PUT /api/plan-items/{id} — Обновление элемента плана
+// PUT /api/v1/plan-items/{id} — Обновление элемента плана
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_plan_item_success)
@@ -949,7 +949,7 @@ BOOST_AUTO_TEST_CASE(test_update_plan_item_success)
         common::timePointToSeconds(now + std::chrono::hours(24 * 7))
     );
 
-    auto response = makePutRequest("/api/plan-items/1", body).get();
+    auto response = makePutRequest("/api/v1/plan-items/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getUpdatePlanItemCallCount(), 1);
@@ -965,7 +965,7 @@ BOOST_AUTO_TEST_CASE(test_update_plan_item_partial)
     web::json::value body;
     body[U("userId")] = web::json::value::number(4);
 
-    auto response = makePutRequest("/api/plan-items/1", body).get();
+    auto response = makePutRequest("/api/v1/plan-items/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockPlanService->getUpdatePlanItemCallCount(), 1);
@@ -988,7 +988,7 @@ BOOST_AUTO_TEST_CASE(test_update_plan_item_not_found)
     web::json::value body;
     body[U("userId")] = web::json::value::number(1);
 
-    auto response = makePutRequest("/api/plan-items/999", body).get();
+    auto response = makePutRequest("/api/v1/plan-items/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
@@ -1010,18 +1010,18 @@ BOOST_AUTO_TEST_CASE(test_update_plan_item_in_active_plan_fails)
     web::json::value body;
     body[U("userId")] = web::json::value::number(3);
 
-    auto response = makePutRequest("/api/plan-items/2", body).get();
+    auto response = makePutRequest("/api/v1/plan-items/2", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/plan-items/{id} — Удаление элемента из плана
+// DELETE /api/v1/plan-items/{id} — Удаление элемента из плана
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_plan_item_success)
 {
-    auto response = makeDeleteRequest("/api/plan-items/3").get();
+    auto response = makeDeleteRequest("/api/v1/plan-items/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockPlanService->getRemovePlanItemCallCount(), 1);
@@ -1050,7 +1050,7 @@ BOOST_AUTO_TEST_CASE(test_delete_plan_item_not_found)
         }
     );
 
-    auto response = makeDeleteRequest("/api/plan-items/999").get();
+    auto response = makeDeleteRequest("/api/v1/plan-items/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
@@ -1076,14 +1076,14 @@ BOOST_AUTO_TEST_CASE(test_delete_plan_item_from_active_plan_fails)
         }
     );
 
-    auto response = makeDeleteRequest("/api/plan-items/2").get();
+    auto response = makeDeleteRequest("/api/v1/plan-items/2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_plan_item_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/plan-items/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/plan-items/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockPlanService->getRemovePlanItemCallCount(), 0);
@@ -1105,14 +1105,14 @@ BOOST_AUTO_TEST_CASE(test_full_plan_lifecycle)
     createBody[U("caption")] = web::json::value::string(U("Жизненный цикл плана"));
     createBody[U("description")] = web::json::value::string(U("Тестовый план"));
 
-    auto createResponse = makePostRequest("/api/phases/10/plans", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/phases/10/plans", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
     auto createJson = createResponse.extract_json().get();
     int64_t newPlanId = createJson.at(U("id")).as_integer();
     BOOST_CHECK_GT(newPlanId, 0);
 
     // 2. Чтение созданного плана
-    auto getResponse = makeGetRequest("/api/plans/" + std::to_string(newPlanId)).get();
+    auto getResponse = makeGetRequest("/api/v1/plans/" + std::to_string(newPlanId)).get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Добавление элемента в план
@@ -1127,22 +1127,22 @@ BOOST_AUTO_TEST_CASE(test_full_plan_lifecycle)
     );
     addItemBody[U("userId")] = web::json::value::number(1);
 
-    auto addItemResponse = makePostRequest("/api/plans/" + std::to_string(newPlanId) + "/items", addItemBody).get();
+    auto addItemResponse = makePostRequest("/api/v1/plans/" + std::to_string(newPlanId) + "/items", addItemBody).get();
     BOOST_CHECK_EQUAL(addItemResponse.status_code(), status_codes::Created);
 
     // 4. Получение элементов плана
-    auto getItemsResponse = makeGetRequest("/api/plans/" + std::to_string(newPlanId) + "/items").get();
+    auto getItemsResponse = makeGetRequest("/api/v1/plans/" + std::to_string(newPlanId) + "/items").get();
     BOOST_CHECK_EQUAL(getItemsResponse.status_code(), status_codes::OK);
 
     // 5. Обновление элемента плана
     web::json::value updateItemBody;
     updateItemBody[U("userId")] = web::json::value::number(2);
 
-    auto updateItemResponse = makePutRequest("/api/plan-items/200", updateItemBody).get();
+    auto updateItemResponse = makePutRequest("/api/v1/plan-items/200", updateItemBody).get();
     BOOST_CHECK_EQUAL(updateItemResponse.status_code(), status_codes::OK);
 
     // 6. Удаление элемента плана
-    auto deleteItemResponse = makeDeleteRequest("/api/plan-items/200").get();
+    auto deleteItemResponse = makeDeleteRequest("/api/v1/plan-items/200").get();
     BOOST_CHECK_EQUAL(deleteItemResponse.status_code(), status_codes::NoContent);
 
     // 7. Форк плана
@@ -1150,11 +1150,11 @@ BOOST_AUTO_TEST_CASE(test_full_plan_lifecycle)
     forkBody[U("caption")] = web::json::value::string(U("Форк плана"));
     forkBody[U("description")] = web::json::value::string(U("Форк для теста"));
 
-    auto forkResponse = makePostRequest("/api/plans/" + std::to_string(newPlanId) + "/fork", forkBody).get();
+    auto forkResponse = makePostRequest("/api/v1/plans/" + std::to_string(newPlanId) + "/fork", forkBody).get();
     BOOST_CHECK_EQUAL(forkResponse.status_code(), status_codes::Created);
 
     // 8. Удаление плана (форк неактивен, можно удалить)
-    auto deleteResponse = makeDeleteRequest("/api/plans/201").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/plans/201").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 }
 

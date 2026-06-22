@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(test_get_roles_returns_list)
     page.totalCount = 2;
     mockRoleService->setGetRolesResult(page);
 
-    auto response = makeGetRequest("/api/roles").get();
+    auto response = makeGetRequest("/api/v1/roles").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRoleService->getGetRolesCallCount(), 1);
 
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(test_get_roles_with_pagination)
     services::RolesPage empty;
     mockRoleService->setGetRolesResult(empty);
 
-    auto response = makeGetRequest("/api/roles?page=2&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/roles?page=2&pageSize=5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRoleService->getLastGetRolesPage(), 2);
     BOOST_CHECK_EQUAL(mockRoleService->getLastGetRolesPageSize(), 5);
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(test_get_role_by_id_success)
     role.caption = "Role7";
     mockRoleService->setGetRoleResult(role);
 
-    auto response = makeGetRequest("/api/roles/7").get();
+    auto response = makeGetRequest("/api/v1/roles/7").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRoleService->getLastGetRoleId(), 7);
     auto json = response.extract_json().get();
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(test_get_role_by_id_success)
 BOOST_AUTO_TEST_CASE(test_get_role_not_found)
 {
     mockRoleService->setGetRoleResult(std::nullopt);
-    auto response = makeGetRequest("/api/roles/999").get();
+    auto response = makeGetRequest("/api/v1/roles/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(test_create_role_success)
     json::value body;
     body[U("caption")] = json::value::string(U("NewRole"));
 
-    auto response = makePostRequest("/api/roles", body).get();
+    auto response = makePostRequest("/api/v1/roles", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(*mockRoleService->getLastCreatedRole().caption, "NewRole");
 }
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(test_create_role_missing_caption)
     json::value body;
     body[U("description")] = json::value::string(U("Some description"));
 
-    auto response = makePostRequest("/api/roles", body).get();
+    auto response = makePostRequest("/api/v1/roles", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     // Сервис НЕ должен быть вызван, так как валидация происходит в handler
     BOOST_CHECK_EQUAL(mockRoleService->getCreateRoleCallCount(), 0);
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(test_update_role_success)
     json::value body;
     body[U("caption")] = json::value::string(U("Updated"));
 
-    auto response = makePutRequest("/api/roles/1", body).get();
+    auto response = makePutRequest("/api/v1/roles/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(*mockRoleService->getLastUpdatedRole().id, 1);
 }
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(test_update_role_success)
 BOOST_AUTO_TEST_CASE(test_delete_role_success)
 {
     mockRoleService->setDeleteRoleResult(true);
-    auto response = makeDeleteRequest("/api/roles/3").get();
+    auto response = makeDeleteRequest("/api/v1/roles/3").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockRoleService->getLastDeletedRoleId(), 3);
 }

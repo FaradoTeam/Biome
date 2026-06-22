@@ -46,7 +46,7 @@ check_status() {
 # Аутентификация
 print_header "Авторизация"
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/auth/login" \
+    -X POST "$API_HOST/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d '{"login":"admin","password":"password"}')
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -60,7 +60,7 @@ print_header "1. СОЗДАНИЕ ТИПОВ ЭЛЕМЕНТОВ"
 
 print_info "Создание 'Задача' (issue)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/item-types" \
+    -X POST "$API_HOST/api/v1/item-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Задача","kind":"issue","workflowId":1,"defaultStateId":1,"defaultContent":"## Описание задачи\n\n"}')
@@ -72,7 +72,7 @@ ISSUE_TYPE_ID=$(echo "$BODY" | jq -r '.id // empty')
 
 print_info "Создание 'Папка' (folder)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/item-types" \
+    -X POST "$API_HOST/api/v1/item-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Папка","kind":"folder","workflowId":1,"defaultStateId":1}')
@@ -82,7 +82,7 @@ check_status 201 "$HTTP_CODE" "Создание типа 'Папка'"
 
 print_info "Создание 'Требование' (requirement)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/item-types" \
+    -X POST "$API_HOST/api/v1/item-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Требование","kind":"requirement","workflowId":1,"defaultStateId":1}')
@@ -91,7 +91,7 @@ check_status 201 "$HTTP_CODE" "Создание типа 'Требование'"
 
 print_info "Тест: невалидный kind..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/item-types" \
+    -X POST "$API_HOST/api/v1/item-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Bad Type","kind":"invalid_kind","workflowId":1,"defaultStateId":1}')
@@ -103,7 +103,7 @@ print_header "2. ЧТЕНИЕ ТИПОВ ЭЛЕМЕНТОВ"
 
 print_info "Получение списка всех типов..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/item-types" \
+    -X GET "$API_HOST/api/v1/item-types" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -112,14 +112,14 @@ echo "$BODY" | jq '{total: .totalCount, items: [.items[] | {id, caption, kind}]}
 
 print_info "Получение по ID ($ISSUE_TYPE_ID)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/item-types/$ISSUE_TYPE_ID" \
+    -X GET "$API_HOST/api/v1/item-types/$ISSUE_TYPE_ID" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 check_status 200 "$HTTP_CODE" "Получение по ID"
 
 print_info "Фильтр по kind=issue..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/item-types?kind=issue" \
+    -X GET "$API_HOST/api/v1/item-types?kind=issue" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -130,7 +130,7 @@ echo "$BODY" | jq '{total: .totalCount}'
 print_info "Поиск по названию (Задача)..."
 ENCODED_SEARCH=$(urlencode "Задача")
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/item-types?searchCaption=$ENCODED_SEARCH" \
+    -X GET "$API_HOST/api/v1/item-types?searchCaption=$ENCODED_SEARCH" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -140,7 +140,7 @@ echo "$BODY" | jq '{total: .totalCount, items: [.items[] | {id, caption}]}'
 # Альтернативный вариант с --data-urlencode
 print_info "Поиск по названию через GET с --data-urlencode..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -G "$API_HOST/api/item-types" \
+    -G "$API_HOST/api/v1/item-types" \
     -H "Authorization: Bearer $TOKEN" \
     --data-urlencode "searchCaption=Задача")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -153,7 +153,7 @@ print_header "3. ОБНОВЛЕНИЕ ТИПОВ ЭЛЕМЕНТОВ"
 
 print_info "Обновление названия..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X PUT "$API_HOST/api/item-types/$ISSUE_TYPE_ID" \
+    -X PUT "$API_HOST/api/v1/item-types/$ISSUE_TYPE_ID" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Задача v2"}')
@@ -167,7 +167,7 @@ print_header "4. УДАЛЕНИЕ ТИПОВ ЭЛЕМЕНТОВ"
 
 # Создаем временный для удаления
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/item-types" \
+    -X POST "$API_HOST/api/v1/item-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"TempDelete","kind":"test-case","workflowId":1,"defaultStateId":1}')
@@ -177,7 +177,7 @@ TEMP_ID=$(echo "$RESPONSE" | sed '$d' | jq -r '.id // empty')
 if [ -n "$TEMP_ID" ]; then
     print_info "Удаление временного типа (ID=$TEMP_ID)..."
     RESPONSE=$(curl -s -w "\n%{http_code}" \
-        -X DELETE "$API_HOST/api/item-types/$TEMP_ID" \
+        -X DELETE "$API_HOST/api/v1/item-types/$TEMP_ID" \
         -H "Authorization: Bearer $TOKEN")
     HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
     check_status 204 "$HTTP_CODE" "Удаление временного типа"
@@ -187,7 +187,7 @@ fi
 print_header "5. ПАГИНАЦИЯ"
 
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/item-types?page=1&pageSize=2" \
+    -X GET "$API_HOST/api/v1/item-types?page=1&pageSize=2" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -197,10 +197,10 @@ echo "$BODY" | jq '{total: .totalCount, page: .page, pageSize: .pageSize, count:
 # 6. Ошибки
 print_header "6. ПРОВЕРКА ОШИБОК"
 
-RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/item-types/99999" -H "Authorization: Bearer $TOKEN")
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/v1/item-types/99999" -H "Authorization: Bearer $TOKEN")
 check_status 404 "$(echo "$RESPONSE" | tail -n1)" "Несуществующий ID (404)"
 
-RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/item-types")
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/v1/item-types")
 check_status 401 "$(echo "$RESPONSE" | tail -n1)" "Без авторизации (401)"
 
 # Итоги

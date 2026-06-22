@@ -9,7 +9,7 @@ NC='\033[0m' # No Color
 
 # Базовый URL
 BASE_URL="http://localhost:8090"
-API_BASE="${BASE_URL}/api"
+API_BASE="${BASE_URL}/api/v1"
 
 # Файлы для хранения токенов
 TOKEN_FILE="/tmp/biome_tokens.txt"
@@ -120,7 +120,7 @@ log_section "1. Аутентификация и подготовка данны�
 
 # Получаем токен супер-админа (admin:password из миграции)
 log_info "Получение токена супер-админа..."
-ADMIN_RESPONSE=$(curl -s -X POST "${BASE_URL}/auth/login" \
+ADMIN_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d '{"login":"admin","password":"password"}')
 
@@ -160,7 +160,7 @@ log_success "Создан пользователь user1 с id=$USER1_ID"
 
 # Получаем токен для user1
 log_info "Получение токена для user1..."
-USER1_TOKEN_RESPONSE=$(curl -s -X POST "${BASE_URL}/auth/login" \
+USER1_TOKEN_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d '{"login":"testuser1","password":"Test123456"}')
 
@@ -199,7 +199,7 @@ log_success "Создан пользователь user2 с id=$USER2_ID"
 
 # Получаем токен для user2
 log_info "Получение токена для user2..."
-USER2_TOKEN_RESPONSE=$(curl -s -X POST "${BASE_URL}/auth/login" \
+USER2_TOKEN_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d '{"login":"testuser2","password":"Test123456"}')
 

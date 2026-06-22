@@ -53,14 +53,14 @@ make_request() {
 login() {
     local login="$1" password="$2"
     local data="{\"login\":\"${login}\",\"password\":\"${password}\"}"
-    local response=$(curl -s -X POST "${API_URL}/auth/login" -H "Content-Type: application/json" -d "$data")
+    local response=$(curl -s -X POST "${API_URL}/api/v1/auth/login" -H "Content-Type: application/json" -d "$data")
     echo "$response" | grep -o '"access_token":"[^"]*"' | head -1 | cut -d'"' -f4
 }
 
 create_project() {
     local token="$1" name="$2"
     local data="{\"caption\":\"${name}\"}"
-    local response=$(make_request "POST" "/api/projects" "$token" "$data" 201 "Создание ${name}" 2>/dev/null)
+    local response=$(make_request "POST" "/api/v1/projects" "$token" "$data" 201 "Создание ${name}" 2>/dev/null)
     echo "$response" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2
 }
 
@@ -80,7 +80,7 @@ setup() {
 
     for login in project_manager developer viewer; do
         local user_data="{\"login\":\"${login}\",\"email\":\"${login}@test.com\",\"password\":\"Pass123456\",\"firstName\":\"${login}\",\"lastName\":\"Test\"}"
-        make_request "POST" "/api/users" "${TOKENS["admin"]}" "$user_data" 201 "Создание $login" > /dev/null 2>&1
+        make_request "POST" "/api/v1/users" "${TOKENS["admin"]}" "$user_data" 201 "Создание $login" > /dev/null 2>&1
         sleep 0.5
         TOKENS["$login"]=$(login "$login" "Pass123456")
         if [ -n "${TOKENS["$login"]}" ]; then
@@ -90,7 +90,7 @@ setup() {
 
     # Создаем тестовый проект
     local data="{\"caption\":\"Тестовый проект админа\"}"
-    local response=$(curl -s -X POST "${API_URL}/api/projects" \
+    local response=$(curl -s -X POST "${API_URL}/api/v1/projects" \
         -H "Authorization: Bearer ${TOKENS["admin"]}" \
         -H "Content-Type: application/json" \
         -d "$data")
@@ -109,10 +109,10 @@ setup() {
 
 test_unauthorized() {
     print_test_header "Тест 1: Доступ без авторизации"
-    make_request "GET" "/api/projects" "" "" 401 "GET без токена"
-    make_request "POST" "/api/projects" "" '{"caption":"Test"}' 401 "POST без токена"
-    make_request "PUT" "/api/projects/1" "" '{"caption":"Test"}' 401 "PUT без токена"
-    make_request "DELETE" "/api/projects/1" "" "" 401 "DELETE без токена"
+    make_request "GET" "/api/v1/projects" "" "" 401 "GET без токена"
+    make_request "POST" "/api/v1/projects" "" '{"caption":"Test"}' 401 "POST без токена"
+    make_request "PUT" "/api/v1/projects/1" "" '{"caption":"Test"}' 401 "PUT без токена"
+    make_request "DELETE" "/api/v1/projects/1" "" "" 401 "DELETE без токена"
 }
 
 test_admin_access() {
@@ -122,13 +122,13 @@ test_admin_access() {
     local pid=$(create_project "${TOKENS["admin"]}" "Админ проект")
     if [ -n "$pid" ] && [ "$pid" != "null" ] && [ "$pid" != "" ]; then
         print_success "Админ создал проект $pid"
-        make_request "GET" "/api/projects/${pid}" "${TOKENS["admin"]}" "" 200 "GET проект"
-        make_request "PUT" "/api/projects/${pid}" "${TOKENS["admin"]}" '{"caption":"Updated"}' 200 "PUT проект"
-        make_request "DELETE" "/api/projects/${pid}" "${TOKENS["admin"]}" "" 204 "DELETE проект"
+        make_request "GET" "/api/v1/projects/${pid}" "${TOKENS["admin"]}" "" 200 "GET проект"
+        make_request "PUT" "/api/v1/projects/${pid}" "${TOKENS["admin"]}" '{"caption":"Updated"}' 200 "PUT проект"
+        make_request "DELETE" "/api/v1/projects/${pid}" "${TOKENS["admin"]}" "" 204 "DELETE проект"
     else
         print_warning "Не удалось создать тестовый проект для админа (возможно, уже существует)"
     fi
-    make_request "GET" "/api/projects" "${TOKENS["admin"]}" "" 200 "GET список"
+    make_request "GET" "/api/v1/projects" "${TOKENS["admin"]}" "" 200 "GET список"
 }
 
 test_manager_permissions() {
@@ -144,12 +144,12 @@ test_manager_permissions() {
         return
     fi
 
-    make_request "POST" "/api/projects" "${TOKENS["project_manager"]}" '{"caption":"Test"}' 403 "Создание корневого проекта"
-    make_request "GET" "/api/projects/${ADMIN_PROJECT_ID}" "${TOKENS["project_manager"]}" "" 404 "Чтение чужого проекта"
-    make_request "PUT" "/api/projects/${ADMIN_PROJECT_ID}" "${TOKENS["project_manager"]}" '{"caption":"Hack"}' 404 "Обновление чужого проекта"
+    make_request "POST" "/api/v1/projects" "${TOKENS["project_manager"]}" '{"caption":"Test"}' 403 "Создание корневого проекта"
+    make_request "GET" "/api/v1/projects/${ADMIN_PROJECT_ID}" "${TOKENS["project_manager"]}" "" 404 "Чтение чужого проекта"
+    make_request "PUT" "/api/v1/projects/${ADMIN_PROJECT_ID}" "${TOKENS["project_manager"]}" '{"caption":"Hack"}' 404 "Обновление чужого проекта"
 
     local data="{\"caption\":\"Sub\",\"parentId\":${ADMIN_PROJECT_ID}}"
-    make_request "POST" "/api/projects" "${TOKENS["project_manager"]}" "$data" 403 "Создание подпроекта в чужом проекте"
+    make_request "POST" "/api/v1/projects" "${TOKENS["project_manager"]}" "$data" 403 "Создание подпроекта в чужом проекте"
 }
 
 test_developer_permissions() {
@@ -165,8 +165,8 @@ test_developer_permissions() {
         return
     fi
 
-    make_request "POST" "/api/projects" "${TOKENS["developer"]}" '{"caption":"Test"}' 403 "Создание корневого проекта"
-    make_request "GET" "/api/projects/${ADMIN_PROJECT_ID}" "${TOKENS["developer"]}" "" 404 "Чтение чужого проекта"
+    make_request "POST" "/api/v1/projects" "${TOKENS["developer"]}" '{"caption":"Test"}' 403 "Создание корневого проекта"
+    make_request "GET" "/api/v1/projects/${ADMIN_PROJECT_ID}" "${TOKENS["developer"]}" "" 404 "Чтение чужого проекта"
 }
 
 test_viewer_permissions() {
@@ -182,15 +182,15 @@ test_viewer_permissions() {
         return
     fi
 
-    make_request "POST" "/api/projects" "${TOKENS["viewer"]}" '{"caption":"Test"}' 403 "Создание корневого проекта"
-    make_request "GET" "/api/projects/${ADMIN_PROJECT_ID}" "${TOKENS["viewer"]}" "" 404 "Чтение чужого проекта"
+    make_request "POST" "/api/v1/projects" "${TOKENS["viewer"]}" '{"caption":"Test"}' 403 "Создание корневого проекта"
+    make_request "GET" "/api/v1/projects/${ADMIN_PROJECT_ID}" "${TOKENS["viewer"]}" "" 404 "Чтение чужого проекта"
 }
 
 test_invalid_token() {
     print_test_header "Тест 6: Невалидный токен"
     local invalid="invalid.token.here"
-    make_request "GET" "/api/projects" "$invalid" "" 401 "GET с невалидным токеном"
-    make_request "POST" "/api/projects" "$invalid" '{"caption":"Test"}' 401 "POST с невалидным токеном"
+    make_request "GET" "/api/v1/projects" "$invalid" "" 401 "GET с невалидным токеном"
+    make_request "POST" "/api/v1/projects" "$invalid" '{"caption":"Test"}' 401 "POST с невалидным токеном"
 }
 
 test_pagination() {
@@ -201,10 +201,10 @@ test_pagination() {
         create_project "${TOKENS["admin"]}" "Page $i" > /dev/null 2>&1
     done
 
-    make_request "GET" "/api/projects?page=1&pageSize=2" "${TOKENS["admin"]}" "" 200 "page=1&pageSize=2"
-    make_request "GET" "/api/projects?page=2&pageSize=2" "${TOKENS["admin"]}" "" 200 "page=2&pageSize=2"
-    make_request "GET" "/api/projects?page=999&pageSize=10" "${TOKENS["admin"]}" "" 200 "page за пределами"
-    make_request "GET" "/api/projects?parentId=0" "${TOKENS["admin"]}" "" 200 "parentId=0 (корневые)"
+    make_request "GET" "/api/v1/projects?page=1&pageSize=2" "${TOKENS["admin"]}" "" 200 "page=1&pageSize=2"
+    make_request "GET" "/api/v1/projects?page=2&pageSize=2" "${TOKENS["admin"]}" "" 200 "page=2&pageSize=2"
+    make_request "GET" "/api/v1/projects?page=999&pageSize=10" "${TOKENS["admin"]}" "" 200 "page за пределами"
+    make_request "GET" "/api/v1/projects?parentId=0" "${TOKENS["admin"]}" "" 200 "parentId=0 (корневые)"
 }
 
 test_search() {
@@ -214,15 +214,15 @@ test_search() {
     create_project "${TOKENS["admin"]}" "Beta Project" > /dev/null 2>&1
     create_project "${TOKENS["admin"]}" "Gamma Version" > /dev/null 2>&1
 
-    make_request "GET" "/api/projects?searchCaption=Project" "${TOKENS["admin"]}" "" 200 "Поиск 'Project'"
-    make_request "GET" "/api/projects?searchCaption=Alpha" "${TOKENS["admin"]}" "" 200 "Поиск 'Alpha'"
-    make_request "GET" "/api/projects?searchCaption=NonExistent" "${TOKENS["admin"]}" "" 200 "Поиск несуществующего"
+    make_request "GET" "/api/v1/projects?searchCaption=Project" "${TOKENS["admin"]}" "" 200 "Поиск 'Project'"
+    make_request "GET" "/api/v1/projects?searchCaption=Alpha" "${TOKENS["admin"]}" "" 200 "Поиск 'Alpha'"
+    make_request "GET" "/api/v1/projects?searchCaption=NonExistent" "${TOKENS["admin"]}" "" 200 "Поиск несуществующего"
 }
 
 cleanup() {
     print_test_header "Очистка"
     if [ -n "$ADMIN_PROJECT_ID" ] && [ "$ADMIN_PROJECT_ID" != "null" ] && [ "$ADMIN_PROJECT_ID" != "" ]; then
-        curl -s -X DELETE "${API_URL}/api/projects/${ADMIN_PROJECT_ID}" \
+        curl -s -X DELETE "${API_URL}/api/v1/projects/${ADMIN_PROJECT_ID}" \
             -H "Authorization: Bearer ${TOKENS["admin"]}" > /dev/null 2>&1
         print_success "Тестовый проект удален"
     fi

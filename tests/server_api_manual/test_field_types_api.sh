@@ -28,7 +28,7 @@ check_status() {
 # Аутентификация
 print_header "Авторизация"
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/auth/login" \
+    -X POST "$API_HOST/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d '{"login":"admin","password":"password"}')
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -39,7 +39,7 @@ print_info "Токен: ${TOKEN:0:30}..."
 
 # Получаем ID первого доступного ItemType
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/item-types?page=1&pageSize=1" \
+    -X GET "$API_HOST/api/v1/item-types?page=1&pageSize=1" \
     -H "Authorization: Bearer $TOKEN")
 ITEM_TYPE_ID=$(echo "$RESPONSE" | sed '$d' | jq -r '.items[0].id // empty')
 
@@ -54,7 +54,7 @@ print_header "1. СОЗДАНИЕ ТИПОВ ПОЛЕЙ"
 
 print_info "Создание поля 'Приоритет' (Select)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/field-types" \
+    -X POST "$API_HOST/api/v1/field-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"caption\":\"Приоритет\",\"valueType\":\"Select\",\"itemTypeId\":$ITEM_TYPE_ID,\"isBoardVisible\":true}")
@@ -66,7 +66,7 @@ SELECT_FIELD_ID=$(echo "$BODY" | jq -r '.id // empty')
 
 print_info "Создание поля 'Описание' (MarkdownText)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/field-types" \
+    -X POST "$API_HOST/api/v1/field-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"caption\":\"Описание\",\"valueType\":\"MarkdownText\",\"itemTypeId\":$ITEM_TYPE_ID,\"isBoardVisible\":false}")
@@ -75,7 +75,7 @@ check_status 201 "$HTTP_CODE" "Создание поля 'Описание'"
 
 print_info "Создание поля 'Сложность' (Integer)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/field-types" \
+    -X POST "$API_HOST/api/v1/field-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"caption\":\"Сложность\",\"valueType\":\"Integer\",\"itemTypeId\":$ITEM_TYPE_ID,\"isBoardVisible\":true}")
@@ -84,7 +84,7 @@ check_status 201 "$HTTP_CODE" "Создание поля 'Сложность'"
 
 print_info "Тест: невалидный valueType..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/field-types" \
+    -X POST "$API_HOST/api/v1/field-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"caption\":\"Bad\",\"valueType\":\"BadType\",\"itemTypeId\":$ITEM_TYPE_ID}")
@@ -96,7 +96,7 @@ print_header "2. ЧТЕНИЕ ТИПОВ ПОЛЕЙ"
 
 print_info "Получение списка всех типов полей..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/field-types" \
+    -X GET "$API_HOST/api/v1/field-types" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -105,14 +105,14 @@ echo "$BODY" | jq '{total: .totalCount, items: [.items[] | {id, caption, valueTy
 
 print_info "Получение по ID ($SELECT_FIELD_ID)..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/field-types/$SELECT_FIELD_ID" \
+    -X GET "$API_HOST/api/v1/field-types/$SELECT_FIELD_ID" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 check_status 200 "$HTTP_CODE" "Получение по ID"
 
 print_info "Фильтр по valueType=Select..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/field-types?valueType=Select" \
+    -X GET "$API_HOST/api/v1/field-types?valueType=Select" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -122,7 +122,7 @@ echo "$BODY" | jq '{total: .totalCount}'
 # Исправлено: используем --data-urlencode для кириллицы
 print_info "Поиск по названию (Приоритет) через --data-urlencode..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -G "$API_HOST/api/field-types" \
+    -G "$API_HOST/api/v1/field-types" \
     -H "Authorization: Bearer $TOKEN" \
     --data-urlencode "searchCaption=Приоритет")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
@@ -135,7 +135,7 @@ print_header "3. ОБНОВЛЕНИЕ ТИПОВ ПОЛЕЙ"
 
 print_info "Обновление названия и видимости..."
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X PUT "$API_HOST/api/field-types/$SELECT_FIELD_ID" \
+    -X PUT "$API_HOST/api/v1/field-types/$SELECT_FIELD_ID" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Приоритет v2","isBoardVisible":false}')
@@ -149,7 +149,7 @@ print_header "4. УДАЛЕНИЕ ТИПОВ ПОЛЕЙ"
 
 # Создаем временный для удаления
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X POST "$API_HOST/api/field-types" \
+    -X POST "$API_HOST/api/v1/field-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"caption\":\"TempDelete\",\"valueType\":\"Bool\",\"itemTypeId\":$ITEM_TYPE_ID}")
@@ -159,7 +159,7 @@ TEMP_ID=$(echo "$RESPONSE" | sed '$d' | jq -r '.id // empty')
 if [ -n "$TEMP_ID" ]; then
     print_info "Удаление временного поля (ID=$TEMP_ID)..."
     RESPONSE=$(curl -s -w "\n%{http_code}" \
-        -X DELETE "$API_HOST/api/field-types/$TEMP_ID" \
+        -X DELETE "$API_HOST/api/v1/field-types/$TEMP_ID" \
         -H "Authorization: Bearer $TOKEN")
     HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
     check_status 204 "$HTTP_CODE" "Удаление временного поля"
@@ -169,7 +169,7 @@ fi
 print_header "5. ПАГИНАЦИЯ"
 
 RESPONSE=$(curl -s -w "\n%{http_code}" \
-    -X GET "$API_HOST/api/field-types?page=1&pageSize=2" \
+    -X GET "$API_HOST/api/v1/field-types?page=1&pageSize=2" \
     -H "Authorization: Bearer $TOKEN")
 HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
 BODY=$(echo "$RESPONSE" | sed '$d')
@@ -179,10 +179,10 @@ echo "$BODY" | jq '{total: .totalCount, page: .page, pageSize: .pageSize, count:
 # 6. Ошибки
 print_header "6. ПРОВЕРКА ОШИБОК"
 
-RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/field-types/99999" -H "Authorization: Bearer $TOKEN")
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/v1/field-types/99999" -H "Authorization: Bearer $TOKEN")
 check_status 404 "$(echo "$RESPONSE" | tail -n1)" "Несуществующий ID (404)"
 
-RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/field-types")
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_HOST/api/v1/field-types")
 check_status 401 "$(echo "$RESPONSE" | tail -n1)" "Без авторизации (401)"
 
 # Итоги

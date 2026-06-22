@@ -198,12 +198,12 @@ struct ItemLinksTestFixture
 BOOST_FIXTURE_TEST_SUITE(ItemLinksCrudTestSuite, ItemLinksTestFixture)
 
 // ============================================================
-// GET /api/item-links — Получение списка связей
+// GET /api/v1/item-links — Получение списка связей
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_links_returns_list)
 {
-    auto response = makeGetRequest("/api/item-links").get();
+    auto response = makeGetRequest("/api/v1/item-links").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemLinkService->getGetItemLinksCallCount(), 1);
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_with_pagination_params)
     services::ItemLinksPage emptyPage;
     mockItemLinkService->setGetItemLinksResult(emptyPage);
 
-    auto response = makeGetRequest("/api/item-links?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/item-links?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemLinkService->getLastGetItemLinksPage(), 3);
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_filter_by_link_type)
     filteredPage.totalCount = 1;
     mockItemLinkService->setGetItemLinksResult(filteredPage);
 
-    auto response = makeGetRequest("/api/item-links?linkTypeId=42").get();
+    auto response = makeGetRequest("/api/v1/item-links?linkTypeId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemLinkService->getLastGetItemLinksLinkTypeId().has_value());
@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_filter_by_source_item)
     filteredPage.totalCount = 1;
     mockItemLinkService->setGetItemLinksResult(filteredPage);
 
-    auto response = makeGetRequest("/api/item-links?sourceItemId=200").get();
+    auto response = makeGetRequest("/api/v1/item-links?sourceItemId=200").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemLinkService->getLastGetItemLinksSourceItemId().has_value());
@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_filter_by_destination_item)
     filteredPage.totalCount = 1;
     mockItemLinkService->setGetItemLinksResult(filteredPage);
 
-    auto response = makeGetRequest("/api/item-links?destinationItemId=300").get();
+    auto response = makeGetRequest("/api/v1/item-links?destinationItemId=300").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemLinkService->getLastGetItemLinksDestItemId().has_value());
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_empty_list)
     services::ItemLinksPage emptyPage;
     mockItemLinkService->setGetItemLinksResult(emptyPage);
 
-    auto response = makeGetRequest("/api/item-links").get();
+    auto response = makeGetRequest("/api/v1/item-links").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -300,14 +300,14 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_empty_list)
 
 BOOST_AUTO_TEST_CASE(test_get_item_links_requires_auth)
 {
-    auto response = makeGetRequest("/api/item-links", "").get();
+    auto response = makeGetRequest("/api/v1/item-links", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemLinkService->getGetItemLinksCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/item-links/{id} — Получение связи по ID
+// GET /api/v1/item-links/{id} — Получение связи по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_link_by_id_success)
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_link_by_id_success)
     link.destinationItemId = 101;
     mockItemLinkService->setGetItemLinkResult(link);
 
-    auto response = makeGetRequest("/api/item-links/42").get();
+    auto response = makeGetRequest("/api/v1/item-links/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemLinkService->getGetItemLinkCallCount(), 1);
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_link_not_found)
 {
     mockItemLinkService->setGetItemLinkResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/item-links/999").get();
+    auto response = makeGetRequest("/api/v1/item-links/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemLinkService->getGetItemLinkCallCount(), 1);
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_link_not_found)
 }
 
 // ============================================================
-// GET /api/items/{itemId}/links — Получение связей элемента
+// GET /api/v1/items/{itemId}/links — Получение связей элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_links_by_item_id_success)
@@ -365,7 +365,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_by_item_id_success)
     links = { link1, link2 };
     mockItemLinkService->setItemLinksByItemIdResult(links);
 
-    auto response = makeGetRequest("/api/items/100/links").get();
+    auto response = makeGetRequest("/api/v1/items/100/links").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemLinkService->getGetItemLinksByItemIdCallCount(), 1);
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_by_item_id_empty)
 {
     mockItemLinkService->setItemLinksByItemIdResult({});
 
-    auto response = makeGetRequest("/api/items/999/links").get();
+    auto response = makeGetRequest("/api/v1/items/999/links").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -389,7 +389,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_by_item_id_empty)
 }
 
 // ============================================================
-// GET /api/link-types/{linkTypeId}/links — Получение связей по типу
+// GET /api/v1/link-types/{linkTypeId}/links — Получение связей по типу
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_links_by_link_type_id_success)
@@ -410,7 +410,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_by_link_type_id_success)
     links = { link1, link2 };
     mockItemLinkService->setItemLinksByLinkTypeIdResult(links);
 
-    auto response = makeGetRequest("/api/link-types/5/links").get();
+    auto response = makeGetRequest("/api/v1/link-types/5/links").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemLinkService->getGetItemLinksByLinkTypeIdCallCount(), 1);
@@ -418,7 +418,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_links_by_link_type_id_success)
 }
 
 // ============================================================
-// POST /api/item-links — Создание связи
+// POST /api/v1/item-links — Создание связи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_item_link_success)
@@ -435,7 +435,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_link_success)
     body[U("sourceItemId")] = web::json::value::number(100);
     body[U("destinationItemId")] = web::json::value::number(103);
 
-    auto response = makePostRequest("/api/item-links", body).get();
+    auto response = makePostRequest("/api/v1/item-links", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockItemLinkService->getCreateItemLinkCallCount(), 1);
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_link_missing_required_fields)
     body[U("linkTypeId")] = web::json::value::number(1);
     body[U("sourceItemId")] = web::json::value::number(100);
 
-    auto response = makePostRequest("/api/item-links", body).get();
+    auto response = makePostRequest("/api/v1/item-links", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockItemLinkService->getCreateItemLinkCallCount(), 0);
@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_link_duplicate)
     body[U("sourceItemId")] = web::json::value::number(100);
     body[U("destinationItemId")] = web::json::value::number(101);
 
-    auto response = makePostRequest("/api/item-links", body).get();
+    auto response = makePostRequest("/api/v1/item-links", body).get();
 
     // Существующая связь -> конфликт или недостаточно прав
     BOOST_CHECK(response.status_code() == status_codes::Forbidden || response.status_code() == status_codes::Conflict);
@@ -485,13 +485,13 @@ BOOST_AUTO_TEST_CASE(test_create_item_link_access_denied)
     body[U("sourceItemId")] = web::json::value::number(100);
     body[U("destinationItemId")] = web::json::value::number(103);
 
-    auto response = makePostRequest("/api/item-links", body).get();
+    auto response = makePostRequest("/api/v1/item-links", body).get();
 
     BOOST_CHECK(response.status_code() == status_codes::Forbidden);
 }
 
 // ============================================================
-// DELETE /api/item-links/{id} — Удаление связи
+// DELETE /api/v1/item-links/{id} — Удаление связи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_item_link_success)
@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_link_success)
     deleteResult.success = true;
     mockItemLinkService->setDeleteItemLinkResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/item-links/3").get();
+    auto response = makeDeleteRequest("/api/v1/item-links/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockItemLinkService->getDeleteItemLinkCallCount(), 1);
@@ -516,7 +516,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_link_not_found)
     deleteResult.errorMessage = "Item link not found";
     mockItemLinkService->setDeleteItemLinkResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/item-links/999").get();
+    auto response = makeDeleteRequest("/api/v1/item-links/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemLinkService->getDeleteItemLinkCallCount(), 1);
@@ -532,14 +532,14 @@ BOOST_AUTO_TEST_CASE(test_delete_item_link_access_denied)
     deleteResult.errorCode = 403;
     mockItemLinkService->setDeleteItemLinkResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/item-links/1").get();
+    auto response = makeDeleteRequest("/api/v1/item-links/1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_item_link_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/item-links/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/item-links/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemLinkService->getDeleteItemLinkCallCount(), 0);
@@ -564,35 +564,35 @@ BOOST_AUTO_TEST_CASE(test_full_item_link_lifecycle)
     createBody[U("sourceItemId")] = web::json::value::number(100);
     createBody[U("destinationItemId")] = web::json::value::number(200);
 
-    auto createResponse = makePostRequest("/api/item-links", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/item-links", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение созданной связи
     mockItemLinkService->setGetItemLinkResult(newLink);
-    auto getResponse = makeGetRequest("/api/item-links/200").get();
+    auto getResponse = makeGetRequest("/api/v1/item-links/200").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Получение связей элемента
     std::vector<dto::ItemLink> links = { newLink };
     mockItemLinkService->setItemLinksByItemIdResult(links);
-    auto getByItemResponse = makeGetRequest("/api/items/100/links").get();
+    auto getByItemResponse = makeGetRequest("/api/v1/items/100/links").get();
     BOOST_CHECK_EQUAL(getByItemResponse.status_code(), status_codes::OK);
 
     // 4. Получение связей по типу
     mockItemLinkService->setItemLinksByLinkTypeIdResult(links);
-    auto getByTypeResponse = makeGetRequest("/api/link-types/1/links").get();
+    auto getByTypeResponse = makeGetRequest("/api/v1/link-types/1/links").get();
     BOOST_CHECK_EQUAL(getByTypeResponse.status_code(), status_codes::OK);
 
     // 5. Удаление связи
     services::ItemLinkResult deleteResult;
     deleteResult.success = true;
     mockItemLinkService->setDeleteItemLinkResult(deleteResult);
-    auto deleteResponse = makeDeleteRequest("/api/item-links/200").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/item-links/200").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 6. Проверка после удаления
     mockItemLinkService->setGetItemLinkResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/item-links/200").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/item-links/200").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 

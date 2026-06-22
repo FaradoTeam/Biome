@@ -127,10 +127,10 @@ struct TeamsTestFixture
 
 BOOST_FIXTURE_TEST_SUITE(TeamsCrudTestSuite, TeamsTestFixture)
 
-// GET /api/teams
+// GET /api/v1/teams
 BOOST_AUTO_TEST_CASE(test_get_teams_returns_list)
 {
-    auto response = makeGetRequest("/api/teams").get();
+    auto response = makeGetRequest("/api/v1/teams").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getGetTeamsCallCount(), 1);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamsUserId(), 1);
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(test_get_teams_with_pagination)
     services::TeamsPage emptyPage;
     mockTeamService->setGetTeamsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/teams?page=3&pageSize=10").get();
+    auto response = makeGetRequest("/api/v1/teams?page=3&pageSize=10").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamsPage(), 3);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamsPageSize(), 10);
@@ -156,12 +156,12 @@ BOOST_AUTO_TEST_CASE(test_get_teams_with_search)
     services::TeamsPage emptyPage;
     mockTeamService->setGetTeamsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/teams?searchCaption=search").get();
+    auto response = makeGetRequest("/api/v1/teams?searchCaption=search").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamsSearch(), "search");
 }
 
-// GET /api/teams/{id}
+// GET /api/v1/teams/{id}
 BOOST_AUTO_TEST_CASE(test_get_team_by_id_success)
 {
     dto::Team team;
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(test_get_team_by_id_success)
     team.caption = "Found Team";
     mockTeamService->setGetTeamResult(team);
 
-    auto response = makeGetRequest("/api/teams/5").get();
+    auto response = makeGetRequest("/api/v1/teams/5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamId(), 5);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamUserId(), 1);
@@ -183,11 +183,11 @@ BOOST_AUTO_TEST_CASE(test_get_team_not_found)
 {
     mockTeamService->setGetTeamResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/teams/999").get();
+    auto response = makeGetRequest("/api/v1/teams/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
-// POST /api/teams
+// POST /api/v1/teams
 BOOST_AUTO_TEST_CASE(test_create_team_success)
 {
     dto::Team created;
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(test_create_team_success)
     json::value body;
     body[U("caption")] = json::value::string(U("New Team"));
 
-    auto response = makePostRequest("/api/teams", body).get();
+    auto response = makePostRequest("/api/v1/teams", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockTeamService->getCreateTeamCallCount(), 1);
     BOOST_CHECK_EQUAL(mockTeamService->getLastCreatedTeam().caption.value_or(""), "New Team");
@@ -210,12 +210,12 @@ BOOST_AUTO_TEST_CASE(test_create_team_missing_caption)
     json::value body;
     body[U("description")] = json::value::string(U("desc"));
 
-    auto response = makePostRequest("/api/teams", body).get();
+    auto response = makePostRequest("/api/v1/teams", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockTeamService->getCreateTeamCallCount(), 0);
 }
 
-// PUT /api/teams/{id}
+// PUT /api/v1/teams/{id}
 BOOST_AUTO_TEST_CASE(test_update_team_success)
 {
     dto::Team updated;
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(test_update_team_success)
     json::value body;
     body[U("caption")] = json::value::string(U("Updated Team"));
 
-    auto response = makePutRequest("/api/teams/1", body).get();
+    auto response = makePutRequest("/api/v1/teams/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getUpdateTeamCallCount(), 1);
     BOOST_CHECK_EQUAL(mockTeamService->getLastUpdatedTeam().id.value_or(0), 1);
@@ -240,16 +240,16 @@ BOOST_AUTO_TEST_CASE(test_update_team_not_found)
     json::value body;
     body[U("caption")] = json::value::string(U("Ghost"));
 
-    auto response = makePutRequest("/api/teams/999", body).get();
+    auto response = makePutRequest("/api/v1/teams/999", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
-// DELETE /api/teams/{id}
+// DELETE /api/v1/teams/{id}
 BOOST_AUTO_TEST_CASE(test_delete_team_success)
 {
     mockTeamService->setDeleteTeamResult(true);
 
-    auto response = makeDeleteRequest("/api/teams/2").get();
+    auto response = makeDeleteRequest("/api/v1/teams/2").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockTeamService->getDeleteTeamCallCount(), 1);
     BOOST_CHECK_EQUAL(mockTeamService->getLastDeletedTeamId(), 2);
@@ -260,13 +260,13 @@ BOOST_AUTO_TEST_CASE(test_delete_team_not_found)
 {
     mockTeamService->setDeleteTeamResult(false);
 
-    auto response = makeDeleteRequest("/api/teams/999").get();
+    auto response = makeDeleteRequest("/api/v1/teams/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_team_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/teams/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/teams/1", "").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockTeamService->getDeleteTeamCallCount(), 0);
 }

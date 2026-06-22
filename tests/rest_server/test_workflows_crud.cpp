@@ -128,7 +128,7 @@ struct WorkflowsTestFixture
 BOOST_FIXTURE_TEST_SUITE(WorkflowsCrudTestSuite, WorkflowsTestFixture)
 
 // ============================================================
-// GET /api/workflows — Получение списка рабочих процессов
+// GET /api/v1/workflows — Получение списка рабочих процессов
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_workflows_returns_list)
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_get_workflows_returns_list)
     testPage.totalCount = 2;
     mockWorkflowService->setWorkflowsResult(testPage);
 
-    auto response = makeGetRequest("/api/workflows").get();
+    auto response = makeGetRequest("/api/v1/workflows").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockWorkflowService->getWorkflowsCallCount(), 1);
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(test_get_workflows_with_pagination)
     services::WorkflowsPage emptyPage;
     mockWorkflowService->setWorkflowsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/workflows?page=2&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/workflows?page=2&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockWorkflowService->getLastWorkflowsPage(), 2);
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(test_get_workflows_empty_list)
     services::WorkflowsPage emptyPage;
     mockWorkflowService->setWorkflowsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/workflows").get();
+    auto response = makeGetRequest("/api/v1/workflows").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -187,14 +187,14 @@ BOOST_AUTO_TEST_CASE(test_get_workflows_empty_list)
 
 BOOST_AUTO_TEST_CASE(test_get_workflows_requires_auth)
 {
-    auto response = makeGetRequest("/api/workflows", "").get();
+    auto response = makeGetRequest("/api/v1/workflows", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockWorkflowService->getWorkflowsCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/workflows/{id} — Получение рабочего процесса по ID
+// GET /api/v1/workflows/{id} — Получение рабочего процесса по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_workflow_by_id_success)
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(test_get_workflow_by_id_success)
     workflow.description = "Test description";
     mockWorkflowService->setWorkflowResult(workflow);
 
-    auto response = makeGetRequest("/api/workflows/42").get();
+    auto response = makeGetRequest("/api/v1/workflows/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockWorkflowService->getWorkflowCallCount(), 1);
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(test_get_workflow_not_found)
 {
     mockWorkflowService->setWorkflowResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/workflows/999").get();
+    auto response = makeGetRequest("/api/v1/workflows/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockWorkflowService->getWorkflowCallCount(), 1);
@@ -229,12 +229,12 @@ BOOST_AUTO_TEST_CASE(test_get_workflow_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_workflow_invalid_id)
 {
-    auto response = makeGetRequest("/api/workflows/invalid").get();
+    auto response = makeGetRequest("/api/v1/workflows/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/workflows — Создание рабочего процесса
+// POST /api/v1/workflows — Создание рабочего процесса
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_workflow_success)
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(test_create_workflow_success)
     body[U("caption")] = web::json::value::string(U("New Workflow"));
     body[U("description")] = web::json::value::string(U("New description"));
 
-    auto response = makePostRequest("/api/workflows", body).get();
+    auto response = makePostRequest("/api/v1/workflows", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockWorkflowService->getCreateWorkflowCallCount(), 1);
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(test_create_workflow_missing_caption)
     web::json::value body;
     body[U("description")] = web::json::value::string(U("No caption"));
 
-    auto response = makePostRequest("/api/workflows", body).get();
+    auto response = makePostRequest("/api/v1/workflows", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockWorkflowService->getCreateWorkflowCallCount(), 0);
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(test_create_workflow_duplicate)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Existing Workflow"));
 
-    auto response = makePostRequest("/api/workflows", body).get();
+    auto response = makePostRequest("/api/v1/workflows", body).get();
 
     // Должен вернуть 409 Conflict, потому что workflow с таким названием уже существует
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Conflict);
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(test_create_workflow_duplicate)
 }
 
 // ============================================================
-// PUT /api/workflows/{id} — Обновление рабочего процесса
+// PUT /api/v1/workflows/{id} — Обновление рабочего процесса
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_workflow_success)
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(test_update_workflow_success)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Updated Workflow"));
 
-    auto response = makePutRequest("/api/workflows/1", body).get();
+    auto response = makePutRequest("/api/v1/workflows/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockWorkflowService->getUpdateWorkflowCallCount(), 1);
@@ -327,14 +327,14 @@ BOOST_AUTO_TEST_CASE(test_update_workflow_not_found)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Ghost"));
 
-    auto response = makePutRequest("/api/workflows/999", body).get();
+    auto response = makePutRequest("/api/v1/workflows/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockWorkflowService->getUpdateWorkflowCallCount(), 1);
 }
 
 // ============================================================
-// DELETE /api/workflows/{id} — Удаление рабочего процесса
+// DELETE /api/v1/workflows/{id} — Удаление рабочего процесса
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_workflow_success)
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(test_delete_workflow_success)
     deleteResult.success = true;
     mockWorkflowService->setDeleteWorkflowResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/workflows/1").get();
+    auto response = makeDeleteRequest("/api/v1/workflows/1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockWorkflowService->getDeleteWorkflowCallCount(), 1);
@@ -359,7 +359,7 @@ BOOST_AUTO_TEST_CASE(test_delete_workflow_not_found)
     deleteResult.errorMessage = "Workflow not found";
     mockWorkflowService->setDeleteWorkflowResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/workflows/999").get();
+    auto response = makeDeleteRequest("/api/v1/workflows/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockWorkflowService->getDeleteWorkflowCallCount(), 1);
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(test_delete_workflow_with_dependencies)
     deleteResult.errorMessage = "Cannot delete: workflow has states";
     mockWorkflowService->setDeleteWorkflowResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/workflows/1").get();
+    auto response = makeDeleteRequest("/api/v1/workflows/1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Conflict);
     BOOST_CHECK_EQUAL(mockWorkflowService->getDeleteWorkflowCallCount(), 1);
@@ -381,7 +381,7 @@ BOOST_AUTO_TEST_CASE(test_delete_workflow_with_dependencies)
 
 BOOST_AUTO_TEST_CASE(test_delete_workflow_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/workflows/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/workflows/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockWorkflowService->getDeleteWorkflowCallCount(), 0);
@@ -403,12 +403,12 @@ BOOST_AUTO_TEST_CASE(test_full_workflow_lifecycle)
     web::json::value createBody;
     createBody[U("caption")] = web::json::value::string(U("Lifecycle Workflow"));
 
-    auto createResponse = makePostRequest("/api/workflows", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/workflows", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение
     mockWorkflowService->setWorkflowResult(newWorkflow);
-    auto getResponse = makeGetRequest("/api/workflows/100").get();
+    auto getResponse = makeGetRequest("/api/v1/workflows/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление
@@ -419,19 +419,19 @@ BOOST_AUTO_TEST_CASE(test_full_workflow_lifecycle)
     web::json::value updateBody;
     updateBody[U("description")] = web::json::value::string(U("Updated lifecycle description"));
 
-    auto updateResponse = makePutRequest("/api/workflows/100", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/workflows/100", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Удаление
     services::WorkflowResult deleteResult;
     deleteResult.success = true;
     mockWorkflowService->setDeleteWorkflowResult(deleteResult);
-    auto deleteResponse = makeDeleteRequest("/api/workflows/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/workflows/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка после удаления
     mockWorkflowService->setWorkflowResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/workflows/100").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/workflows/100").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 

@@ -195,13 +195,13 @@ struct UsersTestFixture
 BOOST_FIXTURE_TEST_SUITE(UsersCrudTestSuite, UsersTestFixture)
 
 // ============================================================
-// GET /api/users — Получение списка пользователей (доступно всем авторизованным)
+// GET /api/v1/users — Получение списка пользователей (доступно всем авторизованным)
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_users_returns_list_for_regular_user)
 {
     // Обычный авторизованный пользователь может получить список пользователей
-    auto response = makeGetRequest("/api/users").get();
+    auto response = makeGetRequest("/api/v1/users").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockUserService->getGetUsersCallCount(), 1);
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(test_get_users_returns_list_for_regular_user)
 
 BOOST_AUTO_TEST_CASE(test_get_users_with_pagination_params)
 {
-    auto response = makeGetRequest("/api/users?page=2&pageSize=2").get();
+    auto response = makeGetRequest("/api/v1/users?page=2&pageSize=2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockUserService->getLastGetUsersPage(), 2);
@@ -225,14 +225,14 @@ BOOST_AUTO_TEST_CASE(test_get_users_with_pagination_params)
 
 BOOST_AUTO_TEST_CASE(test_get_users_requires_auth)
 {
-    auto response = makeGetRequest("/api/users", "").get();
+    auto response = makeGetRequest("/api/v1/users", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockUserService->getGetUsersCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/users/{id} — Получение пользователя по ID
+// GET /api/v1/users/{id} — Получение пользователя по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_user_by_id_success)
@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(test_get_user_by_id_success)
     user.email = "specific@test.com";
     mockUserService->setGetUserResult(user);
 
-    auto response = makeGetRequest("/api/users/42").get();
+    auto response = makeGetRequest("/api/v1/users/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockUserService->getGetUserCallCount(), 1);
@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(test_get_user_not_found)
 {
     mockUserService->setGetUserResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/users/999").get();
+    auto response = makeGetRequest("/api/v1/users/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockUserService->getGetUserCallCount(), 1);
@@ -268,12 +268,12 @@ BOOST_AUTO_TEST_CASE(test_get_user_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_user_invalid_id)
 {
-    auto response = makeGetRequest("/api/users/invalid").get();
+    auto response = makeGetRequest("/api/v1/users/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/users — Создание пользователя (только для супер-админа)
+// POST /api/v1/users — Создание пользователя (только для супер-админа)
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_user_fails_for_regular_user)
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(test_create_user_fails_for_regular_user)
     body[U("password")] = web::json::value::string(U("securepass123"));
     body[U("firstName")] = web::json::value::string(U("New"));
 
-    auto response = makePostRequest("/api/users", body).get();
+    auto response = makePostRequest("/api/v1/users", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
     BOOST_CHECK_EQUAL(mockUserService->getCreateUserCallCount(), 0);
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(test_create_user_success_for_admin)
     body[U("password")] = web::json::value::string(U("securepass123"));
     body[U("firstName")] = web::json::value::string(U("New"));
 
-    auto response = makePostRequest("/api/users", body).get();
+    auto response = makePostRequest("/api/v1/users", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockUserService->getCreateUserCallCount(), 1);
@@ -321,14 +321,14 @@ BOOST_AUTO_TEST_CASE(test_create_user_missing_required_fields)
     web::json::value body;
     body[U("login")] = web::json::value::string(U("incomplete"));
 
-    auto response = makePostRequest("/api/users", body).get();
+    auto response = makePostRequest("/api/v1/users", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockUserService->getCreateUserCallCount(), 0);
 }
 
 // ============================================================
-// PUT /api/users/{id} — Обновление пользователя (только для супер-админа)
+// PUT /api/v1/users/{id} — Обновление пользователя (только для супер-админа)
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_user_fails_for_regular_user)
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(test_update_user_fails_for_regular_user)
     web::json::value body;
     body[U("firstName")] = web::json::value::string(U("UpdatedName"));
 
-    auto response = makePutRequest("/api/users/1", body).get();
+    auto response = makePutRequest("/api/v1/users/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
     BOOST_CHECK_EQUAL(mockUserService->getUpdateUserCallCount(), 0);
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(test_update_user_success_for_admin)
     web::json::value body;
     body[U("firstName")] = web::json::value::string(U("UpdatedName"));
 
-    auto response = makePutRequest("/api/users/1", body).get();
+    auto response = makePutRequest("/api/v1/users/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockUserService->getUpdateUserCallCount(), 1);
@@ -366,19 +366,19 @@ BOOST_AUTO_TEST_CASE(test_update_user_not_found_for_admin)
     web::json::value body;
     body[U("firstName")] = web::json::value::string(U("Ghost"));
 
-    auto response = makePutRequest("/api/users/999", body).get();
+    auto response = makePutRequest("/api/v1/users/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockUserService->getUpdateUserCallCount(), 1);
 }
 
 // ============================================================
-// DELETE /api/users/{id} — Удаление пользователя (только для супер-админа)
+// DELETE /api/v1/users/{id} — Удаление пользователя (только для супер-админа)
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_user_fails_for_regular_user)
 {
-    auto response = makeDeleteRequest("/api/users/2").get();
+    auto response = makeDeleteRequest("/api/v1/users/2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
     BOOST_CHECK_EQUAL(mockUserService->getDeleteUserCallCount(), 0);
@@ -389,7 +389,7 @@ BOOST_AUTO_TEST_CASE(test_delete_user_success_for_admin)
     // Переключаемся на супер-админа
     mockAuthMiddleware->setValidateRequestResult(true, "1");
 
-    auto response = makeDeleteRequest("/api/users/2").get();
+    auto response = makeDeleteRequest("/api/v1/users/2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockUserService->getDeleteUserCallCount(), 1);
@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(test_delete_user_not_found_for_admin)
     mockAuthMiddleware->setValidateRequestResult(true, "1");
     mockUserService->setDeleteUserResult(false);
 
-    auto response = makeDeleteRequest("/api/users/999").get();
+    auto response = makeDeleteRequest("/api/v1/users/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockUserService->getDeleteUserCallCount(), 1);

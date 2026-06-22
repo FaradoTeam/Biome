@@ -145,7 +145,7 @@ login() {
     local password=$2
     
     local data="{\"login\":\"${login}\",\"password\":\"${password}\"}"
-    local response=$(http_request "POST" "/auth/login" "$data" "")
+    local response=$(http_request "POST" "/api/v1/auth/login" "$data" "")
     
     local http_code=$(echo "$response" | cut -d'|' -f1)
     
@@ -168,7 +168,7 @@ create_test_workflow() {
     echo -e "${BLUE}ℹ${NC} Создание тестового рабочего процесса..." >&2
     
     local data='{"caption":"Тестовый workflow","description":"Для тестирования элементов"}'
-    local response=$(http_request "POST" "/api/workflows" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "POST" "/api/v1/workflows" "$data" "$ADMIN_TOKEN")
     
     local http_code=$(echo "$response" | cut -d'|' -f1)
     if [ "$http_code" = "201" ]; then
@@ -187,7 +187,7 @@ create_test_state() {
     echo -e "${BLUE}ℹ${NC} Создание тестового состояния..." >&2
     
     local data="{\"workflowId\":${workflow_id},\"caption\":\"Новая\",\"orderNumber\":1}"
-    local response=$(http_request "POST" "/api/states" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "POST" "/api/v1/states" "$data" "$ADMIN_TOKEN")
     
     local http_code=$(echo "$response" | cut -d'|' -f1)
     if [ "$http_code" = "201" ]; then
@@ -207,7 +207,7 @@ create_test_item_type() {
     echo -e "${BLUE}ℹ${NC} Создание тестового типа элемента..." >&2
     
     local data="{\"workflowId\":${workflow_id},\"defaultStateId\":${default_state_id},\"caption\":\"Задача\",\"kind\":\"issue\"}"
-    local response=$(http_request "POST" "/api/item-types" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "POST" "/api/v1/item-types" "$data" "$ADMIN_TOKEN")
     
     local http_code=$(echo "$response" | cut -d'|' -f1)
     if [ "$http_code" = "201" ]; then
@@ -225,7 +225,7 @@ create_test_project() {
     echo -e "${BLUE}ℹ${NC} Создание тестового проекта..." >&2
     
     local data='{"caption":"Тестовый проект","description":"Для тестирования элементов"}'
-    local response=$(http_request "POST" "/api/projects" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "POST" "/api/v1/projects" "$data" "$ADMIN_TOKEN")
     
     local http_code=$(echo "$response" | cut -d'|' -f1)
     if [ "$http_code" = "201" ]; then
@@ -244,7 +244,7 @@ create_test_phase() {
     echo -e "${BLUE}ℹ${NC} Создание тестовой фазы..." >&2
     
     local data="{\"projectId\":${project_id},\"caption\":\"Тестовая фаза\"}"
-    local response=$(http_request "POST" "/api/phases" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "POST" "/api/v1/phases" "$data" "$ADMIN_TOKEN")
     
     local http_code=$(echo "$response" | cut -d'|' -f1)
     if [ "$http_code" = "201" ]; then
@@ -263,7 +263,7 @@ create_test_field_type() {
     echo -e "${BLUE}ℹ${NC} Создание тестового типа поля..." >&2
     
     local data="{\"itemTypeId\":${item_type_id},\"caption\":\"Приоритет\",\"valueType\":\"Select\"}"
-    local response=$(http_request "POST" "/api/field-types" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "POST" "/api/v1/field-types" "$data" "$ADMIN_TOKEN")
     
     local http_code=$(echo "$response" | cut -d'|' -f1)
     if [ "$http_code" = "201" ]; then
@@ -305,7 +305,7 @@ test_create_item() {
     
     # 1. Создание элемента с минимальными полями
     local data="{\"caption\":\"Тестовая задача\",\"itemTypeId\":${ITEM_TYPE_ID},\"stateId\":${STATE_ID},\"phaseId\":${PHASE_ID}}"
-    local response=$(http_request "POST" "/api/items" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "POST" "/api/v1/items" "$data" "$ADMIN_TOKEN")
     expect_success "$response" "201" "Создание элемента с минимальными полями"
     
     local item_id=$(get_json_value "$response" ".id")
@@ -316,7 +316,7 @@ test_create_item() {
     
     # 2. Создание элемента со всеми полями
     local data_full="{\"caption\":\"Полная задача\",\"itemTypeId\":${ITEM_TYPE_ID},\"stateId\":${STATE_ID},\"phaseId\":${PHASE_ID},\"content\":\"Подробное описание\"}"
-    local response2=$(http_request "POST" "/api/items" "$data_full" "$ADMIN_TOKEN")
+    local response2=$(http_request "POST" "/api/v1/items" "$data_full" "$ADMIN_TOKEN")
     expect_success "$response2" "201" "Создание элемента со всеми полями"
     
     local item_id2=$(get_json_value "$response2" ".id")
@@ -326,22 +326,22 @@ test_create_item() {
     
     # 3. Создание элемента без обязательного поля caption
     local data_no_caption="{\"itemTypeId\":${ITEM_TYPE_ID},\"stateId\":${STATE_ID},\"phaseId\":${PHASE_ID}}"
-    local response3=$(http_request "POST" "/api/items" "$data_no_caption" "$ADMIN_TOKEN")
+    local response3=$(http_request "POST" "/api/v1/items" "$data_no_caption" "$ADMIN_TOKEN")
     expect_error "$response3" "400" "Создание элемента без caption"
     
     # 4. Создание элемента без itemTypeId
     local data_no_type="{\"caption\":\"Без типа\",\"stateId\":${STATE_ID},\"phaseId\":${PHASE_ID}}"
-    local response4=$(http_request "POST" "/api/items" "$data_no_type" "$ADMIN_TOKEN")
+    local response4=$(http_request "POST" "/api/v1/items" "$data_no_type" "$ADMIN_TOKEN")
     expect_error "$response4" "400" "Создание элемента без itemTypeId"
     
     # 5. Создание элемента без stateId
     local data_no_state="{\"caption\":\"Без состояния\",\"itemTypeId\":${ITEM_TYPE_ID},\"phaseId\":${PHASE_ID}}"
-    local response5=$(http_request "POST" "/api/items" "$data_no_state" "$ADMIN_TOKEN")
+    local response5=$(http_request "POST" "/api/v1/items" "$data_no_state" "$ADMIN_TOKEN")
     expect_error "$response5" "400" "Создание элемента без stateId"
     
     # 6. Создание элемента без phaseId
     local data_no_phase="{\"caption\":\"Без фазы\",\"itemTypeId\":${ITEM_TYPE_ID},\"stateId\":${STATE_ID}}"
-    local response6=$(http_request "POST" "/api/items" "$data_no_phase" "$ADMIN_TOKEN")
+    local response6=$(http_request "POST" "/api/v1/items" "$data_no_phase" "$ADMIN_TOKEN")
     expect_error "$response6" "400" "Создание элемента без phaseId"
 }
 
@@ -356,7 +356,7 @@ test_get_item() {
     local item_id=${CREATED_ITEMS[0]}
     
     # 1. Получение существующего элемента
-    local response=$(http_request "GET" "/api/items/${item_id}" "" "$ADMIN_TOKEN")
+    local response=$(http_request "GET" "/api/v1/items/${item_id}" "" "$ADMIN_TOKEN")
     expect_success "$response" "200" "Получение существующего элемента"
     
     local caption=$(get_json_value "$response" ".caption")
@@ -370,7 +370,7 @@ test_get_item() {
     TESTS_TOTAL=$((TESTS_TOTAL + 1))
     
     # 2. Получение несуществующего элемента
-    local response2=$(http_request "GET" "/api/items/999999" "" "$ADMIN_TOKEN")
+    local response2=$(http_request "GET" "/api/v1/items/999999" "" "$ADMIN_TOKEN")
     expect_error "$response2" "404" "Получение несуществующего элемента"
 }
 
@@ -378,22 +378,22 @@ test_list_items() {
     print_test_header "Список элементов (пагинация и фильтрация)"
     
     # 1. Получение списка с пагинацией
-    local response=$(http_request "GET" "/api/items?page=1&pageSize=10" "" "$ADMIN_TOKEN")
+    local response=$(http_request "GET" "/api/v1/items?page=1&pageSize=10" "" "$ADMIN_TOKEN")
     expect_success "$response" "200" "Получение списка (страница 1)"
     
     local total=$(get_json_value "$response" ".totalCount")
     print_info "Всего элементов: $total"
     
     # 2. Фильтрация по состоянию
-    local response3=$(http_request "GET" "/api/items?stateId=${STATE_ID}" "" "$ADMIN_TOKEN")
+    local response3=$(http_request "GET" "/api/v1/items?stateId=${STATE_ID}" "" "$ADMIN_TOKEN")
     expect_success "$response3" "200" "Фильтрация элементов по состоянию"
     
     # 3. Фильтрация по типу элемента
-    local response4=$(http_request "GET" "/api/items?itemTypeId=${ITEM_TYPE_ID}" "" "$ADMIN_TOKEN")
+    local response4=$(http_request "GET" "/api/v1/items?itemTypeId=${ITEM_TYPE_ID}" "" "$ADMIN_TOKEN")
     expect_success "$response4" "200" "Фильтрация элементов по типу"
     
     # 4. Фильтрация по фазе
-    local response5=$(http_request "GET" "/api/items?phaseId=${PHASE_ID}" "" "$ADMIN_TOKEN")
+    local response5=$(http_request "GET" "/api/v1/items?phaseId=${PHASE_ID}" "" "$ADMIN_TOKEN")
     expect_success "$response5" "200" "Фильтрация элементов по фазе"
 }
 
@@ -409,7 +409,7 @@ test_update_item() {
     
     # 1. Обновление названия элемента
     local data="{\"caption\":\"Обновлённая задача\"}"
-    local response=$(http_request "PUT" "/api/items/${item_id}" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "PUT" "/api/v1/items/${item_id}" "$data" "$ADMIN_TOKEN")
     expect_success "$response" "200" "Обновление названия элемента"
     
     local new_caption=$(get_json_value "$response" ".caption")
@@ -424,11 +424,11 @@ test_update_item() {
     
     # 2. Обновление содержимого
     local data_content="{\"content\":\"Новое содержимое\"}"
-    local response2=$(http_request "PUT" "/api/items/${item_id}" "$data_content" "$ADMIN_TOKEN")
+    local response2=$(http_request "PUT" "/api/v1/items/${item_id}" "$data_content" "$ADMIN_TOKEN")
     expect_success "$response2" "200" "Обновление содержимого элемента"
     
     # 3. Обновление несуществующего элемента
-    local response4=$(http_request "PUT" "/api/items/999999" "$data" "$ADMIN_TOKEN")
+    local response4=$(http_request "PUT" "/api/v1/items/999999" "$data" "$ADMIN_TOKEN")
     expect_error "$response4" "404" "Обновление несуществующего элемента"
 }
 
@@ -443,15 +443,15 @@ test_delete_and_restore_item() {
     local item_id=${CREATED_ITEMS[1]}
     
     # 1. Мягкое удаление элемента
-    local response=$(http_request "DELETE" "/api/items/${item_id}" "" "$ADMIN_TOKEN")
+    local response=$(http_request "DELETE" "/api/v1/items/${item_id}" "" "$ADMIN_TOKEN")
     expect_success "$response" "204" "Мягкое удаление элемента"
     
     # 2. Восстановление элемента
-    local response3=$(http_request "POST" "/api/items/${item_id}/restore" "" "$ADMIN_TOKEN")
+    local response3=$(http_request "POST" "/api/v1/items/${item_id}/restore" "" "$ADMIN_TOKEN")
     expect_success "$response3" "204" "Восстановление элемента"
     
     # 3. Проверка, что элемент восстановлен
-    local response4=$(http_request "GET" "/api/items/${item_id}" "" "$ADMIN_TOKEN")
+    local response4=$(http_request "GET" "/api/v1/items/${item_id}" "" "$ADMIN_TOKEN")
     expect_success "$response4" "200" "Проверка восстановления элемента"
 }
 
@@ -471,7 +471,7 @@ test_create_item_field() {
     
     # Установка текстового поля
     local data="{\"value\":\"Высокий приоритет\"}"
-    local response=$(http_request "PUT" "/api/items/${item_id}/fields/${FIELD_TYPE_ID}" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "PUT" "/api/v1/items/${item_id}/fields/${FIELD_TYPE_ID}" "$data" "$ADMIN_TOKEN")
     expect_success "$response" "200" "Установка текстового поля"
     
     # Небольшая задержка перед следующим тестом
@@ -489,7 +489,7 @@ test_get_item_fields() {
     local item_id=${CREATED_ITEMS[0]}
     
     # Получение всех полей элемента
-    local response=$(http_request "GET" "/api/items/${item_id}/fields" "" "$ADMIN_TOKEN")
+    local response=$(http_request "GET" "/api/v1/items/${item_id}/fields" "" "$ADMIN_TOKEN")
     expect_success "$response" "200" "Получение всех полей элемента"
     
     local fields_count=$(get_json_value "$response" "length")
@@ -500,7 +500,7 @@ test_get_item_fields() {
         local first_field_id=$(get_json_value "$response" ".[0].fieldTypeId")
         print_info "Получение поля с fieldTypeId: $first_field_id"
         
-        local response2=$(http_request "GET" "/api/items/${item_id}/fields/${first_field_id}" "" "$ADMIN_TOKEN")
+        local response2=$(http_request "GET" "/api/v1/items/${item_id}/fields/${first_field_id}" "" "$ADMIN_TOKEN")
         if [ "$(echo "$response2" | cut -d'|' -f1)" = "200" ]; then
             print_success "Получение конкретного поля (HTTP 200)"
             TESTS_PASSED=$((TESTS_PASSED + 1))
@@ -513,7 +513,7 @@ test_get_item_fields() {
     TESTS_TOTAL=$((TESTS_TOTAL + 1))
     
     # Получение несуществующего поля
-    local response3=$(http_request "GET" "/api/items/${item_id}/fields/999" "" "$ADMIN_TOKEN")
+    local response3=$(http_request "GET" "/api/v1/items/${item_id}/fields/999" "" "$ADMIN_TOKEN")
     expect_error "$response3" "404" "Получение несуществующего поля"
 }
 
@@ -529,7 +529,7 @@ test_update_item_field() {
     
     # Обновление значения поля
     local data="{\"value\":\"Критический приоритет\"}"
-    local response=$(http_request "PUT" "/api/items/${item_id}/fields/${FIELD_TYPE_ID}" "$data" "$ADMIN_TOKEN")
+    local response=$(http_request "PUT" "/api/v1/items/${item_id}/fields/${FIELD_TYPE_ID}" "$data" "$ADMIN_TOKEN")
     expect_success "$response" "200" "Обновление значения поля"
     
     local new_value=$(get_json_value "$response" ".value")
@@ -557,11 +557,11 @@ test_delete_item_field() {
     local item_id=${CREATED_ITEMS[0]}
     
     # Удаление поля
-    local response=$(http_request "DELETE" "/api/items/${item_id}/fields/${FIELD_TYPE_ID}" "" "$ADMIN_TOKEN")
+    local response=$(http_request "DELETE" "/api/v1/items/${item_id}/fields/${FIELD_TYPE_ID}" "" "$ADMIN_TOKEN")
     expect_success "$response" "204" "Удаление поля элемента"
     
     # Проверка, что поле удалено
-    local response2=$(http_request "GET" "/api/items/${item_id}/fields/${FIELD_TYPE_ID}" "" "$ADMIN_TOKEN")
+    local response2=$(http_request "GET" "/api/v1/items/${item_id}/fields/${FIELD_TYPE_ID}" "" "$ADMIN_TOKEN")
     expect_error "$response2" "404" "Проверка удаления поля"
 }
 
@@ -574,20 +574,20 @@ test_item_hierarchy() {
     
     # 1. Создание родительского элемента
     local parent_data="{\"caption\":\"Родительская задача\",\"itemTypeId\":${ITEM_TYPE_ID},\"stateId\":${STATE_ID},\"phaseId\":${PHASE_ID}}"
-    local parent_response=$(http_request "POST" "/api/items" "$parent_data" "$ADMIN_TOKEN")
+    local parent_response=$(http_request "POST" "/api/v1/items" "$parent_data" "$ADMIN_TOKEN")
     expect_success "$parent_response" "201" "Создание родительского элемента"
     
     local parent_id=$(get_json_value "$parent_response" ".id")
     
     # 2. Создание дочернего элемента
     local child_data="{\"caption\":\"Дочерняя задача\",\"itemTypeId\":${ITEM_TYPE_ID},\"stateId\":${STATE_ID},\"phaseId\":${PHASE_ID},\"parentId\":${parent_id}}"
-    local child_response=$(http_request "POST" "/api/items" "$child_data" "$ADMIN_TOKEN")
+    local child_response=$(http_request "POST" "/api/v1/items" "$child_data" "$ADMIN_TOKEN")
     expect_success "$child_response" "201" "Создание дочернего элемента"
     
     local child_id=$(get_json_value "$child_response" ".id")
     
     # 3. Получение дочерних элементов родителя
-    local response=$(http_request "GET" "/api/items?parentId=${parent_id}" "" "$ADMIN_TOKEN")
+    local response=$(http_request "GET" "/api/v1/items?parentId=${parent_id}" "" "$ADMIN_TOKEN")
     expect_success "$response" "200" "Получение дочерних элементов родителя"
     
     local children_count=$(get_json_value "$response" ".totalCount")
@@ -612,11 +612,11 @@ test_permissions() {
     print_test_header "Проверка прав доступа"
     
     # 1. Доступ без токена
-    local response=$(http_request "GET" "/api/items" "" "")
+    local response=$(http_request "GET" "/api/v1/items" "" "")
     expect_error "$response" "401" "Доступ без токена авторизации"
     
     # 2. Доступ с невалидным токеном
-    local response2=$(http_request "GET" "/api/items" "" "invalid_token_12345")
+    local response2=$(http_request "GET" "/api/v1/items" "" "invalid_token_12345")
     expect_error "$response2" "401" "Доступ с невалидным токеном"
 }
 
@@ -630,49 +630,49 @@ cleanup_test_data() {
     # Удаление элементов (поля удаляются каскадно)
     for item_id in "${CREATED_ITEMS[@]}"; do
         if [ -n "$item_id" ]; then
-            http_request "DELETE" "/api/items/${item_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
+            http_request "DELETE" "/api/v1/items/${item_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
         fi
     done
     
     # Удаление фаз
     for phase_id in "${CREATED_PHASES[@]}"; do
         if [ -n "$phase_id" ]; then
-            http_request "DELETE" "/api/phases/${phase_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
+            http_request "DELETE" "/api/v1/phases/${phase_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
         fi
     done
     
     # Удаление проектов
     for project_id in "${CREATED_PROJECTS[@]}"; do
         if [ -n "$project_id" ]; then
-            http_request "DELETE" "/api/projects/${project_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
+            http_request "DELETE" "/api/v1/projects/${project_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
         fi
     done
     
     # Удаление типов полей
     for field_type_id in "${CREATED_FIELD_TYPES[@]}"; do
         if [ -n "$field_type_id" ]; then
-            http_request "DELETE" "/api/field-types/${field_type_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
+            http_request "DELETE" "/api/v1/field-types/${field_type_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
         fi
     done
     
     # Удаление типов элементов
     for item_type_id in "${CREATED_ITEM_TYPES[@]}"; do
         if [ -n "$item_type_id" ]; then
-            http_request "DELETE" "/api/item-types/${item_type_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
+            http_request "DELETE" "/api/v1/item-types/${item_type_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
         fi
     done
     
     # Удаление состояний
     for state_id in "${CREATED_STATES[@]}"; do
         if [ -n "$state_id" ]; then
-            http_request "DELETE" "/api/states/${state_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
+            http_request "DELETE" "/api/v1/states/${state_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
         fi
     done
     
     # Удаление workflow
     for workflow_id in "${CREATED_WORKFLOWS[@]}"; do
         if [ -n "$workflow_id" ]; then
-            http_request "DELETE" "/api/workflows/${workflow_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
+            http_request "DELETE" "/api/v1/workflows/${workflow_id}" "" "$ADMIN_TOKEN" > /dev/null 2>&1
         fi
     done
     

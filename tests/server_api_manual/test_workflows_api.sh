@@ -40,7 +40,7 @@ print_fail() {
 }
 
 get_token() {
-    local response=$(curl -s -X POST "${API_HOST}/auth/login" \
+    local response=$(curl -s -X POST "${API_HOST}/api/v1/auth/login" \
         -H "${CONTENT_TYPE}" \
         -d '{"login":"admin","password":"password"}')
     
@@ -75,7 +75,7 @@ AUTH_HEADER="Authorization: Bearer ${TOKEN}"
 print_header "ТЕСТЫ РАБОЧИХ ПРОЦЕССОВ"
 
 print_test "Создание рабочего процесса"
-CREATE_WF_RESPONSE=$(curl -s -X POST "${API_HOST}/api/workflows" \
+CREATE_WF_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/workflows" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d '{"caption":"Scrum Process","description":"Scrum workflow for testing"}')
@@ -88,7 +88,7 @@ else
 fi
 
 print_test "Получение списка рабочих процессов"
-WF_LIST=$(curl -s -X GET "${API_HOST}/api/workflows" \
+WF_LIST=$(curl -s -X GET "${API_HOST}/api/v1/workflows" \
     -H "${AUTH_HEADER}")
 
 TOTAL_COUNT=$(echo "$WF_LIST" | jq -r '.totalCount // 0')
@@ -99,7 +99,7 @@ else
 fi
 
 print_test "Получение рабочего процесса по ID"
-WF_BY_ID=$(curl -s -X GET "${API_HOST}/api/workflows/${WF_ID}" \
+WF_BY_ID=$(curl -s -X GET "${API_HOST}/api/v1/workflows/${WF_ID}" \
     -H "${AUTH_HEADER}")
 
 WF_CAPTION=$(echo "$WF_BY_ID" | jq -r '.caption // empty')
@@ -110,7 +110,7 @@ else
 fi
 
 print_test "Обновление рабочего процесса"
-UPDATE_WF_RESPONSE=$(curl -s -X PUT "${API_HOST}/api/workflows/${WF_ID}" \
+UPDATE_WF_RESPONSE=$(curl -s -X PUT "${API_HOST}/api/v1/workflows/${WF_ID}" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d '{"caption":"Updated Scrum Process","description":"Updated description"}')
@@ -123,7 +123,7 @@ else
 fi
 
 print_test "Создание дубликата рабочего процесса"
-DUP_WF_RESPONSE=$(curl -s -X POST "${API_HOST}/api/workflows" \
+DUP_WF_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/workflows" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d '{"caption":"Updated Scrum Process"}')
@@ -141,7 +141,7 @@ fi
 print_header "ТЕСТЫ СОСТОЯНИЙ"
 
 print_test "Создание состояния 'To Do'"
-CREATE_STATE1_RESPONSE=$(curl -s -X POST "${API_HOST}/api/states" \
+CREATE_STATE1_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/states" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d "{\"workflowId\":${WF_ID},\"caption\":\"To Do\",\"orderNumber\":1,\"weight\":0}")
@@ -154,7 +154,7 @@ else
 fi
 
 print_test "Создание состояния 'In Progress'"
-CREATE_STATE2_RESPONSE=$(curl -s -X POST "${API_HOST}/api/states" \
+CREATE_STATE2_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/states" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d "{\"workflowId\":${WF_ID},\"caption\":\"In Progress\",\"orderNumber\":2,\"weight\":50}")
@@ -167,7 +167,7 @@ else
 fi
 
 print_test "Создание состояния 'Done'"
-CREATE_STATE3_RESPONSE=$(curl -s -X POST "${API_HOST}/api/states" \
+CREATE_STATE3_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/states" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d "{\"workflowId\":${WF_ID},\"caption\":\"Done\",\"orderNumber\":3,\"weight\":100}")
@@ -180,7 +180,7 @@ else
 fi
 
 print_test "Получение состояний по workflowId"
-STATES_LIST=$(curl -s -X GET "${API_HOST}/api/states?workflowId=${WF_ID}" \
+STATES_LIST=$(curl -s -X GET "${API_HOST}/api/v1/states?workflowId=${WF_ID}" \
     -H "${AUTH_HEADER}")
 
 STATES_COUNT=$(echo "$STATES_LIST" | jq -r '.totalCount // 0')
@@ -191,7 +191,7 @@ else
 fi
 
 print_test "Обновление состояния 'In Progress'"
-UPDATE_STATE_RESPONSE=$(curl -s -X PUT "${API_HOST}/api/states/${INPROGRESS_STATE_ID}" \
+UPDATE_STATE_RESPONSE=$(curl -s -X PUT "${API_HOST}/api/v1/states/${INPROGRESS_STATE_ID}" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d '{"weight":60,"isQueue":true}')
@@ -210,7 +210,7 @@ fi
 print_header "ТЕСТЫ ПЕРЕХОДОВ"
 
 print_test "Создание перехода To Do -> In Progress"
-CREATE_EDGE1_RESPONSE=$(curl -s -X POST "${API_HOST}/api/edges" \
+CREATE_EDGE1_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/edges" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d "{\"beginStateId\":${TODO_STATE_ID},\"endStateId\":${INPROGRESS_STATE_ID}}")
@@ -223,7 +223,7 @@ else
 fi
 
 print_test "Создание перехода In Progress -> Done"
-CREATE_EDGE2_RESPONSE=$(curl -s -X POST "${API_HOST}/api/edges" \
+CREATE_EDGE2_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/edges" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d "{\"beginStateId\":${INPROGRESS_STATE_ID},\"endStateId\":${DONE_STATE_ID}}")
@@ -236,7 +236,7 @@ else
 fi
 
 print_test "Создание дубликата перехода"
-DUP_EDGE_RESPONSE=$(curl -s -X POST "${API_HOST}/api/edges" \
+DUP_EDGE_RESPONSE=$(curl -s -X POST "${API_HOST}/api/v1/edges" \
     -H "${CONTENT_TYPE}" \
     -H "${AUTH_HEADER}" \
     -d "{\"beginStateId\":${TODO_STATE_ID},\"endStateId\":${INPROGRESS_STATE_ID}}")
@@ -249,7 +249,7 @@ else
 fi
 
 print_test "Получение переходов по workflowId"
-WORKFLOW_EDGES=$(curl -s -X GET "${API_HOST}/api/workflows/${WF_ID}/edges" \
+WORKFLOW_EDGES=$(curl -s -X GET "${API_HOST}/api/v1/workflows/${WF_ID}/edges" \
     -H "${AUTH_HEADER}")
 
 EDGES_COUNT=$(echo "$WORKFLOW_EDGES" | jq -r '.totalCount // 0')
@@ -260,7 +260,7 @@ else
 fi
 
 print_test "Получение переходов с фильтром по beginStateId"
-FILTERED_EDGES=$(curl -s -X GET "${API_HOST}/api/edges?beginStateId=${TODO_STATE_ID}" \
+FILTERED_EDGES=$(curl -s -X GET "${API_HOST}/api/v1/edges?beginStateId=${TODO_STATE_ID}" \
     -H "${AUTH_HEADER}")
 
 FILTERED_COUNT=$(echo "$FILTERED_EDGES" | jq -r '.totalCount // 0')
@@ -277,7 +277,7 @@ print_header "ТЕСТЫ УДАЛЕНИЯ"
 
 print_test "Удаление перехода To Do -> In Progress"
 DELETE_EDGE1_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
-    "${API_HOST}/api/edges/${EDGE1_ID}" \
+    "${API_HOST}/api/v1/edges/${EDGE1_ID}" \
     -H "${AUTH_HEADER}")
 
 if [ "$DELETE_EDGE1_STATUS" == "204" ]; then
@@ -287,7 +287,7 @@ else
 fi
 
 print_test "Проверка удаления первого перехода"
-CHECK_EDGE1=$(curl -s -X GET "${API_HOST}/api/edges/${EDGE1_ID}" \
+CHECK_EDGE1=$(curl -s -X GET "${API_HOST}/api/v1/edges/${EDGE1_ID}" \
     -H "${AUTH_HEADER}")
 
 DELETED_EDGE1_STATUS=$(echo "$CHECK_EDGE1" | jq -r '.code // 200')
@@ -299,7 +299,7 @@ fi
 
 print_test "Удаление перехода In Progress -> Done"
 DELETE_EDGE2_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
-    "${API_HOST}/api/edges/${EDGE2_ID}" \
+    "${API_HOST}/api/v1/edges/${EDGE2_ID}" \
     -H "${AUTH_HEADER}")
 
 if [ "$DELETE_EDGE2_STATUS" == "204" ]; then
@@ -309,7 +309,7 @@ else
 fi
 
 print_test "Проверка удаления второго перехода"
-CHECK_EDGE2=$(curl -s -X GET "${API_HOST}/api/edges/${EDGE2_ID}" \
+CHECK_EDGE2=$(curl -s -X GET "${API_HOST}/api/v1/edges/${EDGE2_ID}" \
     -H "${AUTH_HEADER}")
 
 DELETED_EDGE2_STATUS=$(echo "$CHECK_EDGE2" | jq -r '.code // 200')
@@ -321,7 +321,7 @@ fi
 
 print_test "Удаление состояния 'In Progress'"
 DELETE_STATE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
-    "${API_HOST}/api/states/${INPROGRESS_STATE_ID}" \
+    "${API_HOST}/api/v1/states/${INPROGRESS_STATE_ID}" \
     -H "${AUTH_HEADER}")
 
 if [ "$DELETE_STATE_STATUS" == "204" ]; then
@@ -331,7 +331,7 @@ else
 fi
 
 print_test "Проверка удаления состояния 'In Progress'"
-CHECK_STATE=$(curl -s -X GET "${API_HOST}/api/states/${INPROGRESS_STATE_ID}" \
+CHECK_STATE=$(curl -s -X GET "${API_HOST}/api/v1/states/${INPROGRESS_STATE_ID}" \
     -H "${AUTH_HEADER}")
 
 DELETED_STATE_STATUS=$(echo "$CHECK_STATE" | jq -r '.code // 200')
@@ -343,7 +343,7 @@ fi
 
 print_test "Удаление рабочего процесса"
 DELETE_WF_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
-    "${API_HOST}/api/workflows/${WF_ID}" \
+    "${API_HOST}/api/v1/workflows/${WF_ID}" \
     -H "${AUTH_HEADER}")
 
 if [ "$DELETE_WF_STATUS" == "204" ]; then
@@ -353,7 +353,7 @@ else
 fi
 
 print_test "Проверка удаления рабочего процесса"
-CHECK_WF=$(curl -s -X GET "${API_HOST}/api/workflows/${WF_ID}" \
+CHECK_WF=$(curl -s -X GET "${API_HOST}/api/v1/workflows/${WF_ID}" \
     -H "${AUTH_HEADER}")
 
 DELETED_WF_STATUS=$(echo "$CHECK_WF" | jq -r '.code // 200')
@@ -365,7 +365,7 @@ fi
 
 # Проверка каскадного удаления состояний
 print_test "Проверка каскадного удаления состояний"
-CHECK_STATES=$(curl -s -X GET "${API_HOST}/api/states?workflowId=${WF_ID}" \
+CHECK_STATES=$(curl -s -X GET "${API_HOST}/api/v1/states?workflowId=${WF_ID}" \
     -H "${AUTH_HEADER}")
 
 REMAINING_STATES=$(echo "$CHECK_STATES" | jq -r '.totalCount // 0')

@@ -185,12 +185,12 @@ struct ItemTypesTestFixture
 BOOST_FIXTURE_TEST_SUITE(ItemTypesCrudTestSuite, ItemTypesTestFixture)
 
 // ============================================================
-// GET /api/item-types — Получение списка типов элементов
+// GET /api/v1/item-types — Получение списка типов элементов
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_types_returns_list)
 {
-    auto response = makeGetRequest("/api/item-types").get();
+    auto response = makeGetRequest("/api/v1/item-types").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemTypeService->getItemTypesCallCount(), 1);
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_types_with_pagination_params)
     services::ItemTypesPage emptyPage;
     mockItemTypeService->setGetItemTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/item-types?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/item-types?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemTypeService->getLastGetItemTypesPage(), 3);
@@ -225,7 +225,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_types_with_workflow_filter)
     filteredPage.totalCount = 1;
     mockItemTypeService->setGetItemTypesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/item-types?workflowId=42").get();
+    auto response = makeGetRequest("/api/v1/item-types?workflowId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemTypeService->getItemTypesCallCount(), 1);
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_types_with_kind_filter)
     filteredPage.totalCount = 1;
     mockItemTypeService->setGetItemTypesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/item-types?kind=issue").get();
+    auto response = makeGetRequest("/api/v1/item-types?kind=issue").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_types_empty_list)
     services::ItemTypesPage emptyPage;
     mockItemTypeService->setGetItemTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/item-types").get();
+    auto response = makeGetRequest("/api/v1/item-types").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -268,14 +268,14 @@ BOOST_AUTO_TEST_CASE(test_get_item_types_empty_list)
 
 BOOST_AUTO_TEST_CASE(test_get_item_types_requires_auth)
 {
-    auto response = makeGetRequest("/api/item-types", "").get();
+    auto response = makeGetRequest("/api/v1/item-types", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemTypeService->getItemTypesCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/item-types/{id} — Получение типа элемента по ID
+// GET /api/v1/item-types/{id} — Получение типа элемента по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_type_by_id_success)
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_type_by_id_success)
     itemType.workflowId = 1;
     mockItemTypeService->setGetItemTypeResult(itemType);
 
-    auto response = makeGetRequest("/api/item-types/42").get();
+    auto response = makeGetRequest("/api/v1/item-types/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemTypeService->getItemTypeCallCount(), 1);
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_type_not_found)
 {
     mockItemTypeService->setGetItemTypeResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/item-types/999").get();
+    auto response = makeGetRequest("/api/v1/item-types/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemTypeService->getItemTypeCallCount(), 1);
@@ -312,18 +312,18 @@ BOOST_AUTO_TEST_CASE(test_get_item_type_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_item_type_invalid_id)
 {
-    auto response = makeGetRequest("/api/item-types/invalid").get();
+    auto response = makeGetRequest("/api/v1/item-types/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_get_item_type_negative_id)
 {
-    auto response = makeGetRequest("/api/item-types/-1").get();
+    auto response = makeGetRequest("/api/v1/item-types/-1").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/item-types — Создание типа элемента
+// POST /api/v1/item-types — Создание типа элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_item_type_success)
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_type_success)
     body[U("defaultStateId")] = web::json::value::number(1);
     body[U("defaultContent")] = web::json::value::string(U("Содержимое по умолчанию"));
 
-    auto response = makePostRequest("/api/item-types", body).get();
+    auto response = makePostRequest("/api/v1/item-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockItemTypeService->createItemTypeCallCount(), 1);
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_type_missing_required_fields)
     web::json::value body;
     body[U("kind")] = web::json::value::string(U("issue"));
 
-    auto response = makePostRequest("/api/item-types", body).get();
+    auto response = makePostRequest("/api/v1/item-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockItemTypeService->createItemTypeCallCount(), 0);
@@ -406,13 +406,13 @@ BOOST_AUTO_TEST_CASE(test_create_item_type_with_all_kinds)
         );
         body[U("workflowId")] = web::json::value::number(1);
 
-        auto response = makePostRequest("/api/item-types", body).get();
+        auto response = makePostRequest("/api/v1/item-types", body).get();
         BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     }
 }
 
 // ============================================================
-// PUT /api/item-types/{id} — Обновление типа элемента
+// PUT /api/v1/item-types/{id} — Обновление типа элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_item_type_success)
@@ -427,7 +427,7 @@ BOOST_AUTO_TEST_CASE(test_update_item_type_success)
     body[U("caption")] = web::json::value::string(U("Обновленный тип"));
     body[U("kind")] = web::json::value::string(U("requirement"));
 
-    auto response = makePutRequest("/api/item-types/1", body).get();
+    auto response = makePutRequest("/api/v1/item-types/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemTypeService->updateItemTypeCallCount(), 1);
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE(test_update_item_type_partial)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Только название"));
 
-    auto response = makePutRequest("/api/item-types/1", body).get();
+    auto response = makePutRequest("/api/v1/item-types/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemTypeService->updateItemTypeCallCount(), 1);
@@ -469,21 +469,21 @@ BOOST_AUTO_TEST_CASE(test_update_item_type_not_found)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Несуществующий"));
 
-    auto response = makePutRequest("/api/item-types/999", body).get();
+    auto response = makePutRequest("/api/v1/item-types/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemTypeService->updateItemTypeCallCount(), 1);
 }
 
 // ============================================================
-// DELETE /api/item-types/{id} — Удаление типа элемента
+// DELETE /api/v1/item-types/{id} — Удаление типа элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_item_type_success)
 {
     mockItemTypeService->setDeleteItemTypeResult(true);
 
-    auto response = makeDeleteRequest("/api/item-types/2").get();
+    auto response = makeDeleteRequest("/api/v1/item-types/2").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockItemTypeService->deleteItemTypeCallCount(), 1);
@@ -495,7 +495,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_type_not_found)
 {
     mockItemTypeService->setDeleteItemTypeResult(false);
 
-    auto response = makeDeleteRequest("/api/item-types/999").get();
+    auto response = makeDeleteRequest("/api/v1/item-types/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemTypeService->deleteItemTypeCallCount(), 1);
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_type_not_found)
 
 BOOST_AUTO_TEST_CASE(test_delete_item_type_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/item-types/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/item-types/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemTypeService->deleteItemTypeCallCount(), 0);
@@ -529,12 +529,12 @@ BOOST_AUTO_TEST_CASE(test_full_item_type_lifecycle)
     createBody[U("kind")] = web::json::value::string(U("issue"));
     createBody[U("workflowId")] = web::json::value::number(1);
 
-    auto createResponse = makePostRequest("/api/item-types", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/item-types", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение созданного типа
     mockItemTypeService->setGetItemTypeResult(newType);
-    auto getResponse = makeGetRequest("/api/item-types/100").get();
+    auto getResponse = makeGetRequest("/api/v1/item-types/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление типа
@@ -549,17 +549,17 @@ BOOST_AUTO_TEST_CASE(test_full_item_type_lifecycle)
     );
     updateBody[U("kind")] = web::json::value::string(U("requirement"));
 
-    auto updateResponse = makePutRequest("/api/item-types/100", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/item-types/100", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Удаление типа
     mockItemTypeService->setDeleteItemTypeResult(true);
-    auto deleteResponse = makeDeleteRequest("/api/item-types/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/item-types/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка, что тип удален
     mockItemTypeService->setGetItemTypeResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/item-types/100").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/item-types/100").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 

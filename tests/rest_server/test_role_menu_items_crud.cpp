@@ -103,7 +103,7 @@ struct RoleMenuItemsTestFixture
 BOOST_FIXTURE_TEST_SUITE(RoleMenuItemsCrudTestSuite, RoleMenuItemsTestFixture)
 
 // ============================================================
-// GET /api/role-menu-items — Получение списка пунктов меню
+// GET /api/v1/role-menu-items — Получение списка пунктов меню
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_role_menu_items_returns_list)
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(test_get_role_menu_items_returns_list)
     testPage.totalCount = 2;
     mockRoleMenuItemService->setGetRoleMenuItemsResult(testPage);
 
-    auto response = makeGetRequest("/api/role-menu-items").get();
+    auto response = makeGetRequest("/api/v1/role-menu-items").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getGetRoleMenuItemsCallCount(), 1);
 
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(test_get_role_menu_items_with_pagination)
     services::RoleMenuItemsPage emptyPage;
     mockRoleMenuItemService->setGetRoleMenuItemsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/role-menu-items?page=2&pageSize=15").get();
+    auto response = makeGetRequest("/api/v1/role-menu-items?page=2&pageSize=15").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getLastGetRoleMenuItemsPage(), 2);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getLastGetRoleMenuItemsPageSize(), 15);
@@ -148,14 +148,14 @@ BOOST_AUTO_TEST_CASE(test_get_role_menu_items_with_role_filter)
     services::RoleMenuItemsPage emptyPage;
     mockRoleMenuItemService->setGetRoleMenuItemsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/role-menu-items?roleId=42").get();
+    auto response = makeGetRequest("/api/v1/role-menu-items?roleId=42").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockRoleMenuItemService->getLastGetRoleMenuItemsRoleId().has_value());
     BOOST_CHECK_EQUAL(*mockRoleMenuItemService->getLastGetRoleMenuItemsRoleId(), 42);
 }
 
 // ============================================================
-// GET /api/role-menu-items/{id} — Получение пункта меню по ID
+// GET /api/v1/role-menu-items/{id} — Получение пункта меню по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_role_menu_item_by_id_success)
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(test_get_role_menu_item_by_id_success)
     item.link = "/profile";
     mockRoleMenuItemService->setGetRoleMenuItemResult(item);
 
-    auto response = makeGetRequest("/api/role-menu-items/5").get();
+    auto response = makeGetRequest("/api/v1/role-menu-items/5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getLastGetRoleMenuItemId(), 5);
 
@@ -181,12 +181,12 @@ BOOST_AUTO_TEST_CASE(test_get_role_menu_item_not_found)
 {
     mockRoleMenuItemService->setGetRoleMenuItemResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/role-menu-items/999").get();
+    auto response = makeGetRequest("/api/v1/role-menu-items/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/role-menu-items — Создание пункта меню
+// POST /api/v1/role-menu-items — Создание пункта меню
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_role_menu_item_success)
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(test_create_role_menu_item_success)
     body[U("link")] = json::value::string(U("/new"));
     body[U("icon")] = json::value::string(U("icon.png"));
 
-    auto response = makePostRequest("/api/role-menu-items", body).get();
+    auto response = makePostRequest("/api/v1/role-menu-items", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getCreateRoleMenuItemCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRoleMenuItemService->getLastCreatedRoleMenuItem().roleId, 5);
@@ -219,14 +219,14 @@ BOOST_AUTO_TEST_CASE(test_create_role_menu_item_missing_required_fields)
     body[U("roleId")] = json::value::number(5);
     body[U("link")] = json::value::string(U("/new"));
 
-    auto response = makePostRequest("/api/role-menu-items", body).get();
+    auto response = makePostRequest("/api/v1/role-menu-items", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     // Сервис НЕ должен быть вызван, так как валидация происходит в handler
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getCreateRoleMenuItemCallCount(), 0);
 }
 
 // ============================================================
-// PUT /api/role-menu-items/{id} — Обновление пункта меню
+// PUT /api/v1/role-menu-items/{id} — Обновление пункта меню
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_role_menu_item_success)
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(test_update_role_menu_item_success)
     json::value body;
     body[U("caption")] = json::value::string(U("Updated Caption"));
 
-    auto response = makePutRequest("/api/role-menu-items/1", body).get();
+    auto response = makePutRequest("/api/v1/role-menu-items/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getUpdateRoleMenuItemCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRoleMenuItemService->getLastUpdatedRoleMenuItem().id, 1);
@@ -252,19 +252,19 @@ BOOST_AUTO_TEST_CASE(test_update_role_menu_item_not_found)
     json::value body;
     body[U("caption")] = json::value::string(U("Ghost"));
 
-    auto response = makePutRequest("/api/role-menu-items/999", body).get();
+    auto response = makePutRequest("/api/v1/role-menu-items/999", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/role-menu-items/{id} — Удаление пункта меню
+// DELETE /api/v1/role-menu-items/{id} — Удаление пункта меню
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_role_menu_item_success)
 {
     mockRoleMenuItemService->setDeleteRoleMenuItemResult(true);
 
-    auto response = makeDeleteRequest("/api/role-menu-items/3").get();
+    auto response = makeDeleteRequest("/api/v1/role-menu-items/3").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getDeleteRoleMenuItemCallCount(), 1);
     BOOST_CHECK_EQUAL(mockRoleMenuItemService->getLastDeletedRoleMenuItemId(), 3);
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(test_delete_role_menu_item_not_found)
 {
     mockRoleMenuItemService->setDeleteRoleMenuItemResult(false);
 
-    auto response = makeDeleteRequest("/api/role-menu-items/999").get();
+    auto response = makeDeleteRequest("/api/v1/role-menu-items/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 

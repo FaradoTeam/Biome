@@ -42,7 +42,7 @@ do_put() {
 authenticate() {
     print_header "Аутентификация пользователя admin..."
     
-    local response=$(curl -s -X POST "${BASE_URL}/auth/login" \
+    local response=$(curl -s -X POST "${BASE_URL}/api/v1/auth/login" \
         -H "Content-Type: application/json" \
         -d '{"login":"admin","password":"password"}')
     
@@ -76,7 +76,7 @@ create_workflow() {
     local caption="$2"
     
     print_header "Создание рабочего процесса '$caption'..."
-    local response=$(do_post "/api/workflows" "$token" "{\"caption\": \"$caption\", \"description\": \"Created by test\"}")
+    local response=$(do_post "/api/v1/workflows" "$token" "{\"caption\": \"$caption\", \"description\": \"Created by test\"}")
     
     if is_success "$response"; then
         local id=$(echo "$response" | jq -r '.id')
@@ -96,7 +96,7 @@ create_state() {
     local caption="$3"
     local order="$4"
     
-    local response=$(do_post "/api/states" "$token" "{\"workflowId\": $workflow_id, \"caption\": \"$caption\", \"orderNumber\": $order}")
+    local response=$(do_post "/api/v1/states" "$token" "{\"workflowId\": $workflow_id, \"caption\": \"$caption\", \"orderNumber\": $order}")
     
     if is_success "$response"; then
         local id=$(echo "$response" | jq -r '.id')
@@ -116,7 +116,7 @@ create_item_type() {
     local caption="$4"
     local kind="$5"
     
-    local response=$(do_post "/api/item-types" "$token" "{\"workflowId\": $workflow_id, \"defaultStateId\": $default_state_id, \"caption\": \"$caption\", \"kind\": \"$kind\"}")
+    local response=$(do_post "/api/v1/item-types" "$token" "{\"workflowId\": $workflow_id, \"defaultStateId\": $default_state_id, \"caption\": \"$caption\", \"kind\": \"$kind\"}")
     
     if is_success "$response"; then
         local id=$(echo "$response" | jq -r '.id')
@@ -133,7 +133,7 @@ create_project() {
     local token="$1"
     local caption="$2"
     
-    local response=$(do_post "/api/projects" "$token" "{\"caption\": \"$caption\"}")
+    local response=$(do_post "/api/v1/projects" "$token" "{\"caption\": \"$caption\"}")
     
     if is_success "$response"; then
         local id=$(echo "$response" | jq -r '.id')
@@ -151,7 +151,7 @@ create_phase() {
     local project_id="$2"
     local caption="$3"
     
-    local response=$(do_post "/api/phases" "$token" "{\"caption\": \"$caption\", \"projectId\": $project_id}")
+    local response=$(do_post "/api/v1/phases" "$token" "{\"caption\": \"$caption\", \"projectId\": $project_id}")
     
     if is_success "$response"; then
         local id=$(echo "$response" | jq -r '.id')
@@ -171,7 +171,7 @@ create_item() {
     local phase_id="$4"
     local caption="$5"
     
-    local response=$(do_post "/api/items" "$token" "{\"caption\": \"$caption\", \"itemTypeId\": $item_type_id, \"stateId\": $state_id, \"phaseId\": $phase_id}")
+    local response=$(do_post "/api/v1/items" "$token" "{\"caption\": \"$caption\", \"itemTypeId\": $item_type_id, \"stateId\": $state_id, \"phaseId\": $phase_id}")
     
     if is_success "$response"; then
         local id=$(echo "$response" | jq -r '.id')
@@ -247,7 +247,7 @@ main() {
     print_header "Тест 1: Создание записи истории изменений"
     
     HISTORY_DATA='{"diff": "{\"caption\": \"Изменён заголовок\"}"}'
-    RESPONSE=$(do_post "/api/items/${ITEM_ID}/histories" "$TOKEN" "$HISTORY_DATA")
+    RESPONSE=$(do_post "/api/v1/items/${ITEM_ID}/histories" "$TOKEN" "$HISTORY_DATA")
     
     if is_success "$RESPONSE"; then
         HISTORY_ID=$(echo "$RESPONSE" | jq -r '.id')
@@ -267,7 +267,7 @@ main() {
         echo "" >&2
         print_header "Тест 2: Получение записи истории по ID"
         
-        RESPONSE=$(do_get "/api/items/histories/${HISTORY_ID}" "$TOKEN")
+        RESPONSE=$(do_get "/api/v1/items/histories/${HISTORY_ID}" "$TOKEN")
         FOUND_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
         
         if [ "$FOUND_ID" = "$HISTORY_ID" ]; then
@@ -282,7 +282,7 @@ main() {
         echo "" >&2
         print_header "Тест 3: Получение списка записей истории"
         
-        RESPONSE=$(do_get "/api/items/histories?itemId=${ITEM_ID}" "$TOKEN")
+        RESPONSE=$(do_get "/api/v1/items/histories?itemId=${ITEM_ID}" "$TOKEN")
         TOTAL_COUNT=$(echo "$RESPONSE" | jq -r '.totalCount // 0')
         
         if [ "$TOTAL_COUNT" -gt 0 ]; then
@@ -295,9 +295,9 @@ main() {
         echo "" >&2
         print_header "Тест 4: Удаление записи истории"
         
-        do_delete "/api/items/histories/${HISTORY_ID}" "$TOKEN"
+        do_delete "/api/v1/items/histories/${HISTORY_ID}" "$TOKEN"
         
-        RESPONSE=$(do_get "/api/items/histories/${HISTORY_ID}" "$TOKEN")
+        RESPONSE=$(do_get "/api/v1/items/histories/${HISTORY_ID}" "$TOKEN")
         CHECK_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
         
         if [ -z "$CHECK_ID" ]; then
@@ -315,45 +315,45 @@ main() {
     
     # Удаляем элемент
     if [ -n "$ITEM_ID" ]; then
-        do_delete "/api/items/${ITEM_ID}" "$TOKEN"
+        do_delete "/api/v1/items/${ITEM_ID}" "$TOKEN"
         print_success "Удалён элемент ID: $ITEM_ID"
     fi
     
     # Удаляем фазу
     if [ -n "$PHASE_ID" ]; then
-        do_delete "/api/phases/${PHASE_ID}" "$TOKEN"
+        do_delete "/api/v1/phases/${PHASE_ID}" "$TOKEN"
         print_success "Удалена фаза ID: $PHASE_ID"
     fi
     
     # Удаляем проект
     if [ -n "$PROJECT_ID" ]; then
-        do_delete "/api/projects/${PROJECT_ID}" "$TOKEN"
+        do_delete "/api/v1/projects/${PROJECT_ID}" "$TOKEN"
         print_success "Удалён проект ID: $PROJECT_ID"
     fi
     
     # Удаляем тип элемента
     if [ -n "$ITEM_TYPE_ID" ]; then
-        do_delete "/api/item-types/${ITEM_TYPE_ID}" "$TOKEN"
+        do_delete "/api/v1/item-types/${ITEM_TYPE_ID}" "$TOKEN"
         print_success "Удалён тип элемента ID: $ITEM_TYPE_ID"
     fi
     
     # Удаляем состояния
     if [ -n "$STATE1_ID" ]; then
-        do_delete "/api/states/${STATE1_ID}" "$TOKEN"
+        do_delete "/api/v1/states/${STATE1_ID}" "$TOKEN"
         print_success "Удалено состояние ID: $STATE1_ID"
     fi
     if [ -n "$STATE2_ID" ]; then
-        do_delete "/api/states/${STATE2_ID}" "$TOKEN"
+        do_delete "/api/v1/states/${STATE2_ID}" "$TOKEN"
         print_success "Удалено состояние ID: $STATE2_ID"
     fi
     if [ -n "$STATE3_ID" ]; then
-        do_delete "/api/states/${STATE3_ID}" "$TOKEN"
+        do_delete "/api/v1/states/${STATE3_ID}" "$TOKEN"
         print_success "Удалено состояние ID: $STATE3_ID"
     fi
     
     # Удаляем рабочий процесс
     if [ -n "$WORKFLOW_ID" ]; then
-        do_delete "/api/workflows/${WORKFLOW_ID}" "$TOKEN"
+        do_delete "/api/v1/workflows/${WORKFLOW_ID}" "$TOKEN"
         print_success "Удалён рабочий процесс ID: $WORKFLOW_ID"
     fi
     
