@@ -21,6 +21,7 @@
 #include "api/handlers/phases_handler.h"
 #include "api/handlers/plans_handler.h"
 #include "api/handlers/projects_handler.h"
+#include "api/handlers/project_teams_handler.h"
 #include "api/handlers/role_menu_items_handler.h"
 #include "api/handlers/roles_handler.h"
 #include "api/handlers/rule_item_types_handler.h"
@@ -204,6 +205,11 @@ void RestServer::setPlanService(std::shared_ptr<services::IPlanService> service)
 void RestServer::setProjectService(std::shared_ptr<services::IProjectService> projectService)
 {
     m_projectService = projectService;
+}
+
+void RestServer::setProjectTeamService(std::shared_ptr<services::IProjectTeamService> service)
+{
+    m_projectTeamService = service;
 }
 
 void RestServer::setUserService(std::shared_ptr<services::IUserService> userService)
@@ -953,6 +959,48 @@ void RestServer::registerRoutes()
             [projectsHandler](const auto& request, const auto& userId)
             {
                 projectsHandler->handleDeleteProject(request, userId);
+            }
+        );
+    }
+
+    // ===== Project Teams (связи проектов и команд) =====
+    if (m_projectTeamService)
+    {
+        auto handler = std::make_shared<handlers::ProjectTeamsHandler>(m_projectTeamService);
+
+        // GET /project-teams — список связей
+        addRouteGet(
+            "/project-teams",
+            [handler](const auto& req, const auto& uid)
+            {
+                handler->handleGetItems(req, uid);
+            }
+        );
+
+        // POST /project-teams — создание связи
+        addRoutePost(
+            "/project-teams",
+            [handler](const auto& req, const auto& uid)
+            {
+                handler->handleCreateItem(req, uid);
+            }
+        );
+
+        // GET /project-teams/{id} — получение связи по ID
+        addRouteGet(
+            R"(/project-teams/(\d+))",
+            [handler](const auto& req, const auto& uid)
+            {
+                handler->handleGetItem(req, uid);
+            }
+        );
+
+        // DELETE /project-teams/{id} — удаление связи
+        addRouteDel(
+            R"(/project-teams/(\d+))",
+            [handler](const auto& req, const auto& uid)
+            {
+                handler->handleDeleteItem(req, uid);
             }
         );
     }

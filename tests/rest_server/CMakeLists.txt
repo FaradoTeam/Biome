@@ -26,6 +26,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/phases_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/plans_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/projects_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/project_teams_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/role_menu_items_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/roles_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/rule_item_types_handler.cpp
@@ -104,6 +105,7 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_phases_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_plans_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_projects_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_project_teams_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_rest_server.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_role_menu_items_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_roles_crud.cpp

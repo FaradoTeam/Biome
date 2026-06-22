@@ -32,6 +32,7 @@ class ILinkTypeService;
 class IPhaseService;
 class IPlanService;
 class IProjectService;
+class IProjectTeamService;
 class IUserService;
 class IStateService;
 class IWorkflowService;
@@ -112,6 +113,7 @@ public:
     void setPhaseService(std::shared_ptr<services::IPhaseService> phaseService);
     void setPlanService(std::shared_ptr<services::IPlanService> planService);
     void setProjectService(std::shared_ptr<services::IProjectService> projectService);
+    void setProjectTeamService(std::shared_ptr<services::IProjectTeamService> service);
     void setUserService(std::shared_ptr<services::IUserService> userService);
     void setStateService(std::shared_ptr<services::IStateService> stateService);
     void setWorkflowService(std::shared_ptr<services::IWorkflowService> workflowService);
@@ -277,6 +279,7 @@ private:
     std::shared_ptr<services::IPhaseService> m_phaseService;
     std::shared_ptr<services::IPlanService> m_planService;
     std::shared_ptr<services::IProjectService> m_projectService;
+    std::shared_ptr<services::IProjectTeamService> m_projectTeamService;
     std::shared_ptr<services::IUserService> m_userService;
     std::shared_ptr<services::IStateService> m_stateService;
     std::shared_ptr<services::IWorkflowService> m_workflowService;

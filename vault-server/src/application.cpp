@@ -26,6 +26,7 @@
 #include "logic/impl/phase_service.h"
 #include "logic/impl/plan_service.h"
 #include "logic/impl/project_service.h"
+#include "logic/impl/project_team_service.h"
 #include "logic/impl/role_menu_item_service.h"
 #include "logic/impl/role_service.h"
 #include "logic/impl/rule_item_type_service.h"
@@ -54,6 +55,7 @@
 #include "repo/sqlite/sqlite_plan_item_repository.h"
 #include "repo/sqlite/sqlite_plan_repository.h"
 #include "repo/sqlite/sqlite_project_repository.h"
+#include "repo/sqlite/sqlite_project_team_repository.h"
 #include "repo/sqlite/sqlite_role_menu_item_repository.h"
 #include "repo/sqlite/sqlite_role_repository.h"
 #include "repo/sqlite/sqlite_rule_item_type_repository.h"
@@ -120,6 +122,7 @@ bool Application::initialize()
     auto planRepository = std::make_shared<repositories::SqlitePlanRepository>(m_database);
     auto planItemRepository = std::make_shared<repositories::SqlitePlanItemRepository>(m_database);
     auto projectRepository = std::make_shared<repositories::SqliteProjectRepository>(m_database);
+    auto projectTeamRepository = std::make_shared<repositories::SqliteProjectTeamRepository>(m_database);
     auto roleMenuItemRepository = std::make_shared<repositories::SqliteRoleMenuItemRepository>(m_database);
     auto roleRepository = std::make_shared<repositories::SqliteRoleRepository>(m_database);
     auto ruleItemTypeRepository = std::make_shared<repositories::SqliteRuleItemTypeRepository>(m_database);
@@ -252,6 +255,12 @@ bool Application::initialize()
         userTeamRoleRepository, userRepository, teamRepository, roleRepository,
         authorizationService
     );
+    auto projectTeamService = std::make_shared<services::ProjectTeamService>(
+        projectTeamRepository,
+        projectRepository,
+        teamRepository,
+        authorizationService
+    );
     auto boardService = std::make_shared<services::BoardService>(
         boardRepository,
         projectService,
@@ -296,6 +305,7 @@ bool Application::initialize()
     m_restServer->setPhaseService(phaseService);
     m_restServer->setPlanService(planService);
     m_restServer->setProjectService(projectService);
+    m_restServer->setProjectTeamService(projectTeamService);
     m_restServer->setRoleService(roleService);
     m_restServer->setRoleMenuItemService(roleMenuItemService);
     m_restServer->setRuleService(ruleService);
