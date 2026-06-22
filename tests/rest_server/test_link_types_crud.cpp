@@ -179,12 +179,12 @@ struct LinkTypesTestFixture
 BOOST_FIXTURE_TEST_SUITE(LinkTypesCrudTestSuite, LinkTypesTestFixture)
 
 // ============================================================
-// GET /api/link-types — Получение списка типов связей
+// GET /api/v1/link-types — Получение списка типов связей
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_link_types_returns_list)
 {
-    auto response = makeGetRequest("/api/link-types").get();
+    auto response = makeGetRequest("/api/v1/link-types").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getGetLinkTypesCallCount(), 1);
@@ -201,7 +201,7 @@ BOOST_AUTO_TEST_CASE(test_get_link_types_with_pagination_params)
     services::LinkTypesPage emptyPage;
     mockLinkTypeService->setGetLinkTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/link-types?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/link-types?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getLastGetLinkTypesPage(), 3);
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(test_get_link_types_with_source_filter)
     filteredPage.totalCount = 1;
     mockLinkTypeService->setGetLinkTypesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/link-types?sourceItemTypeId=42").get();
+    auto response = makeGetRequest("/api/v1/link-types?sourceItemTypeId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockLinkTypeService->getLastGetLinkTypesSourceItemTypeId().has_value());
@@ -243,7 +243,7 @@ BOOST_AUTO_TEST_CASE(test_get_link_types_with_destination_filter)
     filteredPage.totalCount = 1;
     mockLinkTypeService->setGetLinkTypesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/link-types?destinationItemTypeId=100").get();
+    auto response = makeGetRequest("/api/v1/link-types?destinationItemTypeId=100").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockLinkTypeService->getLastGetLinkTypesDestItemTypeId().has_value());
@@ -255,7 +255,7 @@ BOOST_AUTO_TEST_CASE(test_get_link_types_empty_list)
     services::LinkTypesPage emptyPage;
     mockLinkTypeService->setGetLinkTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/link-types").get();
+    auto response = makeGetRequest("/api/v1/link-types").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -265,14 +265,14 @@ BOOST_AUTO_TEST_CASE(test_get_link_types_empty_list)
 
 BOOST_AUTO_TEST_CASE(test_get_link_types_requires_auth)
 {
-    auto response = makeGetRequest("/api/link-types", "").get();
+    auto response = makeGetRequest("/api/v1/link-types", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getGetLinkTypesCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/link-types/{id} — Получение типа связи по ID
+// GET /api/v1/link-types/{id} — Получение типа связи по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_link_type_by_id_success)
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(test_get_link_type_by_id_success)
     linkType.isBidirectional = true;
     mockLinkTypeService->setGetLinkTypeResult(linkType);
 
-    auto response = makeGetRequest("/api/link-types/42").get();
+    auto response = makeGetRequest("/api/v1/link-types/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getGetLinkTypeCallCount(), 1);
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(test_get_link_type_not_found)
 {
     mockLinkTypeService->setGetLinkTypeResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/link-types/999").get();
+    auto response = makeGetRequest("/api/v1/link-types/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getGetLinkTypeCallCount(), 1);
@@ -312,12 +312,12 @@ BOOST_AUTO_TEST_CASE(test_get_link_type_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_link_type_invalid_id)
 {
-    auto response = makeGetRequest("/api/link-types/invalid").get();
+    auto response = makeGetRequest("/api/v1/link-types/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/link-types — Создание типа связи
+// POST /api/v1/link-types — Создание типа связи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_link_type_success)
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(test_create_link_type_success)
     body[U("destinationItemTypeId")] = web::json::value::number(2);
     body[U("isBidirectional")] = web::json::value::boolean(false);
 
-    auto response = makePostRequest("/api/link-types", body).get();
+    auto response = makePostRequest("/api/v1/link-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getCreateLinkTypeCallCount(), 1);
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(test_create_link_type_missing_required_fields)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Только название"));
 
-    auto response = makePostRequest("/api/link-types", body).get();
+    auto response = makePostRequest("/api/v1/link-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getCreateLinkTypeCallCount(), 0);
@@ -369,14 +369,14 @@ BOOST_AUTO_TEST_CASE(test_create_link_type_missing_source_type)
     body[U("caption")] = web::json::value::string(U("Без исходного типа"));
     body[U("destinationItemTypeId")] = web::json::value::number(1);
 
-    auto response = makePostRequest("/api/link-types", body).get();
+    auto response = makePostRequest("/api/v1/link-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getCreateLinkTypeCallCount(), 0);
 }
 
 // ============================================================
-// PUT /api/link-types/{id} — Обновление типа связи
+// PUT /api/v1/link-types/{id} — Обновление типа связи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_link_type_success)
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(test_update_link_type_success)
     body[U("caption")] = web::json::value::string(U("Обновлённый тип"));
     body[U("isBidirectional")] = web::json::value::boolean(true);
 
-    auto response = makePutRequest("/api/link-types/1", body).get();
+    auto response = makePutRequest("/api/v1/link-types/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getUpdateLinkTypeCallCount(), 1);
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE(test_update_link_type_partial)
     web::json::value body;
     body[U("isBidirectional")] = web::json::value::boolean(true);
 
-    auto response = makePutRequest("/api/link-types/1", body).get();
+    auto response = makePutRequest("/api/v1/link-types/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getUpdateLinkTypeCallCount(), 1);
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(test_update_link_type_not_found)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Несуществующий"));
 
-    auto response = makePutRequest("/api/link-types/999", body).get();
+    auto response = makePutRequest("/api/v1/link-types/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getUpdateLinkTypeCallCount(), 1);
@@ -448,7 +448,7 @@ BOOST_AUTO_TEST_CASE(test_update_link_type_regular_user_forbidden)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Попытка обновления"));
 
-    auto response = makePutRequest("/api/link-types/1", body).get();
+    auto response = makePutRequest("/api/v1/link-types/1", body).get();
 
     // TODO: Должен вернуть 403, потому что ресурс существует, но нет прав на обновление
     // пока ожидаем NotFound
@@ -456,14 +456,14 @@ BOOST_AUTO_TEST_CASE(test_update_link_type_regular_user_forbidden)
 }
 
 // ============================================================
-// DELETE /api/link-types/{id} — Удаление типа связи
+// DELETE /api/v1/link-types/{id} — Удаление типа связи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_link_type_success)
 {
     mockLinkTypeService->setDeleteLinkTypeResult(true);
 
-    auto response = makeDeleteRequest("/api/link-types/3").get();
+    auto response = makeDeleteRequest("/api/v1/link-types/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getDeleteLinkTypeCallCount(), 1);
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE(test_delete_link_type_not_found)
 {
     mockLinkTypeService->setDeleteLinkTypeResult(false);
 
-    auto response = makeDeleteRequest("/api/link-types/999").get();
+    auto response = makeDeleteRequest("/api/v1/link-types/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getDeleteLinkTypeCallCount(), 1);
@@ -486,14 +486,14 @@ BOOST_AUTO_TEST_CASE(test_delete_link_type_in_use)
 {
     mockLinkTypeService->setDeleteLinkTypeResult(false);
 
-    auto response = makeDeleteRequest("/api/link-types/1").get();
+    auto response = makeDeleteRequest("/api/v1/link-types/1").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_link_type_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/link-types/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/link-types/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockLinkTypeService->getDeleteLinkTypeCallCount(), 0);
@@ -519,12 +519,12 @@ BOOST_AUTO_TEST_CASE(test_full_link_type_lifecycle)
     createBody[U("sourceItemTypeId")] = web::json::value::number(1);
     createBody[U("destinationItemTypeId")] = web::json::value::number(1);
 
-    auto createResponse = makePostRequest("/api/link-types", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/link-types", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение созданного типа
     mockLinkTypeService->setGetLinkTypeResult(newType);
-    auto getResponse = makeGetRequest("/api/link-types/100").get();
+    auto getResponse = makeGetRequest("/api/v1/link-types/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление типа
@@ -537,17 +537,17 @@ BOOST_AUTO_TEST_CASE(test_full_link_type_lifecycle)
     updateBody[U("caption")] = web::json::value::string(U("Обновлённый жизненный цикл"));
     updateBody[U("isBidirectional")] = web::json::value::boolean(true);
 
-    auto updateResponse = makePutRequest("/api/link-types/100", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/link-types/100", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Удаление типа
     mockLinkTypeService->setDeleteLinkTypeResult(true);
-    auto deleteResponse = makeDeleteRequest("/api/link-types/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/link-types/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка, что тип удалён
     mockLinkTypeService->setGetLinkTypeResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/link-types/100").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/link-types/100").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 

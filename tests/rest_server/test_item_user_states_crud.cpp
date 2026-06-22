@@ -189,12 +189,12 @@ struct ItemUserStatesTestFixture
 BOOST_FIXTURE_TEST_SUITE(ItemUserStatesCrudTestSuite, ItemUserStatesTestFixture)
 
 // ============================================================
-// GET /api/items/user-states — Получение списка записей
+// GET /api/v1/items/user-states — Получение списка записей
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_user_states_returns_list)
 {
-    auto response = makeGetRequest("/api/items/user-states").get();
+    auto response = makeGetRequest("/api/v1/items/user-states").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getGetItemUserStatesCallCount(), 1);
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_user_states_with_pagination_params)
     services::ItemUserStatesPage emptyPage;
     mockItemUserStateService->setGetItemUserStatesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/items/user-states?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/items/user-states?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getLastGetItemUserStatesPage(), 3);
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_user_states_filter_by_item_id)
     filteredPage.totalCount = 1;
     mockItemUserStateService->setGetItemUserStatesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/items/user-states?itemId=42").get();
+    auto response = makeGetRequest("/api/v1/items/user-states?itemId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemUserStateService->getLastGetItemUserStatesItemId().has_value());
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_user_states_filter_by_user_id)
     filteredPage.totalCount = 1;
     mockItemUserStateService->setGetItemUserStatesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/items/user-states?userId=200").get();
+    auto response = makeGetRequest("/api/v1/items/user-states?userId=200").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemUserStateService->getLastGetItemUserStatesFilterUserId().has_value());
@@ -263,14 +263,14 @@ BOOST_AUTO_TEST_CASE(test_get_item_user_states_filter_by_user_id)
 
 BOOST_AUTO_TEST_CASE(test_get_item_user_states_requires_auth)
 {
-    auto response = makeGetRequest("/api/items/user-states", "").get();
+    auto response = makeGetRequest("/api/v1/items/user-states", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getGetItemUserStatesCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/items/user-states/{id} — Получение записи по ID
+// GET /api/v1/items/user-states/{id} — Получение записи по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_user_state_by_id_success)
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_user_state_by_id_success)
     state.comment = "Конкретная запись";
     mockItemUserStateService->setGetItemUserStateResult(state);
 
-    auto response = makeGetRequest("/api/items/user-states/42").get();
+    auto response = makeGetRequest("/api/v1/items/user-states/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getGetItemUserStateCallCount(), 1);
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_user_state_not_found)
 {
     mockItemUserStateService->setGetItemUserStateResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/items/user-states/999").get();
+    auto response = makeGetRequest("/api/v1/items/user-states/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getGetItemUserStateCallCount(), 1);
@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_user_state_not_found)
 }
 
 // ============================================================
-// GET /api/items/{itemId}/user-states/last — Последняя запись для элемента
+// GET /api/v1/items/{itemId}/user-states/last — Последняя запись для элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_last_item_user_state_success)
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(test_get_last_item_user_state_success)
     lastState.comment = "Последнее состояние";
     mockItemUserStateService->setGetLastItemUserStateResult(lastState);
 
-    auto response = makeGetRequest("/api/items/1/user-states/last").get();
+    auto response = makeGetRequest("/api/v1/items/1/user-states/last").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getGetLastItemUserStateCallCount(), 1);
@@ -337,13 +337,13 @@ BOOST_AUTO_TEST_CASE(test_get_last_item_user_state_not_found)
 {
     mockItemUserStateService->setGetLastItemUserStateResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/items/999/user-states/last").get();
+    auto response = makeGetRequest("/api/v1/items/999/user-states/last").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/items/{itemId}/user-states — Создание записи
+// POST /api/v1/items/{itemId}/user-states — Создание записи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_item_user_state_success)
@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_user_state_success)
     body[U("stateId")] = web::json::value::number(3);
     body[U("comment")] = web::json::value::string(U("Новая запись истории"));
 
-    auto response = makePostRequest("/api/items/1/user-states", body).get();
+    auto response = makePostRequest("/api/v1/items/1/user-states", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getCreateItemUserStateCallCount(), 1);
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_user_state_missing_state_id)
     web::json::value body;
     body[U("comment")] = web::json::value::string(U("Комментарий без stateId"));
 
-    auto response = makePostRequest("/api/items/1/user-states", body).get();
+    auto response = makePostRequest("/api/v1/items/1/user-states", body).get();
 
     // Отсутствует обязательное поле stateId - сервис вернёт nullopt
     // Обработчик вернёт 400 Bad Request
@@ -393,14 +393,14 @@ BOOST_AUTO_TEST_CASE(test_create_item_user_state_forbidden)
     body[U("stateId")] = web::json::value::number(3);
     body[U("comment")] = web::json::value::string(U("Попытка создания"));
 
-    auto response = makePostRequest("/api/items/1/user-states", body).get();
+    auto response = makePostRequest("/api/v1/items/1/user-states", body).get();
 
     // Пользователь 999 не имеет прав - сервер возвращает 403 Forbidden
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
 // ============================================================
-// DELETE /api/items/user-states/{id} — Удаление записи
+// DELETE /api/v1/items/user-states/{id} — Удаление записи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_item_user_state_success)
@@ -409,7 +409,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_user_state_success)
     deleteResult.success = true;
     mockItemUserStateService->setDeleteItemUserStateResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/items/user-states/3").get();
+    auto response = makeDeleteRequest("/api/v1/items/user-states/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getDeleteItemUserStateCallCount(), 1);
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_user_state_not_found)
     deleteResult.errorMessage = "State not found";
     mockItemUserStateService->setDeleteItemUserStateResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/items/user-states/999").get();
+    auto response = makeDeleteRequest("/api/v1/items/user-states/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getDeleteItemUserStateCallCount(), 1);
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_user_state_not_found)
 
 BOOST_AUTO_TEST_CASE(test_delete_item_user_state_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/items/user-states/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/items/user-states/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemUserStateService->getDeleteItemUserStateCallCount(), 0);
@@ -458,7 +458,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_user_state_lifecycle)
     createBody[U("stateId")] = web::json::value::number(3);
     createBody[U("comment")] = web::json::value::string(U("Жизненный цикл записи"));
 
-    auto createResponse = makePostRequest("/api/items/1/user-states", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/items/1/user-states", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
     auto createJson = createResponse.extract_json().get();
     int64_t newStateId = createJson.at(U("id")).as_integer();
@@ -466,12 +466,12 @@ BOOST_AUTO_TEST_CASE(test_full_item_user_state_lifecycle)
 
     // 2. Чтение созданной записи
     mockItemUserStateService->setGetItemUserStateResult(newState);
-    auto getResponse = makeGetRequest("/api/items/user-states/" + std::to_string(newStateId)).get();
+    auto getResponse = makeGetRequest("/api/v1/items/user-states/" + std::to_string(newStateId)).get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Получение последней записи для элемента
     mockItemUserStateService->setGetLastItemUserStateResult(newState);
-    auto getLastResponse = makeGetRequest("/api/items/1/user-states/last").get();
+    auto getLastResponse = makeGetRequest("/api/v1/items/1/user-states/last").get();
     BOOST_CHECK_EQUAL(getLastResponse.status_code(), status_codes::OK);
 
     // 4. Получение списка записей
@@ -479,14 +479,14 @@ BOOST_AUTO_TEST_CASE(test_full_item_user_state_lifecycle)
     listPage.states = { newState };
     listPage.totalCount = 1;
     mockItemUserStateService->setGetItemUserStatesResult(listPage);
-    auto listResponse = makeGetRequest("/api/items/user-states?itemId=1").get();
+    auto listResponse = makeGetRequest("/api/v1/items/user-states?itemId=1").get();
     BOOST_CHECK_EQUAL(listResponse.status_code(), status_codes::OK);
 
     // 5. Удаление записи
     services::ItemUserStateResult deleteResult;
     deleteResult.success = true;
     mockItemUserStateService->setDeleteItemUserStateResult(deleteResult);
-    auto deleteResponse = makeDeleteRequest("/api/items/user-states/" + std::to_string(newStateId)).get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/items/user-states/" + std::to_string(newStateId)).get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 }
 

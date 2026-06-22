@@ -24,7 +24,7 @@ public:
     explicit PlansHandler(std::shared_ptr<services::IPlanService> planService);
 
     // ============================================================
-    // GET /api/phases/{phaseId}/plans - список планов фазы
+    // GET /phases/{phaseId}/plans - список планов фазы
     // ============================================================
     void handleGetPlansByPhase(
         const web::http::http_request& request,
@@ -32,7 +32,7 @@ public:
     );
 
     // ============================================================
-    // POST /api/phases/{phaseId}/plans - создание первого плана в фазе
+    // POST /phases/{phaseId}/plans - создание первого плана в фазе
     // ============================================================
     void handleCreateFirstPlan(
         const web::http::http_request& request,
@@ -40,7 +40,7 @@ public:
     );
 
     // ============================================================
-    // GET /api/plans/{id} - получение плана по ID
+    // GET /plans/{id} - получение плана по ID
     // ============================================================
     void handleGetPlan(
         const web::http::http_request& request,
@@ -48,7 +48,7 @@ public:
     );
 
     // ============================================================
-    // DELETE /api/plans/{id} - удаление плана (только черновик)
+    // DELETE /plans/{id} - удаление плана (только черновик)
     // ============================================================
     void handleDeletePlan(
         const web::http::http_request& request,
@@ -56,7 +56,7 @@ public:
     );
 
     // ============================================================
-    // POST /api/plans/{id}/fork - создание новой версии плана
+    // POST /plans/{id}/fork - создание новой версии плана
     // ============================================================
     void handleForkPlan(
         const web::http::http_request& request,
@@ -64,7 +64,7 @@ public:
     );
 
     // ============================================================
-    // POST /api/plans/{id}/activate - активация плана
+    // POST /plans/{id}/activate - активация плана
     // ============================================================
     void handleActivatePlan(
         const web::http::http_request& request,
@@ -72,7 +72,7 @@ public:
     );
 
     // ============================================================
-    // GET /api/plans/{planId}/items - получение элементов плана
+    // GET /plans/{planId}/items - получение элементов плана
     // ============================================================
     void handleGetPlanItems(
         const web::http::http_request& request,
@@ -80,7 +80,7 @@ public:
     );
 
     // ============================================================
-    // POST /api/plans/{planId}/items - добавление элемента в план
+    // POST /plans/{planId}/items - добавление элемента в план
     // ============================================================
     void handleAddPlanItem(
         const web::http::http_request& request,
@@ -88,7 +88,7 @@ public:
     );
 
     // ============================================================
-    // GET /api/plan-items/{id} - получение элемента плана по ID
+    // GET /plan-items/{id} - получение элемента плана по ID
     // ============================================================
     void handleGetPlanItem(
         const web::http::http_request& request,
@@ -96,7 +96,7 @@ public:
     );
 
     // ============================================================
-    // PUT /api/plan-items/{id} - обновление элемента плана
+    // PUT /plan-items/{id} - обновление элемента плана
     // ============================================================
     void handleUpdatePlanItem(
         const web::http::http_request& request,
@@ -104,7 +104,7 @@ public:
     );
 
     // ============================================================
-    // DELETE /api/plan-items/{id} - удаление элемента из плана
+    // DELETE /plan-items/{id} - удаление элемента из плана
     // ============================================================
     void handleDeletePlanItem(
         const web::http::http_request& request,

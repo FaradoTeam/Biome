@@ -7,6 +7,8 @@
 #include "common/log/log.h"
 
 #include "api/handlers/auth_handler.h"
+#include "api/handlers/board_columns_handler.h"
+#include "api/handlers/boards_handler.h"
 #include "api/handlers/edges_handler.h"
 #include "api/handlers/field_type_possible_values_handler.h"
 #include "api/handlers/field_types_handler.h"
@@ -44,9 +46,14 @@
 namespace server
 {
 
-RestServer::RestServer(const std::string& host, uint16_t port)
+RestServer::RestServer(
+    const std::string& host,
+    uint16_t port,
+    const std::string& basePath
+)
     : m_host(host)
     , m_port(port)
+    , m_basePath(basePath)
     , m_isRunning(false)
 {
     LOG_DEBUG
@@ -127,6 +134,16 @@ void RestServer::setAuthMiddleware(std::shared_ptr<IAuthMiddleware> middleware)
 void RestServer::setAuthService(std::shared_ptr<services::IAuthService> authService)
 {
     m_authService = authService;
+}
+
+void RestServer::setBoardService(std::shared_ptr<services::IBoardService> service)
+{
+    m_boardService = service;
+}
+
+void RestServer::setBoardColumnService(std::shared_ptr<services::IBoardColumnService> service)
+{
+    m_boardColumnService = service;
 }
 
 void RestServer::setFieldTypeService(std::shared_ptr<services::IFieldTypeService> fieldTypeService)
@@ -282,81 +299,81 @@ void RestServer::registerRoutes()
     {
         auto itemsHandler = std::make_shared<handlers::ItemsHandler>(m_itemService);
 
-        // GET /api/items - список элементов
+        // GET /items - список элементов
         addRouteGet(
-            "/api/items",
+            "/items",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleGetItems(request, userId);
             }
         );
 
-        // POST /api/items - создание элемента
+        // POST /items - создание элемента
         addRoutePost(
-            "/api/items",
+            "/items",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleCreateItem(request, userId);
             }
         );
 
-        // GET /api/items/{id} - получение элемента
+        // GET /items/{id} - получение элемента
         addRouteGet(
-            R"(/api/items/(\d+))",
+            R"(/items/(\d+))",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleGetItem(request, userId);
             }
         );
 
-        // PUT /api/items/{id} - обновление элемента
+        // PUT /items/{id} - обновление элемента
         addRoutePut(
-            R"(/api/items/(\d+))",
+            R"(/items/(\d+))",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleUpdateItem(request, userId);
             }
         );
 
-        // DELETE /api/items/{id} - удаление элемента
+        // DELETE /items/{id} - удаление элемента
         addRouteDel(
-            R"(/api/items/(\d+))",
+            R"(/items/(\d+))",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleDeleteItem(request, userId);
             }
         );
 
-        // POST /api/items/{id}/restore - восстановление элемента
+        // POST /items/{id}/restore - восстановление элемента
         addRoutePost(
-            R"(/api/items/(\d+)/restore)",
+            R"(/items/(\d+)/restore)",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleRestoreItem(request, userId);
             }
         );
 
-        // GET /api/items/{id}/fields - получение всех полей элемента
+        // GET /items/{id}/fields - получение всех полей элемента
         addRouteGet(
-            R"(/api/items/(\d+)/fields)",
+            R"(/items/(\d+)/fields)",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleGetItemFields(request, userId);
             }
         );
 
-        // PUT /api/items/{id}/fields/{fieldTypeId} - установка поля
+        // PUT /items/{id}/fields/{fieldTypeId} - установка поля
         addRoutePut(
-            R"(/api/items/(\d+)/fields/(\d+))",
+            R"(/items/(\d+)/fields/(\d+))",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleSetItemField(request, userId);
             }
         );
 
-        // DELETE /api/items/{id}/fields/{fieldTypeId} - удаление поля
+        // DELETE /items/{id}/fields/{fieldTypeId} - удаление поля
         addRouteDel(
-            R"(/api/items/(\d+)/fields/(\d+))",
+            R"(/items/(\d+)/fields/(\d+))",
             [itemsHandler](const auto& request, const auto& userId)
             {
                 itemsHandler->handleDeleteItemField(request, userId);
@@ -369,45 +386,45 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::ItemUserStatesHandler>(m_itemUserStateService);
 
-        // GET /api/items/user-states - список с фильтрацией
+        // GET /items/user-states - список с фильтрацией
         addRouteGet(
-            "/api/items/user-states",
+            "/items/user-states",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetItemUserStates(request, userId);
             }
         );
 
-        // GET /api/items/user-states/{id} - получение по ID
+        // GET /items/user-states/{id} - получение по ID
         addRouteGet(
-            R"(/api/items/user-states/(\d+))",
+            R"(/items/user-states/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetItemUserState(request, userId);
             }
         );
 
-        // DELETE /api/items/user-states/{id} - удаление
+        // DELETE /items/user-states/{id} - удаление
         addRouteDel(
-            R"(/api/items/user-states/(\d+))",
+            R"(/items/user-states/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleDeleteItemUserState(request, userId);
             }
         );
 
-        // GET /api/items/{itemId}/user-states/last - последняя запись
+        // GET /items/{itemId}/user-states/last - последняя запись
         addRouteGet(
-            R"(/api/items/(\d+)/user-states/last)",
+            R"(/items/(\d+)/user-states/last)",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetLastItemUserState(request, userId);
             }
         );
 
-        // POST /api/items/{itemId}/user-states - создание
+        // POST /items/{itemId}/user-states - создание
         addRoutePost(
-            R"(/api/items/(\d+)/user-states)",
+            R"(/items/(\d+)/user-states)",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleCreateItemUserState(request, userId);
@@ -420,45 +437,45 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::ItemHistoriesHandler>(m_itemHistoryService);
 
-        // GET /api/items/histories - список с фильтрацией
+        // GET /items/histories - список с фильтрацией
         addRouteGet(
-            "/api/items/histories",
+            "/items/histories",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetItemHistories(request, userId);
             }
         );
 
-        // GET /api/items/histories/{id} - получение по ID
+        // GET /items/histories/{id} - получение по ID
         addRouteGet(
-            R"(/api/items/histories/(\d+))",
+            R"(/items/histories/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetItemHistory(request, userId);
             }
         );
 
-        // DELETE /api/items/histories/{id} - удаление
+        // DELETE /items/histories/{id} - удаление
         addRouteDel(
-            R"(/api/items/histories/(\d+))",
+            R"(/items/histories/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleDeleteItemHistory(request, userId);
             }
         );
 
-        // GET /api/items/{itemId}/histories/last - последняя запись
+        // GET /items/{itemId}/histories/last - последняя запись
         addRouteGet(
-            R"(/api/items/(\d+)/histories/last)",
+            R"(/items/(\d+)/histories/last)",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetLastItemHistory(request, userId);
             }
         );
 
-        // POST /api/items/{itemId}/histories - создание
+        // POST /items/{itemId}/histories - создание
         addRoutePost(
-            R"(/api/items/(\d+)/histories)",
+            R"(/items/(\d+)/histories)",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleCreateItemHistory(request, userId);
@@ -471,45 +488,45 @@ void RestServer::registerRoutes()
     {
         auto linkTypesHandler = std::make_shared<handlers::LinkTypesHandler>(m_linkTypeService);
 
-        // GET /api/link-types - список типов связей
+        // GET /link-types - список типов связей
         addRouteGet(
-            "/api/link-types",
+            "/link-types",
             [linkTypesHandler](const auto& request, const auto& userId)
             {
                 linkTypesHandler->handleGetLinkTypes(request, userId);
             }
         );
 
-        // POST /api/link-types - создание типа связи
+        // POST /link-types - создание типа связи
         addRoutePost(
-            "/api/link-types",
+            "/link-types",
             [linkTypesHandler](const auto& request, const auto& userId)
             {
                 linkTypesHandler->handleCreateLinkType(request, userId);
             }
         );
 
-        // GET /api/link-types/{id} - получение типа связи
+        // GET /link-types/{id} - получение типа связи
         addRouteGet(
-            R"(/api/link-types/(\d+))",
+            R"(/link-types/(\d+))",
             [linkTypesHandler](const auto& request, const auto& userId)
             {
                 linkTypesHandler->handleGetLinkType(request, userId);
             }
         );
 
-        // PUT /api/link-types/{id} - обновление типа связи
+        // PUT /link-types/{id} - обновление типа связи
         addRoutePut(
-            R"(/api/link-types/(\d+))",
+            R"(/link-types/(\d+))",
             [linkTypesHandler](const auto& request, const auto& userId)
             {
                 linkTypesHandler->handleUpdateLinkType(request, userId);
             }
         );
 
-        // DELETE /api/link-types/{id} - удаление типа связи
+        // DELETE /link-types/{id} - удаление типа связи
         addRouteDel(
-            R"(/api/link-types/(\d+))",
+            R"(/link-types/(\d+))",
             [linkTypesHandler](const auto& request, const auto& userId)
             {
                 linkTypesHandler->handleDeleteLinkType(request, userId);
@@ -522,54 +539,54 @@ void RestServer::registerRoutes()
     {
         auto itemLinksHandler = std::make_shared<handlers::ItemLinksHandler>(m_itemLinkService);
 
-        // GET /api/item-links - список связей элементов
+        // GET /item-links - список связей элементов
         addRouteGet(
-            "/api/item-links",
+            "/item-links",
             [itemLinksHandler](const auto& request, const auto& userId)
             {
                 itemLinksHandler->handleGetItemLinks(request, userId);
             }
         );
 
-        // POST /api/item-links - создание связи
+        // POST /item-links - создание связи
         addRoutePost(
-            "/api/item-links",
+            "/item-links",
             [itemLinksHandler](const auto& request, const auto& userId)
             {
                 itemLinksHandler->handleCreateItemLink(request, userId);
             }
         );
 
-        // GET /api/item-links/{id} - получение связи по ID
+        // GET /item-links/{id} - получение связи по ID
         addRouteGet(
-            R"(/api/item-links/(\d+))",
+            R"(/item-links/(\d+))",
             [itemLinksHandler](const auto& request, const auto& userId)
             {
                 itemLinksHandler->handleGetItemLink(request, userId);
             }
         );
 
-        // DELETE /api/item-links/{id} - удаление связи
+        // DELETE /item-links/{id} - удаление связи
         addRouteDel(
-            R"(/api/item-links/(\d+))",
+            R"(/item-links/(\d+))",
             [itemLinksHandler](const auto& request, const auto& userId)
             {
                 itemLinksHandler->handleDeleteItemLink(request, userId);
             }
         );
 
-        // GET /api/items/{itemId}/links - все связи элемента
+        // GET /items/{itemId}/links - все связи элемента
         addRouteGet(
-            R"(/api/items/(\d+)/links)",
+            R"(/items/(\d+)/links)",
             [itemLinksHandler](const auto& request, const auto& userId)
             {
                 itemLinksHandler->handleGetItemLinksByItemId(request, userId);
             }
         );
 
-        // GET /api/link-types/{linkTypeId}/links - все связи по типу
+        // GET /link-types/{linkTypeId}/links - все связи по типу
         addRouteGet(
-            R"(/api/link-types/(\d+)/links)",
+            R"(/link-types/(\d+)/links)",
             [itemLinksHandler](const auto& request, const auto& userId)
             {
                 itemLinksHandler->handleGetItemLinksByLinkTypeId(request, userId);
@@ -582,102 +599,231 @@ void RestServer::registerRoutes()
     {
         auto plansHandler = std::make_shared<handlers::PlansHandler>(m_planService);
 
-        // GET /api/phases/{phaseId}/plans - список планов фазы
+        // GET /phases/{phaseId}/plans - список планов фазы
         addRouteGet(
-            R"(/api/phases/(\d+)/plans)",
+            R"(/phases/(\d+)/plans)",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleGetPlansByPhase(request, userId);
             }
         );
 
-        // POST /api/phases/{phaseId}/plans - создание первого плана в фазе
+        // POST /phases/{phaseId}/plans - создание первого плана в фазе
         addRoutePost(
-            R"(/api/phases/(\d+)/plans)",
+            R"(/phases/(\d+)/plans)",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleCreateFirstPlan(request, userId);
             }
         );
 
-        // GET /api/plans/{id} - получение плана
+        // GET /plans/{id} - получение плана
         addRouteGet(
-            R"(/api/plans/(\d+))",
+            R"(/plans/(\d+))",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleGetPlan(request, userId);
             }
         );
 
-        // DELETE /api/plans/{id} - удаление плана
+        // DELETE /plans/{id} - удаление плана
         addRouteDel(
-            R"(/api/plans/(\d+))",
+            R"(/plans/(\d+))",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleDeletePlan(request, userId);
             }
         );
 
-        // POST /api/plans/{id}/fork - форк плана
+        // POST /plans/{id}/fork - форк плана
         addRoutePost(
-            R"(/api/plans/(\d+)/fork)",
+            R"(/plans/(\d+)/fork)",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleForkPlan(request, userId);
             }
         );
 
-        // POST /api/plans/{id}/activate - активация плана
+        // POST /plans/{id}/activate - активация плана
         addRoutePost(
-            R"(/api/plans/(\d+)/activate)",
+            R"(/plans/(\d+)/activate)",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleActivatePlan(request, userId);
             }
         );
 
-        // GET /api/plans/{planId}/items - получение элементов плана
+        // GET /plans/{planId}/items - получение элементов плана
         addRouteGet(
-            R"(/api/plans/(\d+)/items)",
+            R"(/plans/(\d+)/items)",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleGetPlanItems(request, userId);
             }
         );
 
-        // POST /api/plans/{planId}/items - добавление элемента в план
+        // POST /plans/{planId}/items - добавление элемента в план
         addRoutePost(
-            R"(/api/plans/(\d+)/items)",
+            R"(/plans/(\d+)/items)",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleAddPlanItem(request, userId);
             }
         );
 
-        // GET /api/plan-items/{id} - получение элемента плана
+        // GET /plan-items/{id} - получение элемента плана
         addRouteGet(
-            R"(/api/plan-items/(\d+))",
+            R"(/plan-items/(\d+))",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleGetPlanItem(request, userId);
             }
         );
 
-        // PUT /api/plan-items/{id} - обновление элемента плана
+        // PUT /plan-items/{id} - обновление элемента плана
         addRoutePut(
-            R"(/api/plan-items/(\d+))",
+            R"(/plan-items/(\d+))",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleUpdatePlanItem(request, userId);
             }
         );
 
-        // DELETE /api/plan-items/{id} - удаление элемента плана
+        // DELETE /plan-items/{id} - удаление элемента плана
         addRouteDel(
-            R"(/api/plan-items/(\d+))",
+            R"(/plan-items/(\d+))",
             [plansHandler](const auto& request, const auto& userId)
             {
                 plansHandler->handleDeletePlanItem(request, userId);
+            }
+        );
+    }
+
+    // ===== Доски (Boards) =====
+    if (m_boardService)
+    {
+        auto boardsHandler = std::make_shared<handlers::BoardsHandler>(m_boardService);
+
+        // GET /boards - список досок
+        addRouteGet(
+            "/boards",
+            [boardsHandler](const auto& request, const auto& userId)
+            {
+                boardsHandler->handleGetBoards(request, userId);
+            }
+        );
+
+        // POST /boards - создание доски
+        addRoutePost(
+            "/boards",
+            [boardsHandler](const auto& request, const auto& userId)
+            {
+                boardsHandler->handleCreateBoard(request, userId);
+            }
+        );
+
+        // GET /boards/{id} - получение доски
+        addRouteGet(
+            R"(/boards/(\d+))",
+            [boardsHandler](const auto& request, const auto& userId)
+            {
+                boardsHandler->handleGetBoard(request, userId);
+            }
+        );
+
+        // PUT /boards/{id} - обновление доски
+        addRoutePut(
+            R"(/boards/(\d+))",
+            [boardsHandler](const auto& request, const auto& userId)
+            {
+                boardsHandler->handleUpdateBoard(request, userId);
+            }
+        );
+
+        // DELETE /boards/{id} - удаление доски
+        addRouteDel(
+            R"(/boards/(\d+))",
+            [boardsHandler](const auto& request, const auto& userId)
+            {
+                boardsHandler->handleDeleteBoard(request, userId);
+            }
+        );
+
+        // GET /projects/{projectId}/boards - доски проекта
+        addRouteGet(
+            R"(/projects/(\d+)/boards)",
+            [boardsHandler](const auto& request, const auto& userId)
+            {
+                boardsHandler->handleGetBoardsByProject(request, userId);
+            }
+        );
+
+        // GET /phases/{phaseId}/boards - доски фазы
+        addRouteGet(
+            R"(/phases/(\d+)/boards)",
+            [boardsHandler](const auto& request, const auto& userId)
+            {
+                boardsHandler->handleGetBoardsByPhase(request, userId);
+            }
+        );
+    }
+
+    // ===== Колонки досок (Board Columns) =====
+    if (m_boardColumnService)
+    {
+        auto boardColumnsHandler = std::make_shared<handlers::BoardColumnsHandler>(m_boardColumnService);
+
+        // GET /board-columns - список колонок
+        addRouteGet(
+            "/board-columns",
+            [boardColumnsHandler](const auto& request, const auto& userId)
+            {
+                boardColumnsHandler->handleGetBoardColumns(request, userId);
+            }
+        );
+
+        // GET /board-columns/{id} - получение колонки
+        addRouteGet(
+            R"(/board-columns/(\d+))",
+            [boardColumnsHandler](const auto& request, const auto& userId)
+            {
+                boardColumnsHandler->handleGetBoardColumn(request, userId);
+            }
+        );
+
+        // PUT /board-columns/{id} - обновление колонки
+        addRoutePut(
+            R"(/board-columns/(\d+))",
+            [boardColumnsHandler](const auto& request, const auto& userId)
+            {
+                boardColumnsHandler->handleUpdateBoardColumn(request, userId);
+            }
+        );
+
+        // DELETE /board-columns/{id} - удаление колонки
+        addRouteDel(
+            R"(/board-columns/(\d+))",
+            [boardColumnsHandler](const auto& request, const auto& userId)
+            {
+                boardColumnsHandler->handleDeleteBoardColumn(request, userId);
+            }
+        );
+
+        // GET /boards/{boardId}/columns - колонки доски
+        addRouteGet(
+            R"(/boards/(\d+)/columns)",
+            [boardColumnsHandler](const auto& request, const auto& userId)
+            {
+                boardColumnsHandler->handleGetColumnsByBoard(request, userId);
+            }
+        );
+
+        // POST /boards/{boardId}/columns - создание колонки
+        addRoutePost(
+            R"(/boards/(\d+)/columns)",
+            [boardColumnsHandler](const auto& request, const auto& userId)
+            {
+                boardColumnsHandler->handleCreateBoardColumn(request, userId);
             }
         );
     }
@@ -688,35 +834,35 @@ void RestServer::registerRoutes()
         auto usersHandler = std::make_shared<handlers::UsersHandler>(m_userService);
 
         addRouteGet(
-            "/api/users",
+            "/users",
             [usersHandler](const auto& request, auto& userId)
             {
                 usersHandler->handleGetUsers(request, userId);
             }
         );
         addRoutePost(
-            "/api/users",
+            "/users",
             [usersHandler](const auto& request, auto& userId)
             {
                 usersHandler->handleCreateUser(request, userId);
             }
         );
         addRouteGet(
-            R"(/api/users/(\d+))",
+            R"(/users/(\d+))",
             [usersHandler](const auto& request, auto& userId)
             {
                 usersHandler->handleGetUser(request, userId);
             }
         );
         addRoutePut(
-            R"(/api/users/(\d+))",
+            R"(/users/(\d+))",
             [usersHandler](const auto& request, auto& userId)
             {
                 usersHandler->handleUpdateUser(request, userId);
             }
         );
         addRouteDel(
-            R"(/api/users/(\d+))",
+            R"(/users/(\d+))",
             [usersHandler](const auto& request, auto& userId)
             {
                 usersHandler->handleDeleteUser(request, userId);
@@ -730,35 +876,35 @@ void RestServer::registerRoutes()
         auto phasesHandler = std::make_shared<handlers::PhasesHandler>(m_phaseService);
 
         addRouteGet(
-            "/api/phases",
+            "/phases",
             [phasesHandler](const auto& request, const auto& userId)
             {
                 phasesHandler->handleGetPhases(request, userId);
             }
         );
         addRoutePost(
-            "/api/phases",
+            "/phases",
             [phasesHandler](const auto& request, const auto& userId)
             {
                 phasesHandler->handleCreatePhase(request, userId);
             }
         );
         addRouteGet(
-            R"(/api/phases/(\d+))",
+            R"(/phases/(\d+))",
             [phasesHandler](const auto& request, const auto& userId)
             {
                 phasesHandler->handleGetPhase(request, userId);
             }
         );
         addRoutePut(
-            R"(/api/phases/(\d+))",
+            R"(/phases/(\d+))",
             [phasesHandler](const auto& request, const auto& userId)
             {
                 phasesHandler->handleUpdatePhase(request, userId);
             }
         );
         addRouteDel(
-            R"(/api/phases/(\d+))",
+            R"(/phases/(\d+))",
             [phasesHandler](const auto& request, const auto& userId)
             {
                 phasesHandler->handleDeletePhase(request, userId);
@@ -772,7 +918,7 @@ void RestServer::registerRoutes()
         auto projectsHandler = std::make_shared<handlers::ProjectsHandler>(m_projectService);
 
         addRouteGet(
-            "/api/projects",
+            "/projects",
             [projectsHandler](const auto& request, const auto& userId)
             {
                 projectsHandler->handleGetProjects(request, userId);
@@ -780,7 +926,7 @@ void RestServer::registerRoutes()
         );
 
         addRoutePost(
-            "/api/projects",
+            "/projects",
             [projectsHandler](const auto& request, const auto& userId)
             {
                 projectsHandler->handleCreateProject(request, userId);
@@ -788,7 +934,7 @@ void RestServer::registerRoutes()
         );
 
         addRouteGet(
-            R"(/api/projects/(\d+))",
+            R"(/projects/(\d+))",
             [projectsHandler](const auto& request, const auto& userId)
             {
                 projectsHandler->handleGetProject(request, userId);
@@ -796,14 +942,14 @@ void RestServer::registerRoutes()
         );
 
         addRoutePut(
-            R"(/api/projects/(\d+))",
+            R"(/projects/(\d+))",
             [projectsHandler](const auto& request, const auto& userId)
             {
                 projectsHandler->handleUpdateProject(request, userId);
             }
         );
         addRouteDel(
-            R"(/api/projects/(\d+))",
+            R"(/projects/(\d+))",
             [projectsHandler](const auto& request, const auto& userId)
             {
                 projectsHandler->handleDeleteProject(request, userId);
@@ -818,7 +964,7 @@ void RestServer::registerRoutes()
 
         addRoute(
             web::http::methods::GET,
-            "/api/field-types",
+            "/field-types",
             [fieldTypesHandler](const auto& request, const auto& userId)
             {
                 fieldTypesHandler->handleGetFieldTypes(request, userId);
@@ -826,7 +972,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::POST,
-            "/api/field-types",
+            "/field-types",
             [fieldTypesHandler](const auto& request, const auto& userId)
             {
                 fieldTypesHandler->handleCreateFieldType(request, userId);
@@ -834,7 +980,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::GET,
-            R"(/api/field-types/(\d+))",
+            R"(/field-types/(\d+))",
             [fieldTypesHandler](const auto& request, const auto& userId)
             {
                 fieldTypesHandler->handleGetFieldType(request, userId);
@@ -842,7 +988,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::PUT,
-            R"(/api/field-types/(\d+))",
+            R"(/field-types/(\d+))",
             [fieldTypesHandler](const auto& request, const auto& userId)
             {
                 fieldTypesHandler->handleUpdateFieldType(request, userId);
@@ -850,7 +996,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::DEL,
-            R"(/api/field-types/(\d+))",
+            R"(/field-types/(\d+))",
             [fieldTypesHandler](const auto& request, const auto& userId)
             {
                 fieldTypesHandler->handleDeleteFieldType(request, userId);
@@ -865,54 +1011,54 @@ void RestServer::registerRoutes()
             m_fieldTypePossibleValueService
         );
 
-        // GET /api/field-type-values — список с пагинацией
+        // GET /field-type-values — список с пагинацией
         addRouteGet(
-            "/api/field-type-values",
+            "/field-type-values",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetValues(request, userId);
             }
         );
 
-        // POST /api/field-type-values — создание
+        // POST /field-type-values — создание
         addRoutePost(
-            "/api/field-type-values",
+            "/field-type-values",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleCreateValue(request, userId);
             }
         );
 
-        // GET /api/field-type-values/{id} — получение по ID
+        // GET /field-type-values/{id} — получение по ID
         addRouteGet(
-            R"(/api/field-type-values/(\d+))",
+            R"(/field-type-values/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetValue(request, userId);
             }
         );
 
-        // PUT /api/field-type-values/{id} — обновление
+        // PUT /field-type-values/{id} — обновление
         addRoutePut(
-            R"(/api/field-type-values/(\d+))",
+            R"(/field-type-values/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleUpdateValue(request, userId);
             }
         );
 
-        // DELETE /api/field-type-values/{id} — удаление
+        // DELETE /field-type-values/{id} — удаление
         addRouteDel(
-            R"(/api/field-type-values/(\d+))",
+            R"(/field-type-values/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleDeleteValue(request, userId);
             }
         );
 
-        // GET /api/field-type-values/by-field-type/{fieldTypeId} — значения по типу поля
+        // GET /field-type-values/by-field-type/{fieldTypeId} — значения по типу поля
         addRouteGet(
-            R"(/api/field-type-values/by-field-type/(\d+))",
+            R"(/field-type-values/by-field-type/(\d+))",
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetValuesByFieldType(request, userId);
@@ -926,7 +1072,7 @@ void RestServer::registerRoutes()
         auto workflowsHandler = std::make_shared<handlers::WorkflowsHandler>(m_workflowService);
 
         addRouteGet(
-            "/api/workflows",
+            "/workflows",
             [workflowsHandler](auto& request, auto& userId)
             {
                 workflowsHandler->handleGetWorkflows(request, userId);
@@ -934,7 +1080,7 @@ void RestServer::registerRoutes()
         );
 
         addRoutePost(
-            "/api/workflows",
+            "/workflows",
             [workflowsHandler](auto& request, auto& userId)
             {
                 workflowsHandler->handleCreateWorkflow(request, userId);
@@ -942,7 +1088,7 @@ void RestServer::registerRoutes()
         );
 
         addRouteGet(
-            R"(/api/workflows/(\d+))",
+            R"(/workflows/(\d+))",
             [workflowsHandler](auto& request, auto& userId)
             {
                 workflowsHandler->handleGetWorkflow(request, userId);
@@ -950,7 +1096,7 @@ void RestServer::registerRoutes()
         );
 
         addRoutePut(
-            R"(/api/workflows/(\d+))",
+            R"(/workflows/(\d+))",
             [workflowsHandler](auto& request, auto& userId)
             {
                 workflowsHandler->handleUpdateWorkflow(request, userId);
@@ -958,7 +1104,7 @@ void RestServer::registerRoutes()
         );
 
         addRouteDel(
-            R"(/api/workflows/(\d+))",
+            R"(/workflows/(\d+))",
             [workflowsHandler](auto& request, auto& userId)
             {
                 workflowsHandler->handleDeleteWorkflow(request, userId);
@@ -973,7 +1119,7 @@ void RestServer::registerRoutes()
 
         addRoute(
             web::http::methods::GET,
-            "/api/item-types",
+            "/item-types",
             [itemTypesHandler](const auto& request, const auto& userId)
             {
                 itemTypesHandler->handleGetItemTypes(request, userId);
@@ -981,7 +1127,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::POST,
-            "/api/item-types",
+            "/item-types",
             [itemTypesHandler](const auto& request, const auto& userId)
             {
                 itemTypesHandler->handleCreateItemType(request, userId);
@@ -989,7 +1135,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::GET,
-            R"(/api/item-types/(\d+))",
+            R"(/item-types/(\d+))",
             [itemTypesHandler](const auto& request, const auto& userId)
             {
                 itemTypesHandler->handleGetItemType(request, userId);
@@ -997,7 +1143,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::PUT,
-            R"(/api/item-types/(\d+))",
+            R"(/item-types/(\d+))",
             [itemTypesHandler](const auto& request, const auto& userId)
             {
                 itemTypesHandler->handleUpdateItemType(request, userId);
@@ -1005,7 +1151,7 @@ void RestServer::registerRoutes()
         );
         addRoute(
             web::http::methods::DEL,
-            R"(/api/item-types/(\d+))",
+            R"(/item-types/(\d+))",
             [itemTypesHandler](const auto& request, const auto& userId)
             {
                 itemTypesHandler->handleDeleteItemType(request, userId);
@@ -1019,7 +1165,7 @@ void RestServer::registerRoutes()
         auto statesHandler = std::make_shared<handlers::StatesHandler>(m_stateService);
 
         addRouteGet(
-            "/api/states",
+            "/states",
             [statesHandler](auto& request, auto& userId)
             {
                 statesHandler->handleGetStates(request, userId);
@@ -1027,7 +1173,7 @@ void RestServer::registerRoutes()
         );
 
         addRoutePost(
-            "/api/states",
+            "/states",
             [statesHandler](auto& request, auto& userId)
             {
                 statesHandler->handleCreateState(request, userId);
@@ -1035,7 +1181,7 @@ void RestServer::registerRoutes()
         );
 
         addRouteGet(
-            R"(/api/states/(\d+))",
+            R"(/states/(\d+))",
             [statesHandler](auto& request, auto& userId)
             {
                 statesHandler->handleGetState(request, userId);
@@ -1043,7 +1189,7 @@ void RestServer::registerRoutes()
         );
 
         addRoutePut(
-            R"(/api/states/(\d+))",
+            R"(/states/(\d+))",
             [statesHandler](auto& request, auto& userId)
             {
                 statesHandler->handleUpdateState(request, userId);
@@ -1051,7 +1197,7 @@ void RestServer::registerRoutes()
         );
 
         addRouteDel(
-            R"(/api/states/(\d+))",
+            R"(/states/(\d+))",
             [statesHandler](auto& request, auto& userId)
             {
                 statesHandler->handleDeleteState(request, userId);
@@ -1065,7 +1211,7 @@ void RestServer::registerRoutes()
         auto edgesHandler = std::make_shared<handlers::EdgesHandler>(m_edgeService);
 
         addRouteGet(
-            "/api/edges",
+            "/edges",
             [edgesHandler](auto& request, auto& userId)
             {
                 edgesHandler->handleGetEdges(request, userId);
@@ -1073,7 +1219,7 @@ void RestServer::registerRoutes()
         );
 
         addRoutePost(
-            "/api/edges",
+            "/edges",
             [edgesHandler](auto& request, auto& userId)
             {
                 edgesHandler->handleCreateEdge(request, userId);
@@ -1081,7 +1227,7 @@ void RestServer::registerRoutes()
         );
 
         addRouteGet(
-            R"(/api/edges/(\d+))",
+            R"(/edges/(\d+))",
             [edgesHandler](auto& request, auto& userId)
             {
                 edgesHandler->handleGetEdge(request, userId);
@@ -1089,7 +1235,7 @@ void RestServer::registerRoutes()
         );
 
         addRouteDel(
-            R"(/api/edges/(\d+))",
+            R"(/edges/(\d+))",
             [edgesHandler](auto& request, auto& userId)
             {
                 edgesHandler->handleDeleteEdge(request, userId);
@@ -1098,7 +1244,7 @@ void RestServer::registerRoutes()
 
         // Специальный маршрут: получение всех переходов для workflow
         addRouteGet(
-            R"(/api/workflows/(\d+)/edges)",
+            R"(/workflows/(\d+)/edges)",
             [edgesHandler](auto& request, auto& userId)
             {
                 edgesHandler->handleGetWorkflowEdges(request, userId);
@@ -1111,35 +1257,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::TeamsHandler>(m_teamService);
         addRouteGet(
-            "/api/teams",
+            "/teams",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetTeams(req, uid);
             }
         );
         addRoutePost(
-            "/api/teams",
+            "/teams",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateTeam(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/teams/(\d+))",
+            R"(/teams/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetTeam(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/teams/(\d+))",
+            R"(/teams/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateTeam(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/teams/(\d+))",
+            R"(/teams/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteTeam(req, uid);
@@ -1152,35 +1298,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::RolesHandler>(m_roleService);
         addRouteGet(
-            "/api/roles",
+            "/roles",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetRoles(req, uid);
             }
         );
         addRoutePost(
-            "/api/roles",
+            "/roles",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateRole(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/roles/(\d+))",
+            R"(/roles/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetRole(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/roles/(\d+))",
+            R"(/roles/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateRole(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/roles/(\d+))",
+            R"(/roles/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteRole(req, uid);
@@ -1193,35 +1339,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::RulesHandler>(m_ruleService);
         addRouteGet(
-            "/api/rules",
+            "/rules",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetRules(req, uid);
             }
         );
         addRoutePost(
-            "/api/rules",
+            "/rules",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateRule(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/rules/(\d+))",
+            R"(/rules/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetRule(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/rules/(\d+))",
+            R"(/rules/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateRule(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/rules/(\d+))",
+            R"(/rules/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteRule(req, uid);
@@ -1234,35 +1380,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::RuleProjectsHandler>(m_ruleProjectService);
         addRouteGet(
-            "/api/rule-projects",
+            "/rule-projects",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItems(req, uid);
             }
         );
         addRoutePost(
-            "/api/rule-projects",
+            "/rule-projects",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateItem(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/rule-projects/(\d+))",
+            R"(/rule-projects/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItem(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/rule-projects/(\d+))",
+            R"(/rule-projects/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateItem(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/rule-projects/(\d+))",
+            R"(/rule-projects/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteItem(req, uid);
@@ -1275,35 +1421,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::RuleItemTypesHandler>(m_ruleItemTypeService);
         addRouteGet(
-            "/api/rule-item-types",
+            "/rule-item-types",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItems(req, uid);
             }
         );
         addRoutePost(
-            "/api/rule-item-types",
+            "/rule-item-types",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateItem(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/rule-item-types/(\d+))",
+            R"(/rule-item-types/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItem(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/rule-item-types/(\d+))",
+            R"(/rule-item-types/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateItem(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/rule-item-types/(\d+))",
+            R"(/rule-item-types/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteItem(req, uid);
@@ -1316,35 +1462,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::RuleStatesHandler>(m_ruleStateService);
         addRouteGet(
-            "/api/rule-states",
+            "/rule-states",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItems(req, uid);
             }
         );
         addRoutePost(
-            "/api/rule-states",
+            "/rule-states",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateItem(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/rule-states/(\d+))",
+            R"(/rule-states/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItem(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/rule-states/(\d+))",
+            R"(/rule-states/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateItem(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/rule-states/(\d+))",
+            R"(/rule-states/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteItem(req, uid);
@@ -1357,35 +1503,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::RoleMenuItemsHandler>(m_roleMenuItemService);
         addRouteGet(
-            "/api/role-menu-items",
+            "/role-menu-items",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItems(req, uid);
             }
         );
         addRoutePost(
-            "/api/role-menu-items",
+            "/role-menu-items",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateItem(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/role-menu-items/(\d+))",
+            R"(/role-menu-items/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItem(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/role-menu-items/(\d+))",
+            R"(/role-menu-items/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateItem(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/role-menu-items/(\d+))",
+            R"(/role-menu-items/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteItem(req, uid);
@@ -1398,35 +1544,35 @@ void RestServer::registerRoutes()
     {
         auto handler = std::make_shared<handlers::UserTeamRolesHandler>(m_userTeamRoleService);
         addRouteGet(
-            "/api/user-team-roles",
+            "/user-team-roles",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItems(req, uid);
             }
         );
         addRoutePost(
-            "/api/user-team-roles",
+            "/user-team-roles",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleCreateItem(req, uid);
             }
         );
         addRouteGet(
-            R"(/api/user-team-roles/(\d+))",
+            R"(/user-team-roles/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleGetItem(req, uid);
             }
         );
         addRoutePut(
-            R"(/api/user-team-roles/(\d+))",
+            R"(/user-team-roles/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleUpdateItem(req, uid);
             }
         );
         addRouteDel(
-            R"(/api/user-team-roles/(\d+))",
+            R"(/user-team-roles/(\d+))",
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteItem(req, uid);
@@ -1582,7 +1728,7 @@ void RestServer::addRoute(
 {
     RouteInfo route;
     route.method = method;
-    route.pathPattern = path;
+    route.pathPattern = m_basePath + path;
     route.handler = handler;
     route.isPublic = isPublic;
     m_routes.push_back(route);
@@ -1611,7 +1757,7 @@ bool RestServer::matchRoute(
             handler = route.handler;
             isPublic = route.isPublic;
 
-            // Извлекаем параметры из пути (например, ID из /api/items/123)
+            // Извлекаем параметры из пути (например, ID из /items/123)
             if (matches.size() > 1)
             {
                 params["id"] = matches[1].str();

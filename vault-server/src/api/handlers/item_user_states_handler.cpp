@@ -105,7 +105,7 @@ void ItemUserStatesHandler::handleGetItemUserStates(
     }
 
     LOG_DEBUG
-        << "GET /api/items/user-states: user=" << userId
+        << "GET /items/user-states: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
         << ", itemId=" << (itemId.has_value() ? std::to_string(*itemId) : "none")
         << ", filterUserId=" << (filterUserId.has_value() ? std::to_string(*filterUserId) : "none");
@@ -163,7 +163,7 @@ void ItemUserStatesHandler::handleGetItemUserState(
         return;
     }
 
-    LOG_DEBUG << "GET /api/items/user-states/" << id << " from user " << userId;
+    LOG_DEBUG << "GET /items/user-states/" << id << " from user " << userId;
 
     try
     {
@@ -204,13 +204,13 @@ void ItemUserStatesHandler::handleGetLastItemUserState(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем itemId из пути: /api/items/{itemId}/user-states/last
+    // Извлекаем itemId из пути: /items/{itemId}/user-states/last
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+)/user-states/last)");
+    static const std::regex pattern(R"(/items/(\d+)/user-states/last)");
     std::smatch matches;
 
     int64_t itemId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -233,7 +233,7 @@ void ItemUserStatesHandler::handleGetLastItemUserState(
         return;
     }
 
-    LOG_DEBUG << "GET /api/items/" << itemId << "/user-states/last from user " << userId;
+    LOG_DEBUG << "GET /items/" << itemId << "/user-states/last from user " << userId;
 
     try
     {
@@ -274,13 +274,13 @@ void ItemUserStatesHandler::handleCreateItemUserState(
     }
     const int64_t userId = *userIdOpt;
 
-    // Извлекаем itemId из пути: /api/items/{itemId}/user-states
+    // Извлекаем itemId из пути: /items/{itemId}/user-states
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/api/items/(\d+)/user-states)");
+    static const std::regex pattern(R"(/items/(\d+)/user-states)");
     std::smatch matches;
 
     int64_t itemId = -1;
-    if (std::regex_match(path, matches, pattern) && matches.size() > 1)
+    if (std::regex_search(path, matches, pattern) && matches.size() > 1)
     {
         try
         {
@@ -303,7 +303,7 @@ void ItemUserStatesHandler::handleCreateItemUserState(
         return;
     }
 
-    LOG_DEBUG << "POST /api/items/" << itemId << "/user-states from user " << userId;
+    LOG_DEBUG << "POST /items/" << itemId << "/user-states from user " << userId;
 
     request
         .extract_json()
@@ -387,7 +387,7 @@ void ItemUserStatesHandler::handleDeleteItemUserState(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/items/user-states/" << id << " from user " << userId;
+    LOG_DEBUG << "DELETE /items/user-states/" << id << " from user " << userId;
 
     try
     {

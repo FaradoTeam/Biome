@@ -12,12 +12,14 @@
 
 #include "logic/impl/auth_service.h"
 #include "logic/impl/authorization_service.h"
+#include "logic/impl/board_column_service.h"
+#include "logic/impl/board_service.h"
 #include "logic/impl/edge_service.h"
 #include "logic/impl/field_type_possible_value_service.h"
 #include "logic/impl/field_type_service.h"
-#include "logic/impl/item_service.h"
 #include "logic/impl/item_history_service.h"
 #include "logic/impl/item_link_service.h"
+#include "logic/impl/item_service.h"
 #include "logic/impl/item_type_service.h"
 #include "logic/impl/item_user_state_service.h"
 #include "logic/impl/link_type_service.h"
@@ -36,19 +38,21 @@
 #include "logic/impl/user_team_role_service.h"
 #include "logic/impl/workflow_service.h"
 
+#include "repo/sqlite/sqlite_board_column_repository.h"
+#include "repo/sqlite/sqlite_board_repository.h"
 #include "repo/sqlite/sqlite_edge_repository.h"
 #include "repo/sqlite/sqlite_field_type_possible_value_repository.h"
 #include "repo/sqlite/sqlite_field_type_repository.h"
 #include "repo/sqlite/sqlite_item_field_repository.h"
-#include "repo/sqlite/sqlite_item_repository.h"
 #include "repo/sqlite/sqlite_item_history_repository.h"
 #include "repo/sqlite/sqlite_item_link_repository.h"
+#include "repo/sqlite/sqlite_item_repository.h"
 #include "repo/sqlite/sqlite_item_type_repository.h"
 #include "repo/sqlite/sqlite_item_user_state_repository.h"
 #include "repo/sqlite/sqlite_link_type_repository.h"
 #include "repo/sqlite/sqlite_phase_repository.h"
-#include "repo/sqlite/sqlite_plan_repository.h"
 #include "repo/sqlite/sqlite_plan_item_repository.h"
+#include "repo/sqlite/sqlite_plan_repository.h"
 #include "repo/sqlite/sqlite_project_repository.h"
 #include "repo/sqlite/sqlite_role_menu_item_repository.h"
 #include "repo/sqlite/sqlite_role_repository.h"
@@ -100,6 +104,8 @@ bool Application::initialize()
     }
 
     // === Создаем репозитории ===
+    auto boardRepository = std::make_shared<repositories::SqliteBoardRepository>(m_database);
+    auto boardColumnRepository = std::make_shared<repositories::SqliteBoardColumnRepository>(m_database);
     auto edgeRepository = std::make_shared<repositories::SqliteEdgeRepository>(m_database);
     auto fieldTypeRepository = std::make_shared<repositories::SqliteFieldTypeRepository>(m_database);
     auto fieldTypePossibleValueRepository = std::make_shared<repositories::SqliteFieldTypePossibleValueRepository>(m_database);
@@ -125,7 +131,6 @@ bool Application::initialize()
     auto userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
     auto userTeamRoleRepository = std::make_shared<repositories::SqliteUserTeamRoleRepository>(m_database);
     auto workflowRepository = std::make_shared<repositories::SqliteWorkflowRepository>(m_database);
-
 
     // === Создаем сервисы ===
     auto authorizationService = std::make_shared<services::AuthorizationService>(
@@ -247,6 +252,19 @@ bool Application::initialize()
         userTeamRoleRepository, userRepository, teamRepository, roleRepository,
         authorizationService
     );
+    auto boardService = std::make_shared<services::BoardService>(
+        boardRepository,
+        projectService,
+        phaseService,
+        workflowService,
+        authorizationService
+    );
+    auto boardColumnService = std::make_shared<services::BoardColumnService>(
+        boardColumnRepository,
+        boardService,
+        stateService,
+        authorizationService
+    );
     // TODO: Вынести секретный ключ в конфиг
     auto authMiddleware = std::make_shared<AuthMiddleware>(
         "your-very-long-secret-key-that-is-at-least-32-bytes-long!"
@@ -264,6 +282,8 @@ bool Application::initialize()
 
     m_restServer->setAuthMiddleware(authMiddleware);
     m_restServer->setAuthService(authService);
+    m_restServer->setBoardService(boardService);
+    m_restServer->setBoardColumnService(boardColumnService);
     m_restServer->setEdgeService(edgeService);
     m_restServer->setFieldTypeService(fieldTypeService);
     m_restServer->setFieldTypePossibleValueService(fieldTypePossibleValueService);

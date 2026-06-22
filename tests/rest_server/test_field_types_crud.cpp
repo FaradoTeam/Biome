@@ -187,12 +187,12 @@ struct FieldTypesTestFixture
 BOOST_FIXTURE_TEST_SUITE(FieldTypesCrudTestSuite, FieldTypesTestFixture)
 
 // ============================================================
-// GET /api/field-types — Получение списка типов полей
+// GET /api/v1/field-types — Получение списка типов полей
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_field_types_returns_list)
 {
-    auto response = makeGetRequest("/api/field-types").get();
+    auto response = makeGetRequest("/api/v1/field-types").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypeService->getFieldTypesCallCount(), 1);
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(test_get_field_types_with_pagination_params)
     services::FieldTypesPage emptyPage;
     mockFieldTypeService->setGetFieldTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/field-types?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/field-types?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypeService->getLastGetFieldTypesPage(), 3);
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(test_get_field_types_with_item_type_filter)
     filteredPage.totalCount = 1;
     mockFieldTypeService->setGetFieldTypesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/field-types?itemTypeId=42").get();
+    auto response = makeGetRequest("/api/v1/field-types?itemTypeId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(test_get_field_types_with_value_type_filter)
     filteredPage.totalCount = 1;
     mockFieldTypeService->setGetFieldTypesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/field-types?valueType=Select").get();
+    auto response = makeGetRequest("/api/v1/field-types?valueType=Select").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(test_get_field_types_empty_list)
     services::FieldTypesPage emptyPage;
     mockFieldTypeService->setGetFieldTypesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/field-types").get();
+    auto response = makeGetRequest("/api/v1/field-types").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     auto json = response.extract_json().get();
@@ -268,14 +268,14 @@ BOOST_AUTO_TEST_CASE(test_get_field_types_empty_list)
 
 BOOST_AUTO_TEST_CASE(test_get_field_types_requires_auth)
 {
-    auto response = makeGetRequest("/api/field-types", "").get();
+    auto response = makeGetRequest("/api/v1/field-types", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockFieldTypeService->getFieldTypesCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/field-types/{id} — Получение типа поля по ID
+// GET /api/v1/field-types/{id} — Получение типа поля по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_field_type_by_id_success)
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(test_get_field_type_by_id_success)
     fieldType.isBoardVisible = true;
     mockFieldTypeService->setGetFieldTypeResult(fieldType);
 
-    auto response = makeGetRequest("/api/field-types/42").get();
+    auto response = makeGetRequest("/api/v1/field-types/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypeService->getFieldTypeCallCount(), 1);
@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(test_get_field_type_not_found)
 {
     mockFieldTypeService->setGetFieldTypeResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/field-types/999").get();
+    auto response = makeGetRequest("/api/v1/field-types/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockFieldTypeService->getFieldTypeCallCount(), 1);
@@ -314,12 +314,12 @@ BOOST_AUTO_TEST_CASE(test_get_field_type_not_found)
 
 BOOST_AUTO_TEST_CASE(test_get_field_type_invalid_id)
 {
-    auto response = makeGetRequest("/api/field-types/invalid").get();
+    auto response = makeGetRequest("/api/v1/field-types/invalid").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/field-types — Создание типа поля
+// POST /api/v1/field-types — Создание типа поля
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_field_type_success)
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(test_create_field_type_success)
     body[U("isBoardVisible")] = web::json::value::boolean(true);
     body[U("description")] = web::json::value::string(U("Описание поля"));
 
-    auto response = makePostRequest("/api/field-types", body).get();
+    auto response = makePostRequest("/api/v1/field-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockFieldTypeService->createFieldTypeCallCount(), 1);
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(test_create_field_type_missing_required_fields)
     web::json::value body;
     body[U("valueType")] = web::json::value::string(U("String"));
 
-    auto response = makePostRequest("/api/field-types", body).get();
+    auto response = makePostRequest("/api/v1/field-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockFieldTypeService->createFieldTypeCallCount(), 0);
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE(test_create_field_type_with_all_value_types)
         );
         body[U("itemTypeId")] = web::json::value::number(1);
 
-        auto response = makePostRequest("/api/field-types", body).get();
+        auto response = makePostRequest("/api/v1/field-types", body).get();
         BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     }
 }
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE(test_create_field_type_not_board_visible)
     body[U("itemTypeId")] = web::json::value::number(1);
     body[U("isBoardVisible")] = web::json::value::boolean(false);
 
-    auto response = makePostRequest("/api/field-types", body).get();
+    auto response = makePostRequest("/api/v1/field-types", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     auto json = response.extract_json().get();
@@ -429,7 +429,7 @@ BOOST_AUTO_TEST_CASE(test_create_field_type_not_board_visible)
 }
 
 // ============================================================
-// PUT /api/field-types/{id} — Обновление типа поля
+// PUT /api/v1/field-types/{id} — Обновление типа поля
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_field_type_success)
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE(test_update_field_type_success)
     body[U("valueType")] = web::json::value::string(U("MarkdownText"));
     body[U("isBoardVisible")] = web::json::value::boolean(false);
 
-    auto response = makePutRequest("/api/field-types/1", body).get();
+    auto response = makePutRequest("/api/v1/field-types/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypeService->updateFieldTypeCallCount(), 1);
@@ -480,7 +480,7 @@ BOOST_AUTO_TEST_CASE(test_update_field_type_partial)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Только название"));
 
-    auto response = makePutRequest("/api/field-types/1", body).get();
+    auto response = makePutRequest("/api/v1/field-types/1", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockFieldTypeService->updateFieldTypeCallCount(), 1);
@@ -493,21 +493,21 @@ BOOST_AUTO_TEST_CASE(test_update_field_type_not_found)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("Несуществующее"));
 
-    auto response = makePutRequest("/api/field-types/999", body).get();
+    auto response = makePutRequest("/api/v1/field-types/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockFieldTypeService->updateFieldTypeCallCount(), 1);
 }
 
 // ============================================================
-// DELETE /api/field-types/{id} — Удаление типа поля
+// DELETE /api/v1/field-types/{id} — Удаление типа поля
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_field_type_success)
 {
     mockFieldTypeService->setDeleteFieldTypeResult(true);
 
-    auto response = makeDeleteRequest("/api/field-types/3").get();
+    auto response = makeDeleteRequest("/api/v1/field-types/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockFieldTypeService->deleteFieldTypeCallCount(), 1);
@@ -519,7 +519,7 @@ BOOST_AUTO_TEST_CASE(test_delete_field_type_not_found)
 {
     mockFieldTypeService->setDeleteFieldTypeResult(false);
 
-    auto response = makeDeleteRequest("/api/field-types/999").get();
+    auto response = makeDeleteRequest("/api/v1/field-types/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockFieldTypeService->deleteFieldTypeCallCount(), 1);
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE(test_delete_field_type_not_found)
 
 BOOST_AUTO_TEST_CASE(test_delete_field_type_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/field-types/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/field-types/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockFieldTypeService->deleteFieldTypeCallCount(), 0);
@@ -555,12 +555,12 @@ BOOST_AUTO_TEST_CASE(test_full_field_type_lifecycle)
     createBody[U("itemTypeId")] = web::json::value::number(1);
     createBody[U("isBoardVisible")] = web::json::value::boolean(true);
 
-    auto createResponse = makePostRequest("/api/field-types", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/field-types", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение созданного типа поля
     mockFieldTypeService->setGetFieldTypeResult(newField);
-    auto getResponse = makeGetRequest("/api/field-types/100").get();
+    auto getResponse = makeGetRequest("/api/v1/field-types/100").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление типа поля
@@ -575,17 +575,17 @@ BOOST_AUTO_TEST_CASE(test_full_field_type_lifecycle)
     updateBody[U("valueType")] = web::json::value::string(U("Integer"));
     updateBody[U("isBoardVisible")] = web::json::value::boolean(false);
 
-    auto updateResponse = makePutRequest("/api/field-types/100", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/field-types/100", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Удаление типа поля
     mockFieldTypeService->setDeleteFieldTypeResult(true);
-    auto deleteResponse = makeDeleteRequest("/api/field-types/100").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/field-types/100").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка, что тип поля удален
     mockFieldTypeService->setGetFieldTypeResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/field-types/100").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/field-types/100").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 

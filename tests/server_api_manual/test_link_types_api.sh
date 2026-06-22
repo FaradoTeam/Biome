@@ -81,7 +81,7 @@ get_body() {
 get_auth_token() {
     local data='{"login":"admin","password":"password"}'
     local body
-    body=$(get_body "POST" "/auth/login" "$data" "")
+    body=$(get_body "POST" "/api/v1/auth/login" "$data" "")
     echo "$body" | grep -o '"access_token":"[^"]*"' | head -1 | cut -d'"' -f4
 }
 
@@ -108,7 +108,7 @@ echo ""
 echo -e "${YELLOW}2. Подготовка данных${NC}"
 
 # Получаем workflowId
-WORKFLOWS=$(get_body "GET" "/api/workflows" "" "$AUTH_TOKEN")
+WORKFLOWS=$(get_body "GET" "/api/v1/workflows" "" "$AUTH_TOKEN")
 WORKFLOW_ID=$(echo "$WORKFLOWS" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 if [ -z "$WORKFLOW_ID" ]; then
     WORKFLOW_ID=1
@@ -116,7 +116,7 @@ fi
 echo -e "${BLUE}Workflow ID: $WORKFLOW_ID${NC}"
 
 # Получаем stateId
-STATES=$(get_body "GET" "/api/states?workflowId=$WORKFLOW_ID" "" "$AUTH_TOKEN")
+STATES=$(get_body "GET" "/api/v1/states?workflowId=$WORKFLOW_ID" "" "$AUTH_TOKEN")
 STATE_ID=$(echo "$STATES" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
 if [ -z "$STATE_ID" ]; then
     STATE_ID=1
@@ -125,8 +125,8 @@ echo -e "${BLUE}State ID: $STATE_ID${NC}"
 
 # Создаём тестовый тип элемента
 CREATE_TYPE_DATA="{\"caption\":\"Тестовый тип\",\"kind\":\"issue\",\"workflowId\":$WORKFLOW_ID,\"defaultStateId\":$STATE_ID}"
-CREATE_TYPE_STATUS=$(get_status "POST" "/api/item-types" "$CREATE_TYPE_DATA" "$AUTH_TOKEN")
-CREATE_TYPE_BODY=$(get_body "POST" "/api/item-types" "$CREATE_TYPE_DATA" "$AUTH_TOKEN")
+CREATE_TYPE_STATUS=$(get_status "POST" "/api/v1/item-types" "$CREATE_TYPE_DATA" "$AUTH_TOKEN")
+CREATE_TYPE_BODY=$(get_body "POST" "/api/v1/item-types" "$CREATE_TYPE_DATA" "$AUTH_TOKEN")
 
 if [ "$CREATE_TYPE_STATUS" = "201" ]; then
     ITEM_TYPE_ID=$(echo "$CREATE_TYPE_BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
@@ -146,8 +146,8 @@ echo -e "${YELLOW}3. CRUD операции${NC}\n"
 # 3.1 Создание
 echo -e "${BLUE}3.1 Создание типа связи${NC}"
 CREATE_DATA="{\"caption\":\"связан с\",\"sourceItemTypeId\":$ITEM_TYPE_ID,\"destinationItemTypeId\":$ITEM_TYPE_ID,\"isBidirectional\":false}"
-CREATE_STATUS=$(get_status "POST" "/api/link-types" "$CREATE_DATA" "$AUTH_TOKEN")
-CREATE_BODY=$(get_body "POST" "/api/link-types" "$CREATE_DATA" "$AUTH_TOKEN")
+CREATE_STATUS=$(get_status "POST" "/api/v1/link-types" "$CREATE_DATA" "$AUTH_TOKEN")
+CREATE_BODY=$(get_body "POST" "/api/v1/link-types" "$CREATE_DATA" "$AUTH_TOKEN")
 
 if [ "$CREATE_STATUS" = "201" ]; then
     LINK_TYPE_ID=$(echo "$CREATE_BODY" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2)
@@ -160,8 +160,8 @@ echo ""
 # 3.2 Получение по ID
 if [ -n "$LINK_TYPE_ID" ]; then
     echo -e "${BLUE}3.2 Получение по ID${NC}"
-    GET_STATUS=$(get_status "GET" "/api/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
-    GET_BODY=$(get_body "GET" "/api/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
+    GET_STATUS=$(get_status "GET" "/api/v1/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
+    GET_BODY=$(get_body "GET" "/api/v1/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
     
     if [ "$GET_STATUS" = "200" ]; then
         CAPTION=$(echo "$GET_BODY" | grep -o '"caption":"[^"]*"' | head -1 | cut -d'"' -f4)
@@ -174,7 +174,7 @@ fi
 
 # 3.3 Получение несуществующего
 echo -e "${BLUE}3.3 Получение несуществующего${NC}"
-GET_STATUS=$(get_status "GET" "/api/link-types/99999" "" "$AUTH_TOKEN")
+GET_STATUS=$(get_status "GET" "/api/v1/link-types/99999" "" "$AUTH_TOKEN")
 if [ "$GET_STATUS" = "404" ]; then
     test_pass "404 для несуществующего"
 else
@@ -186,7 +186,7 @@ echo ""
 if [ -n "$LINK_TYPE_ID" ]; then
     echo -e "${BLUE}3.4 Обновление типа связи${NC}"
     UPDATE_DATA='{"caption":"обновлённая связь"}'
-    UPDATE_STATUS=$(get_status "PUT" "/api/link-types/$LINK_TYPE_ID" "$UPDATE_DATA" "$AUTH_TOKEN")
+    UPDATE_STATUS=$(get_status "PUT" "/api/v1/link-types/$LINK_TYPE_ID" "$UPDATE_DATA" "$AUTH_TOKEN")
     
     if [ "$UPDATE_STATUS" = "200" ]; then
         test_pass "Обновление типа связи"
@@ -198,8 +198,8 @@ fi
 
 # 3.5 Получение списка
 echo -e "${BLUE}3.5 Получение списка${NC}"
-LIST_STATUS=$(get_status "GET" "/api/link-types" "" "$AUTH_TOKEN")
-LIST_BODY=$(get_body "GET" "/api/link-types" "" "$AUTH_TOKEN")
+LIST_STATUS=$(get_status "GET" "/api/v1/link-types" "" "$AUTH_TOKEN")
+LIST_BODY=$(get_body "GET" "/api/v1/link-types" "" "$AUTH_TOKEN")
 
 if [ "$LIST_STATUS" = "200" ]; then
     TOTAL_COUNT=$(echo "$LIST_BODY" | grep -o '"totalCount":[0-9]*' | head -1 | cut -d':' -f2)
@@ -212,7 +212,7 @@ echo ""
 # 3.6 Удаление
 if [ -n "$LINK_TYPE_ID" ]; then
     echo -e "${BLUE}3.6 Удаление типа связи${NC}"
-    DELETE_STATUS=$(get_status "DELETE" "/api/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
+    DELETE_STATUS=$(get_status "DELETE" "/api/v1/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
     if [ "$DELETE_STATUS" = "204" ]; then
         test_pass "Удаление типа связи"
     else
@@ -224,7 +224,7 @@ fi
 # 3.7 Проверка удаления
 if [ -n "$LINK_TYPE_ID" ]; then
     echo -e "${BLUE}3.7 Проверка удаления${NC}"
-    GET_STATUS=$(get_status "GET" "/api/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
+    GET_STATUS=$(get_status "GET" "/api/v1/link-types/$LINK_TYPE_ID" "" "$AUTH_TOKEN")
     if [ "$GET_STATUS" = "404" ]; then
         test_pass "Тип связи удалён"
     else
@@ -240,7 +240,7 @@ fi
 echo -e "${YELLOW}4. Тесты безопасности${NC}\n"
 
 echo -e "${BLUE}4.1 Доступ без токена${NC}"
-NO_TOKEN_STATUS=$(get_status "GET" "/api/link-types" "" "")
+NO_TOKEN_STATUS=$(get_status "GET" "/api/v1/link-types" "" "")
 if [ "$NO_TOKEN_STATUS" = "401" ]; then
     test_pass "Без токена - 401"
 else
@@ -249,7 +249,7 @@ fi
 echo ""
 
 echo -e "${BLUE}4.2 Невалидный токен${NC}"
-INVALID_STATUS=$(get_status "GET" "/api/link-types" "" "invalid_token")
+INVALID_STATUS=$(get_status "GET" "/api/v1/link-types" "" "invalid_token")
 if [ "$INVALID_STATUS" = "401" ]; then
     test_pass "Невалидный токен - 401"
 else

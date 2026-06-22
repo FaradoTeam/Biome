@@ -7,8 +7,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Базовый URL API
-BASE_URL="http://localhost:8090/api"
-AUTH_URL="http://localhost:8090/auth"
+BASE_URL="http://localhost:8090/api/v1"
+AUTH_URL="http://localhost:8090/api/v1/auth"
 
 # Переменные для хранения ID созданных объектов
 TOKEN=""
@@ -109,7 +109,7 @@ echo "=================================================="
 echo ""
 
 log_info "Проверка доступности сервера"
-HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8090/health")
+HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8090/api/v1/health")
 if [ "$HEALTH_RESPONSE" != "200" ]; then
     echo -e "${RED}Ошибка: Сервер не доступен. Запустите biome-vault-server сначала.${NC}"
     exit 1
@@ -148,10 +148,10 @@ log_success "Успешный вход в систему"
 log_debug "Токен получен: ${TOKEN:0:30}..."
 
 # ============================================================
-# 2. GET /api/phases/10/plans (проверка, что фаза 10 не имеет планов)
+# 2. GET /api/v1/phases/10/plans (проверка, что фаза 10 не имеет планов)
 # ============================================================
 echo ""
-log_info "Тест: GET /api/phases/10/plans"
+log_info "Тест: GET /api/v1/phases/10/plans"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/phases/10/plans" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 
@@ -170,7 +170,7 @@ fi
 # 3. Создание проекта для тестов
 # ============================================================
 echo ""
-log_info "Тест: POST /api/projects (создание проекта)"
+log_info "Тест: POST /api/v1/projects (создание проекта)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/projects" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -189,7 +189,7 @@ fi
 # 4. Создание фазы для тестов
 # ============================================================
 echo ""
-log_info "Тест: POST /api/phases (создание фазы)"
+log_info "Тест: POST /api/v1/phases (создание фазы)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/phases" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -209,7 +209,7 @@ fi
 # 5. Создание workflow для тестов
 # ============================================================
 echo ""
-log_info "Тест: POST /api/workflows (создание workflow)"
+log_info "Тест: POST /api/v1/workflows (создание workflow)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/workflows" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -228,7 +228,7 @@ fi
 # 6. Создание состояния для тестов
 # ============================================================
 echo ""
-log_info "Тест: POST /api/states (создание состояния)"
+log_info "Тест: POST /api/v1/states (создание состояния)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/states" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -250,7 +250,7 @@ fi
 # 7. Создание типа элемента для тестов
 # ============================================================
 echo ""
-log_info "Тест: POST /api/item-types (создание типа элемента)"
+log_info "Тест: POST /api/v1/item-types (создание типа элемента)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/item-types" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -272,7 +272,7 @@ fi
 # 8. Создание элемента для тестов
 # ============================================================
 echo ""
-log_info "Тест: POST /api/items (создание элемента)"
+log_info "Тест: POST /api/v1/items (создание элемента)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/items" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -291,10 +291,10 @@ if [ -z "$ITEM_ID" ]; then
 fi
 
 # ============================================================
-# 9. POST /api/phases/{phaseId}/plans (создание активного плана)
+# 9. POST /api/v1/phases/{phaseId}/plans (создание активного плана)
 # ============================================================
 echo ""
-log_info "Тест: POST /api/phases/$PHASE_ID/plans (создание активного плана)"
+log_info "Тест: POST /api/v1/phases/$PHASE_ID/plans (создание активного плана)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/phases/$PHASE_ID/plans" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -310,10 +310,10 @@ if [ -z "$PLAN_ID_ACTIVE" ]; then
 fi
 
 # ============================================================
-# 10. POST /api/phases/{phaseId}/plans (дубликат - должен вернуть 403)
+# 10. POST /api/v1/phases/{phaseId}/plans (дубликат - должен вернуть 403)
 # ============================================================
 echo ""
-log_info "Тест: POST /api/phases/$PHASE_ID/plans (дубликат)"
+log_info "Тест: POST /api/v1/phases/$PHASE_ID/plans (дубликат)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/phases/$PHASE_ID/plans" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -325,10 +325,10 @@ RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/phases/$PHASE_ID/plans
 check_response_simple "$RESPONSE" "403" "Создание дублирующего плана"
 
 # ============================================================
-# 11. GET /api/plans/{id}
+# 11. GET /api/v1/plans/{id}
 # ============================================================
 echo ""
-log_info "Тест: GET /api/plans/$PLAN_ID_ACTIVE"
+log_info "Тест: GET /api/v1/plans/$PLAN_ID_ACTIVE"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/plans/$PLAN_ID_ACTIVE" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 
@@ -344,10 +344,10 @@ else
 fi
 
 # ============================================================
-# 12. POST /api/plans/{id}/fork (создание черновика)
+# 12. POST /api/v1/plans/{id}/fork (создание черновика)
 # ============================================================
 echo ""
-log_info "Тест: POST /api/plans/$PLAN_ID_ACTIVE/fork (создание черновика)"
+log_info "Тест: POST /api/v1/plans/$PLAN_ID_ACTIVE/fork (создание черновика)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_ACTIVE/fork" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -363,10 +363,10 @@ if [ -z "$PLAN_ID_DRAFT" ]; then
 fi
 
 # ============================================================
-# 13. POST /api/plans/{planId}/items (добавление элемента в черновик)
+# 13. POST /api/v1/plans/{planId}/items (добавление элемента в черновик)
 # ============================================================
 echo ""
-log_info "Тест: POST /api/plans/$PLAN_ID_DRAFT/items"
+log_info "Тест: POST /api/v1/plans/$PLAN_ID_DRAFT/items"
 # Используем текущее время + 7 дней для дат
 START_DATE=$(date +%s)
 END_DATE=$((START_DATE + 7*24*60*60))
@@ -388,10 +388,10 @@ if [ -z "$PLAN_ITEM_ID" ]; then
 fi
 
 # ============================================================
-# 14. GET /api/plans/{planId}/items
+# 14. GET /api/v1/plans/{planId}/items
 # ============================================================
 echo ""
-log_info "Тест: GET /api/plans/$PLAN_ID_DRAFT/items"
+log_info "Тест: GET /api/v1/plans/$PLAN_ID_DRAFT/items"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/plans/$PLAN_ID_DRAFT/items" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 
@@ -407,10 +407,10 @@ else
 fi
 
 # ============================================================
-# 15. PUT /api/plan-items/{id} (обновление элемента плана)
+# 15. PUT /api/v1/plan-items/{id} (обновление элемента плана)
 # ============================================================
 echo ""
-log_info "Тест: PUT /api/plan-items/$PLAN_ITEM_ID"
+log_info "Тест: PUT /api/v1/plan-items/$PLAN_ITEM_ID"
 # Используем те же даты
 RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$BASE_URL/plan-items/$PLAN_ITEM_ID" \
     -H "Authorization: Bearer $TOKEN" \
@@ -426,10 +426,10 @@ RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$BASE_URL/plan-items/$PLAN_ITEM_I
 check_response_simple "$RESPONSE" "200" "Обновление элемента плана"
 
 # ============================================================
-# 16. POST /api/plans/{id}/activate (активация черновика)
+# 16. POST /api/v1/plans/{id}/activate (активация черновика)
 # ============================================================
 echo ""
-log_info "Тест: POST /api/plans/$PLAN_ID_DRAFT/activate"
+log_info "Тест: POST /api/v1/plans/$PLAN_ID_DRAFT/activate"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_DRAFT/activate" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -440,10 +440,10 @@ RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_DRAFT/a
 check_response_simple "$RESPONSE" "200" "Активация черновика"
 
 # ============================================================
-# 17. POST /api/plans/{planId}/items (активный план) - должен вернуть 403
+# 17. POST /api/v1/plans/{planId}/items (активный план) - должен вернуть 403
 # ============================================================
 echo ""
-log_info "Тест: POST /api/plans/$PLAN_ID_DRAFT/items (активный план)"
+log_info "Тест: POST /api/v1/plans/$PLAN_ID_DRAFT/items (активный план)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_DRAFT/items" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -457,10 +457,10 @@ RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_DRAFT/i
 check_response_simple "$RESPONSE" "403" "Добавление элемента в активный план"
 
 # ============================================================
-# 18. POST /api/plans/{id}/fork (создание нового черновика)
+# 18. POST /api/v1/plans/{id}/fork (создание нового черновика)
 # ============================================================
 echo ""
-log_info "Тест: POST /api/plans/$PLAN_ID_DRAFT/fork (создание нового черновика)"
+log_info "Тест: POST /api/v1/plans/$PLAN_ID_DRAFT/fork (создание нового черновика)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_DRAFT/fork" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -476,10 +476,10 @@ if [ -z "$PLAN_ID_DRAFT" ]; then
 fi
 
 # ============================================================
-# 19. POST /api/plans/{planId}/items - должен вернуть 403, так как элемент уже в плане
+# 19. POST /api/v1/plans/{planId}/items - должен вернуть 403, так как элемент уже в плане
 # ============================================================
 echo ""
-log_info "Тест: POST /api/plans/$PLAN_ID_DRAFT/items (элемент уже в плане)"
+log_info "Тест: POST /api/v1/plans/$PLAN_ID_DRAFT/items (элемент уже в плане)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_DRAFT/items" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
@@ -494,10 +494,10 @@ RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/plans/$PLAN_ID_DRAFT/i
 check_response_simple "$RESPONSE" "403" "Добавление элемента в новый черновик (дубликат)"
 
 # ============================================================
-# 20. GET /api/plans/{planId}/items (проверка, что элемент скопировался)
+# 20. GET /api/v1/plans/{planId}/items (проверка, что элемент скопировался)
 # ============================================================
 echo ""
-log_info "Тест: GET /api/plans/$PLAN_ID_DRAFT/items"
+log_info "Тест: GET /api/v1/plans/$PLAN_ID_DRAFT/items"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/plans/$PLAN_ID_DRAFT/items" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 
@@ -521,20 +521,20 @@ else
 fi
 
 # ============================================================
-# 21. DELETE /api/plan-items/{id} (удаление элемента из черновика)
+# 21. DELETE /api/v1/plan-items/{id} (удаление элемента из черновика)
 # ============================================================
 echo ""
-log_info "Тест: DELETE /api/plan-items/$PLAN_ITEM_ID_FOR_DELETE"
+log_info "Тест: DELETE /api/v1/plan-items/$PLAN_ITEM_ID_FOR_DELETE"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "$BASE_URL/plan-items/$PLAN_ITEM_ID_FOR_DELETE" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 
 check_response_simple "$RESPONSE" "204" "Удаление элемента из черновика"
 
 # ============================================================
-# 22. GET /api/plans/{planId}/items (после удаления)
+# 22. GET /api/v1/plans/{planId}/items (после удаления)
 # ============================================================
 echo ""
-log_info "Тест: GET /api/plans/$PLAN_ID_DRAFT/items (после удаления)"
+log_info "Тест: GET /api/v1/plans/$PLAN_ID_DRAFT/items (после удаления)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/plans/$PLAN_ID_DRAFT/items" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 
@@ -550,29 +550,29 @@ else
 fi
 
 # ============================================================
-# 23. DELETE /api/plans/{id}
+# 23. DELETE /api/v1/plans/{id}
 # ============================================================
 echo ""
-log_info "Тест: DELETE /api/plans/$PLAN_ID_DRAFT"
+log_info "Тест: DELETE /api/v1/plans/$PLAN_ID_DRAFT"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "$BASE_URL/plans/$PLAN_ID_DRAFT" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 
 check_response_simple "$RESPONSE" "204" "Удаление неактивного плана"
 
 # ============================================================
-# 24. GET /api/phases/{phaseId}/plans (без токена)
+# 24. GET /api/v1/phases/{phaseId}/plans (без токена)
 # ============================================================
 echo ""
-log_info "Тест: GET /api/phases/$PHASE_ID/plans (без токена)"
+log_info "Тест: GET /api/v1/phases/$PHASE_ID/plans (без токена)"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/phases/$PHASE_ID/plans" 2>&1)
 
 check_response_simple "$RESPONSE" "401" "Доступ без токена"
 
 # ============================================================
-# 25. DELETE /api/projects/{id} (очистка)
+# 25. DELETE /api/v1/projects/{id} (очистка)
 # ============================================================
 echo ""
-log_info "Тест: DELETE /api/projects/$PROJECT_ID"
+log_info "Тест: DELETE /api/v1/projects/$PROJECT_ID"
 RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "$BASE_URL/projects/$PROJECT_ID" \
     -H "Authorization: Bearer $TOKEN" 2>&1)
 

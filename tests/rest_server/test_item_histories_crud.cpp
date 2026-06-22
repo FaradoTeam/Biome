@@ -181,12 +181,12 @@ struct ItemHistoriesTestFixture
 BOOST_FIXTURE_TEST_SUITE(ItemHistoriesCrudTestSuite, ItemHistoriesTestFixture)
 
 // ============================================================
-// GET /api/items/histories — Получение списка записей
+// GET /api/v1/items/histories — Получение списка записей
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_histories_returns_list)
 {
-    auto response = makeGetRequest("/api/items/histories").get();
+    auto response = makeGetRequest("/api/v1/items/histories").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getGetItemHistoriesCallCount(), 1);
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_histories_with_pagination_params)
     services::ItemHistoriesPage emptyPage;
     mockItemHistoryService->setGetItemHistoriesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/items/histories?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/items/histories?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getLastGetItemHistoriesPage(), 3);
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_histories_filter_by_item_id)
     filteredPage.totalCount = 1;
     mockItemHistoryService->setGetItemHistoriesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/items/histories?itemId=42").get();
+    auto response = makeGetRequest("/api/v1/items/histories?itemId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemHistoryService->getLastGetItemHistoriesItemId().has_value());
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_histories_filter_by_user_id)
     filteredPage.totalCount = 1;
     mockItemHistoryService->setGetItemHistoriesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/items/histories?userId=200").get();
+    auto response = makeGetRequest("/api/v1/items/histories?userId=200").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemHistoryService->getLastGetItemHistoriesFilterUserId().has_value());
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_histories_filter_by_date_range)
     filteredPage.totalCount = 1;
     mockItemHistoryService->setGetItemHistoriesResult(filteredPage);
 
-    auto response = makeGetRequest("/api/items/histories?dateFrom=1609459200&dateTo=1700000000").get();
+    auto response = makeGetRequest("/api/v1/items/histories?dateFrom=1609459200&dateTo=1700000000").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemHistoryService->getLastGetItemHistoriesDateFrom().has_value());
@@ -273,14 +273,14 @@ BOOST_AUTO_TEST_CASE(test_get_item_histories_filter_by_date_range)
 
 BOOST_AUTO_TEST_CASE(test_get_item_histories_requires_auth)
 {
-    auto response = makeGetRequest("/api/items/histories", "").get();
+    auto response = makeGetRequest("/api/v1/items/histories", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getGetItemHistoriesCallCount(), 0);
 }
 
 // ============================================================
-// GET /api/items/histories/{id} — Получение записи по ID
+// GET /api/v1/items/histories/{id} — Получение записи по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_history_by_id_success)
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_history_by_id_success)
     history.diff = R"({"caption": "Конкретное изменение"})";
     mockItemHistoryService->setGetItemHistoryResult(history);
 
-    auto response = makeGetRequest("/api/items/histories/42").get();
+    auto response = makeGetRequest("/api/v1/items/histories/42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getGetItemHistoryCallCount(), 1);
@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_history_not_found)
 {
     mockItemHistoryService->setGetItemHistoryResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/items/histories/999").get();
+    auto response = makeGetRequest("/api/v1/items/histories/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getGetItemHistoryCallCount(), 1);
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_history_not_found)
 }
 
 // ============================================================
-// GET /api/items/{itemId}/histories/last — Последняя запись для элемента
+// GET /api/v1/items/{itemId}/histories/last — Последняя запись для элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_last_item_history_success)
@@ -328,7 +328,7 @@ BOOST_AUTO_TEST_CASE(test_get_last_item_history_success)
     lastHistory.diff = R"({"stateId": 2})";
     mockItemHistoryService->setGetLastItemHistoryResult(lastHistory);
 
-    auto response = makeGetRequest("/api/items/1/histories/last").get();
+    auto response = makeGetRequest("/api/v1/items/1/histories/last").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getGetLastItemHistoryCallCount(), 1);
@@ -343,13 +343,13 @@ BOOST_AUTO_TEST_CASE(test_get_last_item_history_not_found)
 {
     mockItemHistoryService->setGetLastItemHistoryResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/items/999/histories/last").get();
+    auto response = makeGetRequest("/api/v1/items/999/histories/last").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/items/{itemId}/histories — Создание записи
+// POST /api/v1/items/{itemId}/histories — Создание записи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_item_history_success)
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_history_success)
     web::json::value body;
     body[U("diff")] = web::json::value::string(U("{\"caption\": \"Новая запись истории\"}"));
 
-    auto response = makePostRequest("/api/items/1/histories", body).get();
+    auto response = makePostRequest("/api/v1/items/1/histories", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getCreateItemHistoryCallCount(), 1);
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(test_create_item_history_empty_body)
 {
     web::json::value body = web::json::value::object();
 
-    auto response = makePostRequest("/api/items/1/histories", body).get();
+    auto response = makePostRequest("/api/v1/items/1/histories", body).get();
 
     // Пустой объект {} - валидный JSON, создаётся запись с пустым diff
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
@@ -392,14 +392,14 @@ BOOST_AUTO_TEST_CASE(test_create_item_history_forbidden)
     web::json::value body;
     body[U("diff")] = web::json::value::string(U("{\"test\": \"value\"}"));
 
-    auto response = makePostRequest("/api/items/1/histories", body).get();
+    auto response = makePostRequest("/api/v1/items/1/histories", body).get();
 
     // Пользователь 999 не имеет прав - сервер возвращает 403 Forbidden
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
 // ============================================================
-// DELETE /api/items/histories/{id} — Удаление записи
+// DELETE /api/v1/items/histories/{id} — Удаление записи
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_item_history_success)
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_history_success)
     deleteResult.success = true;
     mockItemHistoryService->setDeleteItemHistoryResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/items/histories/3").get();
+    auto response = makeDeleteRequest("/api/v1/items/histories/3").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getDeleteItemHistoryCallCount(), 1);
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_history_not_found)
     deleteResult.errorMessage = "History not found";
     mockItemHistoryService->setDeleteItemHistoryResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/items/histories/999").get();
+    auto response = makeDeleteRequest("/api/v1/items/histories/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getDeleteItemHistoryCallCount(), 1);
@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE(test_delete_item_history_not_found)
 
 BOOST_AUTO_TEST_CASE(test_delete_item_history_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/items/histories/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/items/histories/1", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockItemHistoryService->getDeleteItemHistoryCallCount(), 0);
@@ -455,7 +455,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_history_lifecycle)
     web::json::value createBody;
     createBody[U("diff")] = web::json::value::string(U("{\"caption\": \"Жизненный цикл истории\"}"));
 
-    auto createResponse = makePostRequest("/api/items/1/histories", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/items/1/histories", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
     auto createJson = createResponse.extract_json().get();
     int64_t newHistoryId = createJson.at(U("id")).as_integer();
@@ -463,12 +463,12 @@ BOOST_AUTO_TEST_CASE(test_full_item_history_lifecycle)
 
     // 2. Чтение созданной записи
     mockItemHistoryService->setGetItemHistoryResult(newHistory);
-    auto getResponse = makeGetRequest("/api/items/histories/" + std::to_string(newHistoryId)).get();
+    auto getResponse = makeGetRequest("/api/v1/items/histories/" + std::to_string(newHistoryId)).get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Получение последней записи для элемента
     mockItemHistoryService->setGetLastItemHistoryResult(newHistory);
-    auto getLastResponse = makeGetRequest("/api/items/1/histories/last").get();
+    auto getLastResponse = makeGetRequest("/api/v1/items/1/histories/last").get();
     BOOST_CHECK_EQUAL(getLastResponse.status_code(), status_codes::OK);
 
     // 4. Получение списка записей
@@ -476,14 +476,14 @@ BOOST_AUTO_TEST_CASE(test_full_item_history_lifecycle)
     listPage.histories = { newHistory };
     listPage.totalCount = 1;
     mockItemHistoryService->setGetItemHistoriesResult(listPage);
-    auto listResponse = makeGetRequest("/api/items/histories?itemId=1").get();
+    auto listResponse = makeGetRequest("/api/v1/items/histories?itemId=1").get();
     BOOST_CHECK_EQUAL(listResponse.status_code(), status_codes::OK);
 
     // 5. Удаление записи
     services::ItemHistoryResult deleteResult;
     deleteResult.success = true;
     mockItemHistoryService->setDeleteItemHistoryResult(deleteResult);
-    auto deleteResponse = makeDeleteRequest("/api/items/histories/" + std::to_string(newHistoryId)).get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/items/histories/" + std::to_string(newHistoryId)).get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 }
 

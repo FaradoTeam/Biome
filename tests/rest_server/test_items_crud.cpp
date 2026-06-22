@@ -225,12 +225,12 @@ struct ItemsTestFixture
 BOOST_FIXTURE_TEST_SUITE(ItemsCrudTestSuite, ItemsTestFixture)
 
 // ============================================================
-// GET /api/items — Получение списка элементов
+// GET /api/v1/items — Получение списка элементов
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_items_returns_list)
 {
-    auto response = makeGetRequest("/api/items").get();
+    auto response = makeGetRequest("/api/v1/items").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemService->getGetItemsCallCount(), 1);
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(test_get_items_with_pagination_params)
     services::ItemsPage emptyPage;
     mockItemService->setGetItemsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/items?page=3&pageSize=5").get();
+    auto response = makeGetRequest("/api/v1/items?page=3&pageSize=5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemService->getLastGetItemsPage(), 3);
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE(test_get_items_filter_by_item_type)
     filteredPage.totalCount = 1;
     mockItemService->setGetItemsResult(filteredPage);
 
-    auto response = makeGetRequest("/api/items?itemTypeId=42").get();
+    auto response = makeGetRequest("/api/v1/items?itemTypeId=42").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockItemService->getLastGetItemsItemTypeId().has_value());
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(test_get_items_filter_by_item_type)
 // ... остальные тесты аналогичны предыдущей версии ...
 
 // ============================================================
-// GET /api/items/{id}/fields — Получение полей элемента
+// GET /api/v1/items/{id}/fields — Получение полей элемента
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_item_fields_success)
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(test_get_item_fields_success)
     fields = { field1, field2 };
     mockItemService->setGetItemFieldsResult(fields);
 
-    auto response = makeGetRequest("/api/items/1/fields").get();
+    auto response = makeGetRequest("/api/v1/items/1/fields").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockItemService->getGetItemFieldsCallCount(), 1);
@@ -337,7 +337,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
     createBody[U("stateId")] = web::json::value::number(1);
     createBody[U("phaseId")] = web::json::value::number(1);
 
-    auto createResponse = makePostRequest("/api/items", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/items", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
     auto createJson = createResponse.extract_json().get();
     int64_t newItemId = createJson.at(U("id")).as_integer();
@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
 
     // 2. Чтение созданного элемента
     mockItemService->setGetItemResult(newItem);
-    auto getResponse = makeGetRequest("/api/items/" + std::to_string(newItemId)).get();
+    auto getResponse = makeGetRequest("/api/v1/items/" + std::to_string(newItemId)).get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление элемента
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
     web::json::value updateBody;
     updateBody[U("caption")] = web::json::value::string(U("Обновлённый элемент"));
 
-    auto updateResponse = makePutRequest("/api/items/" + std::to_string(newItemId), updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/items/" + std::to_string(newItemId), updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Установка поля
@@ -371,7 +371,8 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
     fieldBody[U("value")] = web::json::value::string(U("Тестовое значение"));
 
     auto setFieldResponse = makePutRequest(
-                                "/api/items/" + std::to_string(newItemId) + "/fields/10", fieldBody
+                                "/api/v1/items/" + std::to_string(newItemId) + "/fields/10",
+                                fieldBody
     )
                                 .get();
     BOOST_CHECK_EQUAL(setFieldResponse.status_code(), status_codes::OK);
@@ -380,7 +381,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
     std::vector<dto::ItemField> fields = { newField };
     mockItemService->setGetItemFieldsResult(fields);
     auto getFieldsResponse = makeGetRequest(
-                                 "/api/items/" + std::to_string(newItemId) + "/fields"
+                                 "/api/v1/items/" + std::to_string(newItemId) + "/fields"
     )
                                  .get();
     BOOST_CHECK_EQUAL(getFieldsResponse.status_code(), status_codes::OK);
@@ -391,7 +392,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
     mockItemService->setDeleteItemFieldResult(deleteFieldResult);
 
     auto deleteFieldResponse = makeDeleteRequest(
-                                   "/api/items/" + std::to_string(newItemId) + "/fields/10"
+                                   "/api/v1/items/" + std::to_string(newItemId) + "/fields/10"
     )
                                    .get();
     BOOST_CHECK_EQUAL(deleteFieldResponse.status_code(), status_codes::NoContent);
@@ -401,7 +402,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
     deleteResult.success = true;
     mockItemService->setDeleteItemResult(deleteResult);
 
-    auto deleteResponse = makeDeleteRequest("/api/items/" + std::to_string(newItemId)).get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/items/" + std::to_string(newItemId)).get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 8. Восстановление элемента
@@ -410,7 +411,7 @@ BOOST_AUTO_TEST_CASE(test_full_item_lifecycle)
     mockItemService->setRestoreItemResult(restoreResult);
 
     auto restoreResponse = makePostRequest(
-                               "/api/items/" + std::to_string(newItemId) + "/restore", web::json::value::null()
+                               "/api/v1/items/" + std::to_string(newItemId) + "/restore", web::json::value::null()
     )
                                .get();
     BOOST_CHECK_EQUAL(restoreResponse.status_code(), status_codes::NoContent);

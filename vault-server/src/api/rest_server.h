@@ -18,6 +18,8 @@ namespace server
 namespace services
 {
 class IAuthService;
+class IBoardService;
+class IBoardColumnService;
 class IEdgeService;
 class IFieldTypeService;
 class IFieldTypePossibleValueService;
@@ -60,7 +62,8 @@ public:
      */
     explicit RestServer(
         const std::string& host = "0.0.0.0",
-        uint16_t port = 8080
+        uint16_t port = 8080,
+        const std::string& basePath = "/api/v1"
     );
     ~RestServer();
 
@@ -95,6 +98,8 @@ public:
 
     void setAuthMiddleware(std::shared_ptr<IAuthMiddleware> middleware);
     void setAuthService(std::shared_ptr<services::IAuthService> authService);
+    void setBoardService(std::shared_ptr<services::IBoardService> service);
+    void setBoardColumnService(std::shared_ptr<services::IBoardColumnService> service);
     void setFieldTypeService(std::shared_ptr<services::IFieldTypeService> fieldTypeService);
     void setFieldTypePossibleValueService(std::shared_ptr<services::IFieldTypePossibleValueService> service);
     void setItemService(std::shared_ptr<services::IItemService> itemService);
@@ -242,6 +247,7 @@ private:
 private:
     const std::string m_host; ///< Адрес сервера
     const uint16_t m_port; ///< Порт сервера
+    const std::string m_basePath; ///< Базовый префикс всех эндпоинтов
 
 private:
     /// HTTP-слушатель
@@ -257,6 +263,8 @@ private:
     std::vector<RouteInfo> m_routes;
 
     std::shared_ptr<services::IAuthService> m_authService;
+    std::shared_ptr<services::IBoardService> m_boardService;
+    std::shared_ptr<services::IBoardColumnService> m_boardColumnService;
     std::shared_ptr<services::IFieldTypeService> m_fieldTypeService;
     std::shared_ptr<services::IFieldTypePossibleValueService> m_fieldTypePossibleValueService;
     std::shared_ptr<services::IItemService> m_itemService;

@@ -18,6 +18,8 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/rest_server.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/middleware/impl/auth_middleware.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/auth_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/boards_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/board_columns_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/base_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/edges_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_types_handler.cpp
@@ -45,6 +47,8 @@ set(SERVER_SOURCES
     # Logic Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/auth_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/authorization_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/board_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/board_column_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/edge_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_possible_value_service.cpp
@@ -69,6 +73,8 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_team_role_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/workflow_service.cpp
     # Repo Layer
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_board_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_board_column_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_edge_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_possible_value_repository.cpp

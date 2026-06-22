@@ -97,7 +97,7 @@ void PhasesHandler::handleGetPhases(
     }
 
     LOG_DEBUG
-        << "GET /api/phases: user=" << userId
+        << "GET /phases: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
         << ", projectId=" << (projectId.has_value() ? std::to_string(*projectId) : "none")
         << ", isArchive=" << (isArchive.has_value() ? (*isArchive ? "true" : "false") : "none");
@@ -159,7 +159,7 @@ void PhasesHandler::handleGetPhase(
         return;
     }
 
-    LOG_DEBUG << "GET /api/phases/" << phaseId << " from user " << userId;
+    LOG_DEBUG << "GET /phases/" << phaseId << " from user " << userId;
 
     try
     {
@@ -201,7 +201,7 @@ void PhasesHandler::handleCreatePhase(
     }
     int64_t userId = *userIdOpt;
 
-    LOG_DEBUG << "POST /api/phases from user " << userId;
+    LOG_DEBUG << "POST /phases from user " << userId;
 
     request
         .extract_json()
@@ -290,7 +290,7 @@ void PhasesHandler::handleUpdatePhase(
         return;
     }
 
-    LOG_DEBUG << "PUT /api/phases/" << phaseId << " from user " << userId;
+    LOG_DEBUG << "PUT /phases/" << phaseId << " from user " << userId;
 
     request
         .extract_json()
@@ -370,7 +370,7 @@ void PhasesHandler::handleDeletePhase(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/phases/" << phaseId << " from user " << userId;
+    LOG_DEBUG << "DELETE /phases/" << phaseId << " from user " << userId;
 
     try
     {

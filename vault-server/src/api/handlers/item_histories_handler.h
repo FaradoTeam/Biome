@@ -27,8 +27,8 @@ public:
 
     /**
      * @brief Получает список записей истории изменений.
-     * GET /api/items/{itemId}/histories
-     * GET /api/items/histories (с фильтрацией)
+     * GET /items/{itemId}/histories
+     * GET /items/histories (с фильтрацией)
      */
     void handleGetItemHistories(
         const web::http::http_request& request,
@@ -37,7 +37,7 @@ public:
 
     /**
      * @brief Получает запись истории по ID.
-     * GET /api/items/histories/{id}
+     * GET /items/histories/{id}
      */
     void handleGetItemHistory(
         const web::http::http_request& request,
@@ -46,7 +46,7 @@ public:
 
     /**
      * @brief Получает последнюю запись истории для элемента.
-     * GET /api/items/{itemId}/histories/last
+     * GET /items/{itemId}/histories/last
      */
     void handleGetLastItemHistory(
         const web::http::http_request& request,
@@ -55,7 +55,7 @@ public:
 
     /**
      * @brief Создаёт новую запись истории.
-     * POST /api/items/{itemId}/histories
+     * POST /items/{itemId}/histories
      */
     void handleCreateItemHistory(
         const web::http::http_request& request,
@@ -64,7 +64,7 @@ public:
 
     /**
      * @brief Удаляет запись истории.
-     * DELETE /api/items/histories/{id}
+     * DELETE /items/histories/{id}
      */
     void handleDeleteItemHistory(
         const web::http::http_request& request,

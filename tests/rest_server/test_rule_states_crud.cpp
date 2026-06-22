@@ -103,7 +103,7 @@ struct RuleStatesTestFixture
 BOOST_FIXTURE_TEST_SUITE(RuleStatesCrudTestSuite, RuleStatesTestFixture)
 
 // ============================================================
-// GET /api/rule-states — Получение списка прав на состояния
+// GET /api/v1/rule-states — Получение списка прав на состояния
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_rule_states_returns_list)
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_states_returns_list)
     testPage.totalCount = 2;
     mockRuleStateService->setGetRuleStatesResult(testPage);
 
-    auto response = makeGetRequest("/api/rule-states").get();
+    auto response = makeGetRequest("/api/v1/rule-states").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleStateService->getGetRuleStatesCallCount(), 1);
 
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_states_with_pagination)
     services::RuleStatesPage emptyPage;
     mockRuleStateService->setGetRuleStatesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-states?page=2&pageSize=15").get();
+    auto response = makeGetRequest("/api/v1/rule-states?page=2&pageSize=15").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleStateService->getLastGetRuleStatesPage(), 2);
     BOOST_CHECK_EQUAL(mockRuleStateService->getLastGetRuleStatesPageSize(), 15);
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_states_with_rule_filter)
     services::RuleStatesPage emptyPage;
     mockRuleStateService->setGetRuleStatesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-states?ruleId=42").get();
+    auto response = makeGetRequest("/api/v1/rule-states?ruleId=42").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockRuleStateService->getLastGetRuleStatesRuleId().has_value());
     BOOST_CHECK_EQUAL(*mockRuleStateService->getLastGetRuleStatesRuleId(), 42);
@@ -159,14 +159,14 @@ BOOST_AUTO_TEST_CASE(test_get_rule_states_with_state_filter)
     services::RuleStatesPage emptyPage;
     mockRuleStateService->setGetRuleStatesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/rule-states?stateId=100").get();
+    auto response = makeGetRequest("/api/v1/rule-states?stateId=100").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockRuleStateService->getLastGetRuleStatesStateId().has_value());
     BOOST_CHECK_EQUAL(*mockRuleStateService->getLastGetRuleStatesStateId(), 100);
 }
 
 // ============================================================
-// GET /api/rule-states/{id} — Получение права по ID
+// GET /api/v1/rule-states/{id} — Получение права по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_rule_state_by_id_success)
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(test_get_rule_state_by_id_success)
     rs.isStateAllowed = true;
     mockRuleStateService->setGetRuleStateResult(rs);
 
-    auto response = makeGetRequest("/api/rule-states/5").get();
+    auto response = makeGetRequest("/api/v1/rule-states/5").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleStateService->getLastGetRuleStateId(), 5);
 
@@ -193,12 +193,12 @@ BOOST_AUTO_TEST_CASE(test_get_rule_state_not_found)
 {
     mockRuleStateService->setGetRuleStateResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/rule-states/999").get();
+    auto response = makeGetRequest("/api/v1/rule-states/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/rule-states — Создание права на состояние
+// POST /api/v1/rule-states — Создание права на состояние
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_rule_state_success)
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(test_create_rule_state_success)
     body[U("stateId")] = json::value::number(50);
     body[U("isStateAllowed")] = json::value::boolean(true);
 
-    auto response = makePostRequest("/api/rule-states", body).get();
+    auto response = makePostRequest("/api/v1/rule-states", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockRuleStateService->getCreateRuleStateCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRuleStateService->getLastCreatedRuleState().ruleId, 5);
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(test_create_rule_state_missing_required_fields)
     json::value body;
     body[U("ruleId")] = json::value::number(5);
 
-    auto response = makePostRequest("/api/rule-states", body).get();
+    auto response = makePostRequest("/api/v1/rule-states", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     // Сервис НЕ должен быть вызван, так как валидация происходит в handler
     BOOST_CHECK_EQUAL(mockRuleStateService->getCreateRuleStateCallCount(), 0);
@@ -242,12 +242,12 @@ BOOST_AUTO_TEST_CASE(test_create_rule_state_duplicate)
     body[U("ruleId")] = json::value::number(5);
     body[U("stateId")] = json::value::number(50);
 
-    auto response = makePostRequest("/api/rule-states", body).get();
+    auto response = makePostRequest("/api/v1/rule-states", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden); // TODO: status_codes::Conflict
 }
 
 // ============================================================
-// PUT /api/rule-states/{id} — Обновление права на состояние
+// PUT /api/v1/rule-states/{id} — Обновление права на состояние
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_rule_state_success)
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(test_update_rule_state_success)
     json::value body;
     body[U("isStateAllowed")] = json::value::boolean(false);
 
-    auto response = makePutRequest("/api/rule-states/1", body).get();
+    auto response = makePutRequest("/api/v1/rule-states/1", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockRuleStateService->getUpdateRuleStateCallCount(), 1);
     BOOST_CHECK_EQUAL(*mockRuleStateService->getLastUpdatedRuleState().id, 1);
@@ -273,19 +273,19 @@ BOOST_AUTO_TEST_CASE(test_update_rule_state_not_found)
     json::value body;
     body[U("isStateAllowed")] = json::value::boolean(false);
 
-    auto response = makePutRequest("/api/rule-states/999", body).get();
+    auto response = makePutRequest("/api/v1/rule-states/999", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/rule-states/{id} — Удаление права на состояние
+// DELETE /api/v1/rule-states/{id} — Удаление права на состояние
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_rule_state_success)
 {
     mockRuleStateService->setDeleteRuleStateResult(true);
 
-    auto response = makeDeleteRequest("/api/rule-states/3").get();
+    auto response = makeDeleteRequest("/api/v1/rule-states/3").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockRuleStateService->getDeleteRuleStateCallCount(), 1);
     BOOST_CHECK_EQUAL(mockRuleStateService->getLastDeletedRuleStateId(), 3);
@@ -295,13 +295,13 @@ BOOST_AUTO_TEST_CASE(test_delete_rule_state_not_found)
 {
     mockRuleStateService->setDeleteRuleStateResult(false);
 
-    auto response = makeDeleteRequest("/api/rule-states/999").get();
+    auto response = makeDeleteRequest("/api/v1/rule-states/999").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_rule_state_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/rule-states/1", "").get();
+    auto response = makeDeleteRequest("/api/v1/rule-states/1", "").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockRuleStateService->getDeleteRuleStateCallCount(), 0);
 }

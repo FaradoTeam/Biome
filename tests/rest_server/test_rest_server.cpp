@@ -62,7 +62,7 @@ struct RestServerFixture
 
     void setupDefaultUserService()
     {
-        // Настройка тестовых пользователей для эндпоинтов /api/users
+        // Настройка тестовых пользователей для эндпоинтов /api/v1/users
         services::UsersPage testPage;
 
         dto::User user1;
@@ -164,7 +164,7 @@ BOOST_FIXTURE_TEST_SUITE(RestServerTestSuite, RestServerFixture)
 
 BOOST_AUTO_TEST_CASE(test_health_endpoint_returns_ok)
 {
-    auto response = makeRequest("/health").get();
+    auto response = makeRequest("/api/v1/health").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
     auto json = response.extract_json().get();
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(test_login_with_valid_credentials)
 
     web::http::client::http_client client(U("http://127.0.0.1:18080"));
     web::http::http_request request(methods::POST);
-    request.set_request_uri(U("/auth/login"));
+    request.set_request_uri(U("/api/v1/auth/login"));
 
     web::json::value body;
     body[U("login")] = web::json::value::string(U("testuser"));
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(test_login_with_invalid_credentials)
 
     web::http::client::http_client client(U("http://127.0.0.1:18080"));
     web::http::http_request request(methods::POST);
-    request.set_request_uri(U("/auth/login"));
+    request.set_request_uri(U("/api/v1/auth/login"));
 
     web::json::value body;
     body[U("login")] = web::json::value::string(U("baduser"));
@@ -224,13 +224,13 @@ BOOST_AUTO_TEST_CASE(test_login_with_invalid_credentials)
 BOOST_AUTO_TEST_CASE(test_protected_endpoint_requires_auth)
 {
     // Без токена - middleware не должен вызываться
-    auto response = makeRequest("/api/users").get();
+    auto response = makeRequest("/api/v1/users").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
 }
 
 BOOST_AUTO_TEST_CASE(test_protected_endpoint_with_valid_token)
 {
-    auto response = makeRequest("/api/users", methods::GET, "valid_token").get();
+    auto response = makeRequest("/api/v1/users", methods::GET, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockAuthMiddleware->getValidateCallCount(), 1);
     BOOST_CHECK_EQUAL(mockAuthMiddleware->getLastAuthHeader(), "Bearer valid_token");
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(test_logout_endpoint)
 
     web::http::client::http_client client(U("http://127.0.0.1:18080"));
     web::http::http_request request(methods::POST);
-    request.set_request_uri(U("/auth/logout"));
+    request.set_request_uri(U("/api/v1/auth/logout"));
     request.headers().add(U("Authorization"), U("Bearer token_to_logout"));
 
     auto response = client.request(request).get();
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(test_change_password_endpoint)
 
     web::http::client::http_client client(U("http://127.0.0.1:18080"));
     web::http::http_request request(methods::POST);
-    request.set_request_uri(U("/auth/change-password"));
+    request.set_request_uri(U("/api/v1/auth/change-password"));
     request.headers().add(U("Authorization"), U("Bearer valid_token"));
 
     web::json::value body;
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(test_not_found_route_returns_404)
 BOOST_AUTO_TEST_CASE(test_get_users_returns_list_for_authenticated_user)
 {
     // Любой авторизованный пользователь может получить список пользователей
-    auto response = makeRequest("/api/users", methods::GET, "valid_token").get();
+    auto response = makeRequest("/api/v1/users", methods::GET, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
     auto json = response.extract_json().get();
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(test_get_users_returns_list_for_authenticated_user)
 
 BOOST_AUTO_TEST_CASE(test_get_user_by_id_success)
 {
-    auto response = makeRequest("/api/users/1", methods::GET, "valid_token").get();
+    auto response = makeRequest("/api/v1/users/1", methods::GET, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
 
     auto json = response.extract_json().get();
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(test_create_user_fails_for_non_admin)
     body[U("password")] = web::json::value::string(U("securepass123"));
     body[U("firstName")] = web::json::value::string(U("New"));
 
-    auto response = makeRequest("/api/users", methods::POST, "valid_token", body).get();
+    auto response = makeRequest("/api/v1/users", methods::POST, "valid_token", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
@@ -324,14 +324,14 @@ BOOST_AUTO_TEST_CASE(test_update_user_fails_for_non_admin)
     web::json::value body;
     body[U("firstName")] = web::json::value::string(U("UpdatedName"));
 
-    auto response = makeRequest("/api/users/1", methods::PUT, "valid_token", body).get();
+    auto response = makeRequest("/api/v1/users/1", methods::PUT, "valid_token", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_user_fails_for_non_admin)
 {
     // Обычный пользователь не может удалять других пользователей
-    auto response = makeRequest("/api/users/2", methods::DEL, "valid_token").get();
+    auto response = makeRequest("/api/v1/users/2", methods::DEL, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Forbidden);
 }
 
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(test_admin_can_create_user)
     body[U("password")] = web::json::value::string(U("securepass123"));
     body[U("firstName")] = web::json::value::string(U("New"));
 
-    auto response = makeRequest("/api/users", methods::POST, "valid_token", body).get();
+    auto response = makeRequest("/api/v1/users", methods::POST, "valid_token", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
 
     auto json = response.extract_json().get();
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_CASE(test_admin_can_update_user)
     web::json::value body;
     body[U("firstName")] = web::json::value::string(U("UpdatedName"));
 
-    auto response = makeRequest("/api/users/1", methods::PUT, "valid_token", body).get();
+    auto response = makeRequest("/api/v1/users/1", methods::PUT, "valid_token", body).get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
 }
 
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(test_admin_can_delete_user)
     // Супер-админ может удалять пользователей
     mockAuthMiddleware->setValidateRequestResult(true, "1");
 
-    auto response = makeRequest("/api/users/2", methods::DEL, "valid_token").get();
+    auto response = makeRequest("/api/v1/users/2", methods::DEL, "valid_token").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
 }
 

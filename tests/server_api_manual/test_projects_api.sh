@@ -17,7 +17,7 @@ echo ""
 
 # 1. Получаем токен
 echo "1. Авторизация..."
-TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
+TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d "{\"login\":\"$LOGIN\",\"password\":\"$PASSWORD\"}" | \
     grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
@@ -31,7 +31,7 @@ echo ""
 
 # 2. Создаем проект
 echo "2. Создание проекта..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/projects" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/v1/projects" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Тестовый проект","description":"Описание проекта"}')
@@ -55,7 +55,7 @@ echo ""
 
 # 3. Получаем список проектов
 echo "3. Получение списка проектов..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/projects" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/v1/projects" \
     -H "Authorization: Bearer $TOKEN")
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
@@ -72,7 +72,7 @@ echo ""
 # 4. Получаем проект по ID
 if [ -n "$PROJECT_ID" ]; then
     echo "4. Получение проекта по ID ($PROJECT_ID)..."
-    RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/projects/$PROJECT_ID" \
+    RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/v1/projects/$PROJECT_ID" \
         -H "Authorization: Bearer $TOKEN")
 
     HTTP_CODE=$(echo "$RESPONSE" | tail -1)
@@ -90,7 +90,7 @@ fi
 # 5. Обновляем проект
 if [ -n "$PROJECT_ID" ]; then
     echo "5. Обновление проекта ($PROJECT_ID)..."
-    RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$BASE_URL/api/projects/$PROJECT_ID" \
+    RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$BASE_URL/api/v1/projects/$PROJECT_ID" \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
         -d '{"caption":"Обновленный проект","description":"Новое описание"}')
@@ -110,7 +110,7 @@ fi
 # 6. Удаляем проект (архивируем)
 if [ -n "$PROJECT_ID" ]; then
     echo "6. Архивирование проекта ($PROJECT_ID)..."
-    RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "$BASE_URL/api/projects/$PROJECT_ID" \
+    RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "$BASE_URL/api/v1/projects/$PROJECT_ID" \
         -H "Authorization: Bearer $TOKEN")
 
     HTTP_CODE=$(echo "$RESPONSE" | tail -1)

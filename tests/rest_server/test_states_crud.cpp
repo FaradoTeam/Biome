@@ -124,7 +124,7 @@ struct StatesTestFixture
 BOOST_FIXTURE_TEST_SUITE(StatesCrudTestSuite, StatesTestFixture)
 
 // ============================================================
-// GET /api/states — Получение списка состояний
+// GET /api/v1/states — Получение списка состояний
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_states_returns_list)
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_get_states_returns_list)
     testPage.totalCount = 2;
     mockStateService->setStatesResult(testPage);
 
-    auto response = makeGetRequest("/api/states").get();
+    auto response = makeGetRequest("/api/v1/states").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockStateService->getStatesCallCount(), 1);
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(test_get_states_with_workflow_filter)
     services::StatesPage emptyPage;
     mockStateService->setStatesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/states?workflowId=10").get();
+    auto response = makeGetRequest("/api/v1/states?workflowId=10").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_REQUIRE(mockStateService->getLastStatesWorkflowId().has_value());
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(test_get_states_with_pagination)
     services::StatesPage emptyPage;
     mockStateService->setStatesResult(emptyPage);
 
-    auto response = makeGetRequest("/api/states?page=3&pageSize=10").get();
+    auto response = makeGetRequest("/api/v1/states?page=3&pageSize=10").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockStateService->getLastStatesPage(), 3);
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(test_get_states_with_pagination)
 }
 
 // ============================================================
-// GET /api/states/{id} — Получение состояния по ID
+// GET /api/v1/states/{id} — Получение состояния по ID
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_get_state_by_id_success)
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(test_get_state_by_id_success)
     state.weight = 50;
     mockStateService->setStateResult(state);
 
-    auto response = makeGetRequest("/api/states/5").get();
+    auto response = makeGetRequest("/api/v1/states/5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockStateService->getLastStateId(), 5);
@@ -211,13 +211,13 @@ BOOST_AUTO_TEST_CASE(test_get_state_not_found)
 {
     mockStateService->setStateResult(std::nullopt);
 
-    auto response = makeGetRequest("/api/states/999").get();
+    auto response = makeGetRequest("/api/v1/states/999").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// POST /api/states — Создание состояния
+// POST /api/v1/states — Создание состояния
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_create_state_success)
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(test_create_state_success)
     body[U("orderNumber")] = web::json::value::number(3);
     body[U("weight")] = web::json::value::number(75);
 
-    auto response = makePostRequest("/api/states", body).get();
+    auto response = makePostRequest("/api/v1/states", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Created);
     BOOST_CHECK_EQUAL(mockStateService->getCreateStateCallCount(), 1);
@@ -250,14 +250,14 @@ BOOST_AUTO_TEST_CASE(test_create_state_missing_required_fields)
     web::json::value body;
     body[U("caption")] = web::json::value::string(U("No WorkflowId"));
 
-    auto response = makePostRequest("/api/states", body).get();
+    auto response = makePostRequest("/api/v1/states", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::BadRequest);
     BOOST_CHECK_EQUAL(mockStateService->getCreateStateCallCount(), 0);
 }
 
 // ============================================================
-// PUT /api/states/{id} — Обновление состояния
+// PUT /api/v1/states/{id} — Обновление состояния
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_update_state_success)
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(test_update_state_success)
     body[U("weight")] = web::json::value::number(60);
     body[U("isQueue")] = web::json::value::boolean(true);
 
-    auto response = makePutRequest("/api/states/5", body).get();
+    auto response = makePutRequest("/api/v1/states/5", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockStateService->getUpdateStateCallCount(), 1);
@@ -287,13 +287,13 @@ BOOST_AUTO_TEST_CASE(test_update_state_not_found)
     web::json::value body;
     body[U("weight")] = web::json::value::number(50);
 
-    auto response = makePutRequest("/api/states/999", body).get();
+    auto response = makePutRequest("/api/v1/states/999", body).get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NotFound);
 }
 
 // ============================================================
-// DELETE /api/states/{id} — Удаление состояния
+// DELETE /api/v1/states/{id} — Удаление состояния
 // ============================================================
 
 BOOST_AUTO_TEST_CASE(test_delete_state_success)
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(test_delete_state_success)
     deleteResult.success = true;
     mockStateService->setDeleteStateResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/states/5").get();
+    auto response = makeDeleteRequest("/api/v1/states/5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::NoContent);
     BOOST_CHECK_EQUAL(mockStateService->getDeleteStateCallCount(), 1);
@@ -318,14 +318,14 @@ BOOST_AUTO_TEST_CASE(test_delete_state_with_dependencies)
     deleteResult.errorMessage = "Cannot delete: state is used by items";
     mockStateService->setDeleteStateResult(deleteResult);
 
-    auto response = makeDeleteRequest("/api/states/5").get();
+    auto response = makeDeleteRequest("/api/v1/states/5").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Conflict);
 }
 
 BOOST_AUTO_TEST_CASE(test_delete_state_requires_auth)
 {
-    auto response = makeDeleteRequest("/api/states/5", "").get();
+    auto response = makeDeleteRequest("/api/v1/states/5", "").get();
 
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::Unauthorized);
     BOOST_CHECK_EQUAL(mockStateService->getDeleteStateCallCount(), 0);
@@ -350,12 +350,12 @@ BOOST_AUTO_TEST_CASE(test_full_state_lifecycle)
     createBody[U("caption")] = web::json::value::string(U("Testing"));
     createBody[U("weight")] = web::json::value::number(50);
 
-    auto createResponse = makePostRequest("/api/states", createBody).get();
+    auto createResponse = makePostRequest("/api/v1/states", createBody).get();
     BOOST_CHECK_EQUAL(createResponse.status_code(), status_codes::Created);
 
     // 2. Чтение
     mockStateService->setStateResult(newState);
-    auto getResponse = makeGetRequest("/api/states/300").get();
+    auto getResponse = makeGetRequest("/api/v1/states/300").get();
     BOOST_CHECK_EQUAL(getResponse.status_code(), status_codes::OK);
 
     // 3. Обновление
@@ -366,19 +366,19 @@ BOOST_AUTO_TEST_CASE(test_full_state_lifecycle)
     web::json::value updateBody;
     updateBody[U("weight")] = web::json::value::number(75);
 
-    auto updateResponse = makePutRequest("/api/states/300", updateBody).get();
+    auto updateResponse = makePutRequest("/api/v1/states/300", updateBody).get();
     BOOST_CHECK_EQUAL(updateResponse.status_code(), status_codes::OK);
 
     // 4. Удаление
     services::StateResult deleteResult;
     deleteResult.success = true;
     mockStateService->setDeleteStateResult(deleteResult);
-    auto deleteResponse = makeDeleteRequest("/api/states/300").get();
+    auto deleteResponse = makeDeleteRequest("/api/v1/states/300").get();
     BOOST_CHECK_EQUAL(deleteResponse.status_code(), status_codes::NoContent);
 
     // 5. Проверка после удаления
     mockStateService->setStateResult(std::nullopt);
-    auto getAfterDelete = makeGetRequest("/api/states/300").get();
+    auto getAfterDelete = makeGetRequest("/api/v1/states/300").get();
     BOOST_CHECK_EQUAL(getAfterDelete.status_code(), status_codes::NotFound);
 }
 

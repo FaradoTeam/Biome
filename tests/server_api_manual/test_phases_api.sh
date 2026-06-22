@@ -15,7 +15,7 @@ echo ""
 
 # 1. Авторизация
 echo "1. Авторизация..."
-TOKEN=$(curl -s -X POST "$BASE_URL/auth/login" \
+TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
     -H "Content-Type: application/json" \
     -d "{\"login\":\"$LOGIN\",\"password\":\"$PASSWORD\"}" | \
     grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
@@ -29,7 +29,7 @@ echo ""
 
 # 2. Создаем проект для фазы
 echo "2. Создание тестового проекта..."
-PROJECT_RESPONSE=$(curl -s -X POST "$BASE_URL/api/projects" \
+PROJECT_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/projects" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Проект для фаз","description":"Тестовый проект"}')
@@ -40,7 +40,7 @@ echo ""
 
 # 3. Создаем фазу
 echo "3. Создание фазы..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/phases" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/v1/phases" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d "{\"caption\":\"Фаза 1\",\"description\":\"Первая фаза\",\"projectId\":$PROJECT_ID}")
@@ -61,7 +61,7 @@ echo ""
 
 # 4. Получаем список фаз проекта
 echo "4. Список фаз проекта $PROJECT_ID..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/phases?projectId=$PROJECT_ID" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/v1/phases?projectId=$PROJECT_ID" \
     -H "Authorization: Bearer $TOKEN")
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
@@ -77,7 +77,7 @@ echo ""
 
 # 5. Получаем фазу по ID
 echo "5. Получение фазы по ID ($PHASE_ID)..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/phases/$PHASE_ID" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$BASE_URL/api/v1/phases/$PHASE_ID" \
     -H "Authorization: Bearer $TOKEN")
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)
@@ -93,7 +93,7 @@ echo ""
 
 # 6. Обновляем фазу
 echo "6. Обновление фазы..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$BASE_URL/api/phases/$PHASE_ID" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "$BASE_URL/api/v1/phases/$PHASE_ID" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Обновленная фаза","description":"Новое описание фазы"}')
@@ -111,7 +111,7 @@ echo ""
 
 # 7. Архивируем фазу
 echo "7. Архивирование фазы..."
-RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "$BASE_URL/api/phases/$PHASE_ID" \
+RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE "$BASE_URL/api/v1/phases/$PHASE_ID" \
     -H "Authorization: Bearer $TOKEN")
 
 HTTP_CODE=$(echo "$RESPONSE" | tail -1)

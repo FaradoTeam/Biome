@@ -14,7 +14,7 @@ int64_t BaseHandler::extractIdFromPath(const web::http::http_request& request)
     std::string path = web::uri::decode(request.relative_uri().path());
     // Ищем последнюю последовательность цифр в пути
     // Паттерн: /цифры в конце строки или перед слешем
-    std::regex pattern(R"(/(\d+)(?:/|$))");
+    static const std::regex pattern(R"(/(\d+)(?:/|$))");
     std::smatch matches;
 
     if (std::regex_search(path, matches, pattern) && matches.size() > 1)

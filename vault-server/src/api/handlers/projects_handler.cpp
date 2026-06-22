@@ -101,7 +101,7 @@ void ProjectsHandler::handleGetProjects(
         searchCaption = params["searchCaption"];
     }
 
-    LOG_DEBUG << "GET /api/projects: user=" << userId
+    LOG_DEBUG << "GET /projects: user=" << userId
               << ", page=" << page << ", pageSize=" << pageSize
               << ", parentId=" << (parentId.has_value() ? std::to_string(*parentId) : "none")
               << ", isArchive=" << (isArchive.has_value() ? (*isArchive ? "true" : "false") : "none");
@@ -159,7 +159,7 @@ void ProjectsHandler::handleGetProject(
         return;
     }
 
-    LOG_DEBUG << "GET /api/projects/" << projectId << " from user " << userId;
+    LOG_DEBUG << "GET /projects/" << projectId << " from user " << userId;
 
     try
     {
@@ -201,7 +201,7 @@ void ProjectsHandler::handleCreateProject(
     }
     int64_t userId = *userIdOpt;
 
-    LOG_DEBUG << "POST /api/projects from user " << userId;
+    LOG_DEBUG << "POST /projects from user " << userId;
 
     request
         .extract_json()
@@ -276,7 +276,7 @@ void ProjectsHandler::handleUpdateProject(
         return;
     }
 
-    LOG_DEBUG << "PUT /api/projects/" << projectId << " from user " << userId;
+    LOG_DEBUG << "PUT /projects/" << projectId << " from user " << userId;
 
     request
         .extract_json()
@@ -359,7 +359,7 @@ void ProjectsHandler::handleDeleteProject(
         return;
     }
 
-    LOG_DEBUG << "DELETE /api/projects/" << projectId << " from user " << userId;
+    LOG_DEBUG << "DELETE /projects/" << projectId << " from user " << userId;
 
     try
     {
