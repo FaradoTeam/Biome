@@ -206,7 +206,7 @@ void ItemUserStatesHandler::handleGetLastItemUserState(
 
     // Извлекаем itemId из пути: /items/{itemId}/user-states/last
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/items/(\d+)/user-states/last)");
+    static const std::regex pattern(R"(/items/(\d+)/user-states/last)");
     std::smatch matches;
 
     int64_t itemId = -1;
@@ -276,7 +276,7 @@ void ItemUserStatesHandler::handleCreateItemUserState(
 
     // Извлекаем itemId из пути: /items/{itemId}/user-states
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/items/(\d+)/user-states)");
+    static const std::regex pattern(R"(/items/(\d+)/user-states)");
     std::smatch matches;
 
     int64_t itemId = -1;

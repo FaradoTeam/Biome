@@ -161,7 +161,7 @@ void ItemLinksHandler::handleGetItemLinksByItemId(
 
     // Извлекаем itemId из пути: /items/{itemId}/links
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/items/(\d+)/links)");
+    static const std::regex pattern(R"(/items/(\d+)/links)");
     std::smatch matches;
 
     int64_t itemId = -1;
@@ -227,7 +227,7 @@ void ItemLinksHandler::handleGetItemLinksByLinkTypeId(
 
     // Извлекаем linkTypeId из пути: /link-types/{linkTypeId}/links
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/link-types/(\d+)/links)");
+    static const std::regex pattern(R"(/link-types/(\d+)/links)");
     std::smatch matches;
 
     int64_t linkTypeId = -1;

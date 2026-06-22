@@ -218,7 +218,7 @@ void BoardColumnsHandler::handleGetColumnsByBoard(
 
     // Извлекаем boardId из пути: /boards/{boardId}/columns
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/boards/(\d+)/columns)");
+    static const std::regex pattern(R"(/boards/(\d+)/columns)");
     std::smatch matches;
 
     int64_t boardId = -1;
@@ -288,7 +288,7 @@ void BoardColumnsHandler::handleCreateBoardColumn(
 
     // Извлекаем boardId из пути: /boards/{boardId}/columns
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/boards/(\d+)/columns)");
+    static const std::regex pattern(R"(/boards/(\d+)/columns)");
     std::smatch matches;
 
     int64_t boardId = -1;

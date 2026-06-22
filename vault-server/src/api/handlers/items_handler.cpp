@@ -619,7 +619,7 @@ void ItemsHandler::handleSetItemField(
     // Извлекаем itemId и fieldTypeId из пути
     // Ожидаем формат: /items/{itemId}/fields/{fieldTypeId}
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/items/(\d+)/fields/(\d+))");
+    static const std::regex pattern(R"(/items/(\d+)/fields/(\d+))");
     std::smatch matches;
 
     int64_t itemId = -1;
@@ -727,7 +727,7 @@ void ItemsHandler::handleDeleteItemField(
 
     // Извлекаем itemId и fieldTypeId из пути
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/items/(\d+)/fields/(\d+))");
+    static const std::regex pattern(R"(/items/(\d+)/fields/(\d+))");
     std::smatch matches;
 
     int64_t itemId = -1;

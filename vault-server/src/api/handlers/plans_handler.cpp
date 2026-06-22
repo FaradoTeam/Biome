@@ -46,7 +46,7 @@ void PlansHandler::handleGetPlansByPhase(
 
     // Извлекаем phaseId из пути: /phases/{phaseId}/plans
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/phases/(\d+)/plans)");
+    static const std::regex pattern(R"(/phases/(\d+)/plans)");
     std::smatch matches;
 
     int64_t phaseId = -1;
@@ -168,7 +168,7 @@ void PlansHandler::handleCreateFirstPlan(
 
     // Извлекаем phaseId из пути
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/phases/(\d+)/plans)");
+    static const std::regex pattern(R"(/phases/(\d+)/plans)");
     std::smatch matches;
 
     int64_t phaseId = -1;
@@ -574,7 +574,7 @@ void PlansHandler::handleGetPlanItems(
 
     // Извлекаем planId из пути: /plans/{planId}/items
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/plans/(\d+)/items)");
+    static const std::regex pattern(R"(/plans/(\d+)/items)");
     std::smatch matches;
 
     int64_t planId = -1;
@@ -703,7 +703,7 @@ void PlansHandler::handleAddPlanItem(
 
     // Извлекаем planId из пути
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/plans/(\d+)/items)");
+    static const std::regex pattern(R"(/plans/(\d+)/items)");
     std::smatch matches;
 
     int64_t planId = -1;

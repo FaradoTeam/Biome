@@ -235,7 +235,7 @@ void ItemHistoriesHandler::handleGetLastItemHistory(
 
     // Извлекаем itemId из пути: /items/{itemId}/histories/last
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/items/(\d+)/histories/last)");
+    static const std::regex pattern(R"(/items/(\d+)/histories/last)");
     std::smatch matches;
 
     int64_t itemId = -1;
@@ -305,7 +305,7 @@ void ItemHistoriesHandler::handleCreateItemHistory(
 
     // Извлекаем itemId из пути: /items/{itemId}/histories
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/items/(\d+)/histories)");
+    static const std::regex pattern(R"(/items/(\d+)/histories)");
     std::smatch matches;
 
     int64_t itemId = -1;

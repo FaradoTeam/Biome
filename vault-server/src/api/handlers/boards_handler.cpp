@@ -466,7 +466,7 @@ void BoardsHandler::handleGetBoardsByProject(
 
     // Извлекаем projectId из пути: /projects/{projectId}/boards
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/projects/(\d+)/boards)");
+    static const std::regex pattern(R"(/projects/(\d+)/boards)");
     std::smatch matches;
 
     int64_t projectId = -1;
@@ -536,7 +536,7 @@ void BoardsHandler::handleGetBoardsByPhase(
 
     // Извлекаем phaseId из пути: /phases/{phaseId}/boards
     std::string path = web::uri::decode(request.relative_uri().path());
-    std::regex pattern(R"(/phases/(\d+)/boards)");
+    static const std::regex pattern(R"(/phases/(\d+)/boards)");
     std::smatch matches;
 
     int64_t phaseId = -1;
