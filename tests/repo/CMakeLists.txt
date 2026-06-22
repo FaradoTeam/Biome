@@ -33,6 +33,7 @@ set(SERVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_plan_item_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_plan_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_project_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_project_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_role_menu_item_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_role_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_rule_item_type_repository.cpp
@@ -63,8 +64,9 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_workflow_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_phase_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_project_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_project_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_role_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_repository.cpp
