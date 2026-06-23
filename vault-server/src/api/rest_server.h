@@ -31,18 +31,21 @@ class IItemUserStateService;
 class ILinkTypeService;
 class IPhaseService;
 class IPlanService;
+class IPrivateMessageService;
 class IProjectService;
 class IProjectTeamService;
 class IUserService;
 class IStateService;
 class IWorkflowService;
 class ITeamService;
+class ITeamMessageService;
 class IRoleService;
 class IRuleService;
 class IRuleProjectService;
 class IRuleItemTypeService;
 class IRuleStateService;
 class IRoleMenuItemService;
+class IUserNotificationService;
 class IUserTeamRoleService;
 }
 
@@ -97,33 +100,36 @@ public:
      */
     bool isRunning() const { return m_isRunning; }
 
-    void setAuthMiddleware(std::shared_ptr<IAuthMiddleware> middleware);
-    void setAuthService(std::shared_ptr<services::IAuthService> authService);
+    void setAuthMiddleware(std::shared_ptr<IAuthMiddleware> service);
+    void setAuthService(std::shared_ptr<services::IAuthService> service);
     void setBoardService(std::shared_ptr<services::IBoardService> service);
     void setBoardColumnService(std::shared_ptr<services::IBoardColumnService> service);
-    void setFieldTypeService(std::shared_ptr<services::IFieldTypeService> fieldTypeService);
+    void setFieldTypeService(std::shared_ptr<services::IFieldTypeService> service);
     void setFieldTypePossibleValueService(std::shared_ptr<services::IFieldTypePossibleValueService> service);
-    void setItemService(std::shared_ptr<services::IItemService> itemService);
+    void setItemService(std::shared_ptr<services::IItemService> service);
     void setItemHistoryService(std::shared_ptr<services::IItemHistoryService> service);
     void setItemLinkService(std::shared_ptr<services::IItemLinkService> service);
-    void setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService);
+    void setItemTypeService(std::shared_ptr<services::IItemTypeService> service);
     void setItemUserStateService(std::shared_ptr<services::IItemUserStateService> service);
     void setLinkTypeService(std::shared_ptr<services::ILinkTypeService> service);
-    void setEdgeService(std::shared_ptr<services::IEdgeService> edgeService);
-    void setPhaseService(std::shared_ptr<services::IPhaseService> phaseService);
-    void setPlanService(std::shared_ptr<services::IPlanService> planService);
-    void setProjectService(std::shared_ptr<services::IProjectService> projectService);
+    void setEdgeService(std::shared_ptr<services::IEdgeService> service);
+    void setPhaseService(std::shared_ptr<services::IPhaseService> service);
+    void setPlanService(std::shared_ptr<services::IPlanService> service);
+    void setPrivateMessageService(std::shared_ptr<services::IPrivateMessageService> service);
+    void setProjectService(std::shared_ptr<services::IProjectService> service);
     void setProjectTeamService(std::shared_ptr<services::IProjectTeamService> service);
-    void setUserService(std::shared_ptr<services::IUserService> userService);
-    void setStateService(std::shared_ptr<services::IStateService> stateService);
-    void setWorkflowService(std::shared_ptr<services::IWorkflowService> workflowService);
+    void setUserService(std::shared_ptr<services::IUserService> service);
+    void setStateService(std::shared_ptr<services::IStateService> service);
+    void setWorkflowService(std::shared_ptr<services::IWorkflowService> service);
     void setTeamService(std::shared_ptr<services::ITeamService> service);
+    void setTeamMessageService(std::shared_ptr<services::ITeamMessageService> service);
     void setRoleService(std::shared_ptr<services::IRoleService> service);
     void setRuleService(std::shared_ptr<services::IRuleService> service);
     void setRuleProjectService(std::shared_ptr<services::IRuleProjectService> service);
     void setRuleItemTypeService(std::shared_ptr<services::IRuleItemTypeService> service);
     void setRuleStateService(std::shared_ptr<services::IRuleStateService> service);
     void setRoleMenuItemService(std::shared_ptr<services::IRoleMenuItemService> service);
+    void setUserNotificationService(std::shared_ptr<services::IUserNotificationService> service);
     void setUserTeamRoleService(std::shared_ptr<services::IUserTeamRoleService> service);
 
 private:
@@ -278,18 +284,21 @@ private:
     std::shared_ptr<services::IEdgeService> m_edgeService;
     std::shared_ptr<services::IPhaseService> m_phaseService;
     std::shared_ptr<services::IPlanService> m_planService;
+    std::shared_ptr<services::IPrivateMessageService> m_privateMessageService;
     std::shared_ptr<services::IProjectService> m_projectService;
     std::shared_ptr<services::IProjectTeamService> m_projectTeamService;
     std::shared_ptr<services::IUserService> m_userService;
     std::shared_ptr<services::IStateService> m_stateService;
     std::shared_ptr<services::IWorkflowService> m_workflowService;
     std::shared_ptr<services::ITeamService> m_teamService;
+    std::shared_ptr<services::ITeamMessageService> m_teamMessageService;
     std::shared_ptr<services::IRoleService> m_roleService;
     std::shared_ptr<services::IRuleService> m_ruleService;
     std::shared_ptr<services::IRuleProjectService> m_ruleProjectService;
     std::shared_ptr<services::IRuleItemTypeService> m_ruleItemTypeService;
     std::shared_ptr<services::IRuleStateService> m_ruleStateService;
     std::shared_ptr<services::IRoleMenuItemService> m_roleMenuItemService;
+    std::shared_ptr<services::IUserNotificationService> m_userNotificationService;
     std::shared_ptr<services::IUserTeamRoleService> m_userTeamRoleService;
 };
 

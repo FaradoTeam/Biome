@@ -20,8 +20,9 @@
 #include "api/handlers/link_types_handler.h"
 #include "api/handlers/phases_handler.h"
 #include "api/handlers/plans_handler.h"
-#include "api/handlers/projects_handler.h"
+#include "api/handlers/private_messages_handler.h"
 #include "api/handlers/project_teams_handler.h"
+#include "api/handlers/projects_handler.h"
 #include "api/handlers/role_menu_items_handler.h"
 #include "api/handlers/roles_handler.h"
 #include "api/handlers/rule_item_types_handler.h"
@@ -30,8 +31,10 @@
 #include "api/handlers/rules_handler.h"
 #include "api/handlers/states_handler.h"
 #include "api/handlers/teams_handler.h"
+#include "api/handlers/team_messages_handler.h"
 #include "api/handlers/user_team_roles_handler.h"
 #include "api/handlers/users_handler.h"
+#include "api/handlers/user_notifications_handler.h"
 #include "api/handlers/workflows_handler.h"
 
 #include "logic/iauth_service.h"
@@ -127,109 +130,119 @@ void RestServer::stop()
     LOG_INFO << "Сервер REST остановлен";
 }
 
-void RestServer::setAuthMiddleware(std::shared_ptr<IAuthMiddleware> middleware)
+void RestServer::setAuthMiddleware(std::shared_ptr<IAuthMiddleware> service)
 {
-    m_authMiddleware = middleware;
+    m_authMiddleware = std::move(service);
 }
 
-void RestServer::setAuthService(std::shared_ptr<services::IAuthService> authService)
+void RestServer::setAuthService(std::shared_ptr<services::IAuthService> service)
 {
-    m_authService = authService;
+    m_authService = std::move(service);
 }
 
 void RestServer::setBoardService(std::shared_ptr<services::IBoardService> service)
 {
-    m_boardService = service;
+    m_boardService = std::move(service);
 }
 
 void RestServer::setBoardColumnService(std::shared_ptr<services::IBoardColumnService> service)
 {
-    m_boardColumnService = service;
+    m_boardColumnService = std::move(service);
 }
 
-void RestServer::setFieldTypeService(std::shared_ptr<services::IFieldTypeService> fieldTypeService)
+void RestServer::setFieldTypeService(std::shared_ptr<services::IFieldTypeService> service)
 {
-    m_fieldTypeService = fieldTypeService;
+    m_fieldTypeService = std::move(service);
 }
 
 void RestServer::setFieldTypePossibleValueService(std::shared_ptr<services::IFieldTypePossibleValueService> service)
 {
-    m_fieldTypePossibleValueService = service;
+    m_fieldTypePossibleValueService = std::move(service);
 }
 
-void RestServer::setItemService(std::shared_ptr<services::IItemService> itemService)
+void RestServer::setItemService(std::shared_ptr<services::IItemService> service)
 {
-    m_itemService = itemService;
+    m_itemService = std::move(service);
 }
 
 void RestServer::setItemHistoryService(std::shared_ptr<services::IItemHistoryService> service)
 {
-    m_itemHistoryService = service;
+    m_itemHistoryService = std::move(service);
 }
 
 void RestServer::setItemLinkService(std::shared_ptr<services::IItemLinkService> service)
 {
-    m_itemLinkService = service;
+    m_itemLinkService = std::move(service);
 }
 
-void RestServer::setItemTypeService(std::shared_ptr<services::IItemTypeService> itemTypeService)
+void RestServer::setItemTypeService(std::shared_ptr<services::IItemTypeService> service)
 {
-    m_itemTypeService = itemTypeService;
+    m_itemTypeService = std::move(service);
 }
 
 void RestServer::setItemUserStateService(std::shared_ptr<services::IItemUserStateService> service)
 {
-    m_itemUserStateService = service;
+    m_itemUserStateService = std::move(service);
 }
 
 void RestServer::setLinkTypeService(std::shared_ptr<services::ILinkTypeService> service)
 {
-    m_linkTypeService = service;
+    m_linkTypeService = std::move(service);
 }
 
-void RestServer::setEdgeService(std::shared_ptr<services::IEdgeService> edgeService)
+void RestServer::setEdgeService(std::shared_ptr<services::IEdgeService> service)
 {
-    m_edgeService = edgeService;
+    m_edgeService = std::move(service);
 }
 
-void RestServer::setPhaseService(std::shared_ptr<services::IPhaseService> phaseService)
+void RestServer::setPhaseService(std::shared_ptr<services::IPhaseService> service)
 {
-    m_phaseService = phaseService;
+    m_phaseService = std::move(service);
 }
 
 void RestServer::setPlanService(std::shared_ptr<services::IPlanService> service)
 {
-    m_planService = service;
+    m_planService = std::move(service);
 }
 
-void RestServer::setProjectService(std::shared_ptr<services::IProjectService> projectService)
+void RestServer::setPrivateMessageService(std::shared_ptr<services::IPrivateMessageService> service)
 {
-    m_projectService = projectService;
+    m_privateMessageService = std::move(service);
+}
+
+void RestServer::setProjectService(std::shared_ptr<services::IProjectService> service)
+{
+    m_projectService = std::move(service);
 }
 
 void RestServer::setProjectTeamService(std::shared_ptr<services::IProjectTeamService> service)
 {
-    m_projectTeamService = service;
+    m_projectTeamService = std::move(service);
 }
 
-void RestServer::setUserService(std::shared_ptr<services::IUserService> userService)
+void RestServer::setUserService(std::shared_ptr<services::IUserService> service)
 {
-    m_userService = userService;
+    m_userService = std::move(service);
 }
 
-void RestServer::setStateService(std::shared_ptr<services::IStateService> stateService)
+void RestServer::setStateService(std::shared_ptr<services::IStateService> service)
 {
-    m_stateService = stateService;
+    m_stateService = std::move(service);
 }
 
-void RestServer::setWorkflowService(std::shared_ptr<services::IWorkflowService> workflowService)
+void RestServer::setWorkflowService(std::shared_ptr<services::IWorkflowService> service)
 {
-    m_workflowService = workflowService;
+    m_workflowService = std::move(service);
 }
 
 void RestServer::setTeamService(std::shared_ptr<services::ITeamService> service)
 {
     m_teamService = std::move(service);
+}
+
+void RestServer::setTeamMessageService(std::shared_ptr<services::ITeamMessageService> service)
+{
+    m_teamMessageService = std::move(service);
 }
 
 void RestServer::setRoleService(std::shared_ptr<services::IRoleService> service)
@@ -260,6 +273,11 @@ void RestServer::setRuleStateService(std::shared_ptr<services::IRuleStateService
 void RestServer::setRoleMenuItemService(std::shared_ptr<services::IRoleMenuItemService> service)
 {
     m_roleMenuItemService = std::move(service);
+}
+
+void RestServer::setUserNotificationService(std::shared_ptr<services::IUserNotificationService> service)
+{
+    m_userNotificationService = std::move(service);
 }
 
 void RestServer::setUserTeamRoleService(std::shared_ptr<services::IUserTeamRoleService> service)
@@ -1624,6 +1642,186 @@ void RestServer::registerRoutes()
             [handler](const auto& req, const auto& uid)
             {
                 handler->handleDeleteItem(req, uid);
+            }
+        );
+    }
+
+    // ===== Private Messages =====
+    if (m_privateMessageService)
+    {
+        auto handler = std::make_shared<handlers::PrivateMessagesHandler>(m_privateMessageService);
+
+        // GET /private-messages - список с фильтрацией и пагинацией
+        addRouteGet(
+            "/private-messages",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetMessages(request, userId);
+            }
+        );
+
+        // POST /private-messages - отправка сообщения
+        addRoutePost(
+            "/private-messages",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleSendMessage(request, userId);
+            }
+        );
+
+        // GET /private-messages/{id} - получение сообщения
+        addRouteGet(
+            R"(/private-messages/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetMessage(request, userId);
+            }
+        );
+
+        // PUT /private-messages/{id}/view - отметка о прочтении
+        addRoutePut(
+            R"(/private-messages/(\d+)/view)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleMarkAsViewed(request, userId);
+            }
+        );
+
+        // DELETE /private-messages/{id} - удаление сообщения
+        addRouteDel(
+            R"(/private-messages/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteMessage(request, userId);
+            }
+        );
+
+        // GET /private-messages/conversation/{userId} - переписка с пользователем
+        addRouteGet(
+            R"(/private-messages/conversation/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetConversation(request, userId);
+            }
+        );
+
+        // GET /private-messages/unviewed/count - количество непрочитанных
+        addRouteGet(
+            "/private-messages/unviewed/count",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCountUnviewed(request, userId);
+            }
+        );
+    }
+
+    // ===== Team Messages =====
+    if (m_teamMessageService)
+    {
+        auto handler = std::make_shared<handlers::TeamMessagesHandler>(m_teamMessageService);
+
+        // GET /team-messages - список с фильтрацией и пагинацией
+        addRouteGet(
+            "/team-messages",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetMessages(request, userId);
+            }
+        );
+
+        // POST /team-messages - отправка сообщения в команду
+        addRoutePost(
+            "/team-messages",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleSendMessage(request, userId);
+            }
+        );
+
+        // GET /team-messages/{id} - получение сообщения
+        addRouteGet(
+            R"(/team-messages/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetMessage(request, userId);
+            }
+        );
+
+        // DELETE /team-messages/{id} - удаление сообщения
+        addRouteDel(
+            R"(/team-messages/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteMessage(request, userId);
+            }
+        );
+
+        // GET /teams/{teamId}/messages - все сообщения команды
+        addRouteGet(
+            R"(/teams/(\d+)/messages)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetTeamMessages(request, userId);
+            }
+        );
+    }
+
+    // ===== User Notifications =====
+    if (m_userNotificationService)
+    {
+        auto handler = std::make_shared<handlers::UserNotificationsHandler>(m_userNotificationService);
+
+        // GET /user-notifications - список с фильтрацией и пагинацией
+        addRouteGet(
+            "/user-notifications",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetNotifications(request, userId);
+            }
+        );
+
+        // POST /user-notifications - подписка на элемент
+        addRoutePost(
+            "/user-notifications",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleSubscribe(request, userId);
+            }
+        );
+
+        // GET /user-notifications/{id} - получение подписки
+        addRouteGet(
+            R"(/user-notifications/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetNotification(request, userId);
+            }
+        );
+
+        // DELETE /user-notifications/{id} - отписка
+        addRouteDel(
+            R"(/user-notifications/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleUnsubscribe(request, userId);
+            }
+        );
+
+        // GET /items/{itemId}/subscribers - подписчики элемента
+        addRouteGet(
+            R"(/items/(\d+)/subscribers)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetSubscribers(request, userId);
+            }
+        );
+
+        // GET /items/{itemId}/subscribed - проверка подписки
+        addRouteGet(
+            R"(/items/(\d+)/subscribed)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleIsSubscribed(request, userId);
             }
         );
     }
