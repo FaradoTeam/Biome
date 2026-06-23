@@ -32,6 +32,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/link_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/phases_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/plans_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/private_messages_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/projects_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/project_teams_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/role_menu_items_handler.cpp
@@ -42,8 +43,10 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rules_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/teams_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/team_messages_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_team_roles_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/users_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_notifications_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/workflows_handler.cpp
     # Logic Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/auth_service.cpp
@@ -61,6 +64,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/link_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/phase_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/plan_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/private_message_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/project_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/project_team_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/role_menu_item_service.cpp
@@ -71,7 +75,9 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_state_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/state_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_message_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_notification_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_team_role_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/workflow_service.cpp
     # Repo Layer
@@ -90,6 +96,7 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_phase_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_plan_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_plan_item_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_private_message_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_role_menu_item_repository.cpp
@@ -100,7 +107,9 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_message_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_notification_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_team_role_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_workflow_repository.cpp
     # Storage Layer

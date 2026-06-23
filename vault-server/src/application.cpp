@@ -25,6 +25,7 @@
 #include "logic/impl/link_type_service.h"
 #include "logic/impl/phase_service.h"
 #include "logic/impl/plan_service.h"
+#include "logic/impl/private_message_service.h"
 #include "logic/impl/project_service.h"
 #include "logic/impl/project_team_service.h"
 #include "logic/impl/role_menu_item_service.h"
@@ -34,7 +35,9 @@
 #include "logic/impl/rule_service.h"
 #include "logic/impl/rule_state_service.h"
 #include "logic/impl/state_service.h"
+#include "logic/impl/team_message_service.h"
 #include "logic/impl/team_service.h"
+#include "logic/impl/user_notification_service.h"
 #include "logic/impl/user_service.h"
 #include "logic/impl/user_team_role_service.h"
 #include "logic/impl/workflow_service.h"
@@ -54,6 +57,7 @@
 #include "repo/sqlite/sqlite_phase_repository.h"
 #include "repo/sqlite/sqlite_plan_item_repository.h"
 #include "repo/sqlite/sqlite_plan_repository.h"
+#include "repo/sqlite/sqlite_private_message_repository.h"
 #include "repo/sqlite/sqlite_project_repository.h"
 #include "repo/sqlite/sqlite_project_team_repository.h"
 #include "repo/sqlite/sqlite_role_menu_item_repository.h"
@@ -63,7 +67,9 @@
 #include "repo/sqlite/sqlite_rule_repository.h"
 #include "repo/sqlite/sqlite_rule_state_repository.h"
 #include "repo/sqlite/sqlite_state_repository.h"
+#include "repo/sqlite/sqlite_team_message_repository.h"
 #include "repo/sqlite/sqlite_team_repository.h"
+#include "repo/sqlite/sqlite_user_notification_repository.h"
 #include "repo/sqlite/sqlite_user_repository.h"
 #include "repo/sqlite/sqlite_user_team_role_repository.h"
 #include "repo/sqlite/sqlite_workflow_repository.h"
@@ -121,6 +127,7 @@ bool Application::initialize()
     auto phaseRepository = std::make_shared<repositories::SqlitePhaseRepository>(m_database);
     auto planRepository = std::make_shared<repositories::SqlitePlanRepository>(m_database);
     auto planItemRepository = std::make_shared<repositories::SqlitePlanItemRepository>(m_database);
+    auto privateMessageRepository = std::make_shared<repositories::SqlitePrivateMessageRepository>(m_database);
     auto projectRepository = std::make_shared<repositories::SqliteProjectRepository>(m_database);
     auto projectTeamRepository = std::make_shared<repositories::SqliteProjectTeamRepository>(m_database);
     auto roleMenuItemRepository = std::make_shared<repositories::SqliteRoleMenuItemRepository>(m_database);
@@ -131,7 +138,9 @@ bool Application::initialize()
     auto ruleStateRepository = std::make_shared<repositories::SqliteRuleStateRepository>(m_database);
     auto stateRepository = std::make_shared<repositories::SqliteStateRepository>(m_database);
     auto teamRepository = std::make_shared<repositories::SqliteTeamRepository>(m_database);
+    auto teamMessageRepository = std::make_shared<repositories::SqliteTeamMessageRepository>(m_database);
     auto userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
+    auto userNotificationRepository = std::make_shared<repositories::SqliteUserNotificationRepository>(m_database);
     auto userTeamRoleRepository = std::make_shared<repositories::SqliteUserTeamRoleRepository>(m_database);
     auto workflowRepository = std::make_shared<repositories::SqliteWorkflowRepository>(m_database);
 
@@ -274,6 +283,26 @@ bool Application::initialize()
         stateService,
         authorizationService
     );
+    auto privateMessageService = std::make_shared<services::PrivateMessageService>(
+        privateMessageRepository,
+        userRepository,
+        authorizationService
+    );
+
+    auto teamMessageService = std::make_shared<services::TeamMessageService>(
+        teamMessageRepository,
+        teamRepository,
+        userRepository,
+        userTeamRoleRepository,
+        authorizationService
+    );
+
+    auto userNotificationService = std::make_shared<services::UserNotificationService>(
+        userNotificationRepository,
+        userRepository,
+        itemRepository,
+        authorizationService
+    );
     // TODO: Вынести секретный ключ в конфиг
     auto authMiddleware = std::make_shared<AuthMiddleware>(
         "your-very-long-secret-key-that-is-at-least-32-bytes-long!"
@@ -304,6 +333,7 @@ bool Application::initialize()
     m_restServer->setLinkTypeService(linkTypeService);
     m_restServer->setPhaseService(phaseService);
     m_restServer->setPlanService(planService);
+    m_restServer->setPrivateMessageService(privateMessageService);
     m_restServer->setProjectService(projectService);
     m_restServer->setProjectTeamService(projectTeamService);
     m_restServer->setRoleService(roleService);
@@ -314,7 +344,9 @@ bool Application::initialize()
     m_restServer->setRuleStateService(ruleStateService);
     m_restServer->setStateService(stateService);
     m_restServer->setTeamService(teamService);
+    m_restServer->setTeamMessageService(teamMessageService);
     m_restServer->setUserService(userService);
+    m_restServer->setUserNotificationService(userNotificationService);
     m_restServer->setUserTeamRoleService(userTeamRoleService);
     m_restServer->setWorkflowService(workflowService);
 
