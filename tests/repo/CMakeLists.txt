@@ -17,11 +17,15 @@ set(SERVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/storage/sqlite/sqlite_statement.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/storage/sqlite/sqlite_transaction.cpp
     # server repo sqlite
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_board_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_board_column_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_board_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_comment_document_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_comment_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_document_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_edge_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_field_type_possible_value_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_field_type_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_item_document_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_item_field_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_item_history_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_item_link_repository.cpp
@@ -42,45 +46,51 @@ set(SERVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_rule_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_rule_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_state_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_team_message_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_notification_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_team_role_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_workflow_repository.cpp
 )
 
 set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_board_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_board_column_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_board_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_comment_document_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_comment_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_document_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_edge_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_field_type_possible_value_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_field_type_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_document_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_field_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_history_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_link_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_item_user_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_link_type_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_edge_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_field_type_possible_value_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_state_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_workflow_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_phase_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_plan_item_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_plan_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_private_message_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_project_team_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_team_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_team_message_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_role_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_project_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_item_type_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_role_menu_item_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_role_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_item_type_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_project_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_state_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_state_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_team_message_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_notification_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_team_role_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_workflow_repository.cpp
 )
 
 add_executable(
