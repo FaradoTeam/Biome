@@ -81,11 +81,15 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_team_role_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/workflow_service.cpp
     # Repo Layer
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_board_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_board_column_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_board_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_comment_document_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_comment_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_document_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_edge_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_possible_value_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_field_type_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_document_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_field_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_history_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_link_repository.cpp
@@ -94,8 +98,8 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_item_user_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_link_type_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_phase_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_plan_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_plan_item_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_plan_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_private_message_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_project_team_repository.cpp
@@ -106,10 +110,10 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_state_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_message_repository.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_notification_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_team_role_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_workflow_repository.cpp
     # Storage Layer
