@@ -14,9 +14,13 @@
 #include "logic/impl/authorization_service.h"
 #include "logic/impl/board_column_service.h"
 #include "logic/impl/board_service.h"
+#include "logic/impl/comment_document_service.h"
+#include "logic/impl/comment_service.h"
+#include "logic/impl/document_service.h"
 #include "logic/impl/edge_service.h"
 #include "logic/impl/field_type_possible_value_service.h"
 #include "logic/impl/field_type_service.h"
+#include "logic/impl/item_document_service.h"
 #include "logic/impl/item_history_service.h"
 #include "logic/impl/item_link_service.h"
 #include "logic/impl/item_service.h"
@@ -44,9 +48,13 @@
 
 #include "repo/sqlite/sqlite_board_column_repository.h"
 #include "repo/sqlite/sqlite_board_repository.h"
+#include "repo/sqlite/sqlite_comment_document_repository.h"
+#include "repo/sqlite/sqlite_comment_repository.h"
+#include "repo/sqlite/sqlite_document_repository.h"
 #include "repo/sqlite/sqlite_edge_repository.h"
 #include "repo/sqlite/sqlite_field_type_possible_value_repository.h"
 #include "repo/sqlite/sqlite_field_type_repository.h"
+#include "repo/sqlite/sqlite_item_document_repository.h"
 #include "repo/sqlite/sqlite_item_field_repository.h"
 #include "repo/sqlite/sqlite_item_history_repository.h"
 #include "repo/sqlite/sqlite_item_link_repository.h"
@@ -114,9 +122,13 @@ bool Application::initialize()
     // === Создаем репозитории ===
     auto boardRepository = std::make_shared<repositories::SqliteBoardRepository>(m_database);
     auto boardColumnRepository = std::make_shared<repositories::SqliteBoardColumnRepository>(m_database);
+    auto commentDocumentRepository = std::make_shared<repositories::SqliteCommentDocumentRepository>(m_database);
+    auto commentRepository = std::make_shared<repositories::SqliteCommentRepository>(m_database);
+    auto documentRepository = std::make_shared<repositories::SqliteDocumentRepository>(m_database);
     auto edgeRepository = std::make_shared<repositories::SqliteEdgeRepository>(m_database);
     auto fieldTypeRepository = std::make_shared<repositories::SqliteFieldTypeRepository>(m_database);
     auto fieldTypePossibleValueRepository = std::make_shared<repositories::SqliteFieldTypePossibleValueRepository>(m_database);
+    auto itemDocumentRepository = std::make_shared<repositories::SqliteItemDocumentRepository>(m_database);
     auto itemRepository = std::make_shared<repositories::SqliteItemRepository>(m_database);
     auto itemFieldRepository = std::make_shared<repositories::SqliteItemFieldRepository>(m_database);
     auto itemHistoryRepository = std::make_shared<repositories::SqliteItemHistoryRepository>(m_database);
@@ -288,7 +300,27 @@ bool Application::initialize()
         userRepository,
         authorizationService
     );
-
+    auto commentService = std::make_shared<services::CommentService>(
+        commentRepository,
+        itemService,
+        authorizationService
+    );
+    auto documentService = std::make_shared<services::DocumentService>(
+        documentRepository,
+        authorizationService
+    );
+    auto commentDocumentService = std::make_shared<services::CommentDocumentService>(
+        commentDocumentRepository,
+        commentService,
+        documentService,
+        authorizationService
+    );
+    auto itemDocumentService = std::make_shared<services::ItemDocumentService>(
+        itemDocumentRepository,
+        itemService,
+        documentService,
+        authorizationService
+    );
     auto teamMessageService = std::make_shared<services::TeamMessageService>(
         teamMessageRepository,
         teamRepository,
@@ -296,7 +328,6 @@ bool Application::initialize()
         userTeamRoleRepository,
         authorizationService
     );
-
     auto userNotificationService = std::make_shared<services::UserNotificationService>(
         userNotificationRepository,
         userRepository,
@@ -322,9 +353,13 @@ bool Application::initialize()
     m_restServer->setAuthService(authService);
     m_restServer->setBoardService(boardService);
     m_restServer->setBoardColumnService(boardColumnService);
+    m_restServer->setDocumentService(documentService);
+    m_restServer->setCommentService(commentService);
+    m_restServer->setCommentDocumentService(commentDocumentService);
     m_restServer->setEdgeService(edgeService);
     m_restServer->setFieldTypeService(fieldTypeService);
     m_restServer->setFieldTypePossibleValueService(fieldTypePossibleValueService);
+    m_restServer->setItemDocumentService(itemDocumentService);
     m_restServer->setItemService(itemService);
     m_restServer->setItemHistoryService(itemHistoryService);
     m_restServer->setItemLinkService(itemLinkService);

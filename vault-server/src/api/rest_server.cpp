@@ -9,9 +9,13 @@
 #include "api/handlers/auth_handler.h"
 #include "api/handlers/board_columns_handler.h"
 #include "api/handlers/boards_handler.h"
+#include "api/handlers/comment_documents_handler.h"
+#include "api/handlers/comments_handler.h"
+#include "api/handlers/documents_handler.h"
 #include "api/handlers/edges_handler.h"
 #include "api/handlers/field_type_possible_values_handler.h"
 #include "api/handlers/field_types_handler.h"
+#include "api/handlers/item_documents_handler.h"
 #include "api/handlers/item_histories_handler.h"
 #include "api/handlers/item_links_handler.h"
 #include "api/handlers/item_types_handler.h"
@@ -30,11 +34,11 @@
 #include "api/handlers/rule_states_handler.h"
 #include "api/handlers/rules_handler.h"
 #include "api/handlers/states_handler.h"
-#include "api/handlers/teams_handler.h"
 #include "api/handlers/team_messages_handler.h"
+#include "api/handlers/teams_handler.h"
+#include "api/handlers/user_notifications_handler.h"
 #include "api/handlers/user_team_roles_handler.h"
 #include "api/handlers/users_handler.h"
-#include "api/handlers/user_notifications_handler.h"
 #include "api/handlers/workflows_handler.h"
 
 #include "logic/iauth_service.h"
@@ -150,6 +154,21 @@ void RestServer::setBoardColumnService(std::shared_ptr<services::IBoardColumnSer
     m_boardColumnService = std::move(service);
 }
 
+void RestServer::setDocumentService(std::shared_ptr<services::IDocumentService> service)
+{
+    m_documentService = std::move(service);
+}
+
+void RestServer::setCommentService(std::shared_ptr<services::ICommentService> service)
+{
+    m_commentService = std::move(service);
+}
+
+void RestServer::setCommentDocumentService(std::shared_ptr<services::ICommentDocumentService> service)
+{
+    m_commentDocumentService = std::move(service);
+}
+
 void RestServer::setFieldTypeService(std::shared_ptr<services::IFieldTypeService> service)
 {
     m_fieldTypeService = std::move(service);
@@ -158,6 +177,11 @@ void RestServer::setFieldTypeService(std::shared_ptr<services::IFieldTypeService
 void RestServer::setFieldTypePossibleValueService(std::shared_ptr<services::IFieldTypePossibleValueService> service)
 {
     m_fieldTypePossibleValueService = std::move(service);
+}
+
+void RestServer::setItemDocumentService(std::shared_ptr<services::IItemDocumentService> service)
+{
+    m_itemDocumentService = std::move(service);
 }
 
 void RestServer::setItemService(std::shared_ptr<services::IItemService> service)
@@ -1822,6 +1846,246 @@ void RestServer::registerRoutes()
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleIsSubscribed(request, userId);
+            }
+        );
+    }
+
+    // ===== Документы =====
+    if (m_documentService)
+    {
+        auto handler = std::make_shared<handlers::DocumentsHandler>(m_documentService);
+
+        // GET /documents - список документов
+        addRouteGet(
+            "/documents",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetDocuments(request, userId);
+            }
+        );
+
+        // POST /documents - загрузка документа
+        addRoutePost(
+            "/documents",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateDocument(request, userId);
+            }
+        );
+
+        // GET /documents/{id} - получение документа
+        addRouteGet(
+            R"(/documents/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetDocument(request, userId);
+            }
+        );
+
+        // PUT /documents/{id} - обновление метаданных документа
+        addRoutePut(
+            R"(/documents/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleUpdateDocument(request, userId);
+            }
+        );
+
+        // DELETE /documents/{id} - удаление документа
+        addRouteDel(
+            R"(/documents/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteDocument(request, userId);
+            }
+        );
+
+        // GET /documents/{id}/download - скачивание документа
+        addRouteGet(
+            R"(/documents/(\d+)/download)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDownloadDocument(request, userId);
+            }
+        );
+    }
+
+    // ===== Комментарии =====
+    if (m_commentService)
+    {
+        auto handler = std::make_shared<handlers::CommentsHandler>(m_commentService);
+
+        // GET /comments - список комментариев
+        addRouteGet(
+            "/comments",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetComments(request, userId);
+            }
+        );
+
+        // POST /comments - создание комментария
+        addRoutePost(
+            "/comments",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateComment(request, userId);
+            }
+        );
+
+        // GET /comments/{id} - получение комментария
+        addRouteGet(
+            R"(/comments/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetComment(request, userId);
+            }
+        );
+
+        // PUT /comments/{id} - обновление комментария
+        addRoutePut(
+            R"(/comments/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleUpdateComment(request, userId);
+            }
+        );
+
+        // DELETE /comments/{id} - удаление комментария
+        addRouteDel(
+            R"(/comments/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteComment(request, userId);
+            }
+        );
+
+        // GET /items/{itemId}/comments - комментарии элемента
+        addRouteGet(
+            R"(/items/(\d+)/comments)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetCommentsByItem(request, userId);
+            }
+        );
+    }
+
+    // ===== Связи элементов с документами =====
+    if (m_itemDocumentService)
+    {
+        auto handler = std::make_shared<handlers::ItemDocumentsHandler>(m_itemDocumentService);
+
+        // GET /item-documents - список связей
+        addRouteGet(
+            "/item-documents",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetItemDocuments(request, userId);
+            }
+        );
+
+        // POST /item-documents - создание связи
+        addRoutePost(
+            "/item-documents",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateItemDocument(request, userId);
+            }
+        );
+
+        // GET /item-documents/{id} - получение связи
+        addRouteGet(
+            R"(/item-documents/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetItemDocument(request, userId);
+            }
+        );
+
+        // DELETE /item-documents/{id} - удаление связи
+        addRouteDel(
+            R"(/item-documents/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteItemDocument(request, userId);
+            }
+        );
+
+        // GET /items/{itemId}/documents - документы элемента
+        addRouteGet(
+            R"(/items/(\d+)/documents)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetDocumentsByItem(request, userId);
+            }
+        );
+
+        // GET /documents/{documentId}/items - элементы документа
+        addRouteGet(
+            R"(/documents/(\d+)/items)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetItemsByDocument(request, userId);
+            }
+        );
+    }
+
+    // ===== Связи комментариев с документами =====
+    if (m_commentDocumentService)
+    {
+        auto handler = std::make_shared<handlers::CommentDocumentsHandler>(m_commentDocumentService);
+
+        // GET /comment-documents - список связей
+        addRouteGet(
+            "/comment-documents",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetCommentDocuments(request, userId);
+            }
+        );
+
+        // POST /comment-documents - создание связи
+        addRoutePost(
+            "/comment-documents",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateCommentDocument(request, userId);
+            }
+        );
+
+        // GET /comment-documents/{id} - получение связи
+        addRouteGet(
+            R"(/comment-documents/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetCommentDocument(request, userId);
+            }
+        );
+
+        // DELETE /comment-documents/{id} - удаление связи
+        addRouteDel(
+            R"(/comment-documents/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteCommentDocument(request, userId);
+            }
+        );
+
+        // GET /comments/{commentId}/documents - документы комментария
+        addRouteGet(
+            R"(/comments/(\d+)/documents)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetDocumentsByComment(request, userId);
+            }
+        );
+
+        // GET /documents/{documentId}/comments - комментарии документа
+        addRouteGet(
+            R"(/documents/(\d+)/comments)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetCommentsByDocument(request, userId);
             }
         );
     }

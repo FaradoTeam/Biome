@@ -18,12 +18,16 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/rest_server.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/middleware/impl/auth_middleware.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/auth_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/boards_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/board_columns_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/base_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/board_columns_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/boards_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/comment_documents_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/comments_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/documents_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/edges_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_types_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_type_possible_values_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/field_types_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_documents_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_histories_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_links_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/item_types_handler.cpp
@@ -33,8 +37,8 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/phases_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/plans_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/private_messages_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/projects_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/project_teams_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/projects_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/role_menu_items_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/roles_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rule_item_types_handler.cpp
@@ -42,23 +46,27 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rule_states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rules_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/states_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/teams_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/team_messages_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/teams_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_notifications_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_team_roles_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/users_handler.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_notifications_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/workflows_handler.cpp
     # Logic Layer
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/auth_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/authorization_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/board_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/board_column_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/board_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/comment_document_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/comment_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/document_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/edge_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_possible_value_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/field_type_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_document_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_history_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_link_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_type_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/item_user_state_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/link_type_service.cpp
@@ -74,10 +82,10 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_state_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/state_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_message_service.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_notification_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_team_role_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/workflow_service.cpp
     # Repo Layer
