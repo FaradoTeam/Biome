@@ -96,15 +96,17 @@ struct PlanRepositoryFixture
 
         // Создаём тестовую фазу
         auto phaseStmt = conn->prepareStatement(
-            "INSERT INTO Phase (projectId, caption) VALUES (:projectId, 'Test Phase')"
+            "INSERT INTO Phase (projectId, caption) VALUES (:projectId, :caption)"
         );
         phaseStmt->bindInt64("projectId", m_testProjectId);
+        phaseStmt->bindString("caption", "Test Phase");
         phaseStmt->execute();
         m_testPhaseId = conn->lastInsertId();
 
-        // Создаём вторую фазу для тестов
+        // Создаём вторую фазу с уникальным названием
         phaseStmt->reset();
         phaseStmt->bindInt64("projectId", m_testProjectId);
+        phaseStmt->bindString("caption", "Second Phase");
         phaseStmt->execute();
         m_secondPhaseId = conn->lastInsertId();
 
@@ -603,27 +605,40 @@ BOOST_AUTO_TEST_CASE(test_deactivate_all_by_phase_id)
     for (int i = 1; i <= 3; ++i)
     {
         auto plan = createTestPlan(m_testPhaseId, "Активный " + std::to_string(i), std::nullopt, true);
-        m_planRepository->create(plan);
+        int64_t planId = m_planRepository->create(plan);
+        BOOST_CHECK_GT(planId, 0);
     }
 
     // Создаём активный план для второй фазы
     auto otherPhasePlan = createTestPlan(m_secondPhaseId, "Активный в другой фазе", std::nullopt, true);
-    m_planRepository->create(otherPhasePlan);
+    int64_t otherPhasePlanId = m_planRepository->create(otherPhasePlan);
+    BOOST_CHECK_GT(otherPhasePlanId, 0);
 
+    // Проверяем, что план во второй фазе существует и активен
+    auto foundOther = m_planRepository->findById(otherPhasePlanId);
+    BOOST_REQUIRE(foundOther.has_value());
+    BOOST_CHECK(foundOther->isActive.value_or(false));
+
+    // Деактивируем все планы первой фазы
     int64_t deactivated = m_planRepository->deactivateAllByPhaseId(m_testPhaseId);
     BOOST_CHECK_EQUAL(deactivated, 3);
 
     // Проверяем, что планы первой фазы деактивированы
     auto [plans, total] = m_planRepository->findAll(1, 20, m_testPhaseId);
+    BOOST_CHECK_EQUAL(total, 3);
     for (const auto& plan : plans)
     {
         BOOST_CHECK(!plan.isActive.value_or(true));
     }
 
     // Проверяем, что план второй фазы остался активным
-    auto otherPlan = m_planRepository->findById(*otherPhasePlan.id);
-    BOOST_REQUIRE(otherPlan.has_value());
-    BOOST_CHECK(otherPlan->isActive.value_or(false));
+    auto otherPlanAfter = m_planRepository->findById(otherPhasePlanId);
+    BOOST_REQUIRE(otherPlanAfter.has_value());
+    BOOST_CHECK(otherPlanAfter->isActive.value_or(false));
+
+    // Проверяем, что во второй фазе есть активный план
+    auto [activePlansSecond, totalActiveSecond] = m_planRepository->findAll(1, 20, m_secondPhaseId, true);
+    BOOST_CHECK_EQUAL(totalActiveSecond, 1);
 }
 
 // ============================================================

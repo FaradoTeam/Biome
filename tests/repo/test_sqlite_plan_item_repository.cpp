@@ -206,13 +206,13 @@ struct PlanItemRepositoryFixture
         phaseStmt->execute();
         m_testPhaseId = conn->lastInsertId();
 
-        // Создаём тестовые элементы
+        // Создаём 20 тестовых элементов (для пагинации)
         auto itemStmt = conn->prepareStatement(
             "INSERT INTO Item (itemTypeId, stateId, phaseId, caption) "
             "VALUES (:itemTypeId, :stateId, :phaseId, :caption)"
         );
 
-        for (int i = 1; i <= 3; ++i)
+        for (int i = 1; i <= 20; ++i)
         {
             itemStmt->bindInt64("itemTypeId", m_testItemTypeId);
             itemStmt->bindInt64("stateId", m_testStateId);
@@ -364,9 +364,8 @@ BOOST_AUTO_TEST_CASE(test_create_plan_item_duplicate_fails)
     int64_t firstId = m_planItemRepository->create(planItem);
     BOOST_CHECK_GT(firstId, 0);
 
-    // Попытка создать дубликат (те же planId и itemId)
-    int64_t secondId = m_planItemRepository->create(planItem);
-    BOOST_CHECK_EQUAL(secondId, 0);
+    // Попытка создать дубликат должна выбросить исключение из-за UNIQUE constraint
+    BOOST_CHECK_THROW(m_planItemRepository->create(planItem), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_plan_item_missing_required_fields)
@@ -386,8 +385,8 @@ BOOST_AUTO_TEST_CASE(test_create_plan_item_invalid_plan)
     clearTable();
 
     auto planItem = createTestPlanItem(99999, m_testItemIds[0], m_testUserId);
-    int64_t planItemId = m_planItemRepository->create(planItem);
-    BOOST_CHECK_EQUAL(planItemId, 0);
+    // Должно выбросить исключение из-за FOREIGN KEY constraint
+    BOOST_CHECK_THROW(m_planItemRepository->create(planItem), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_create_plan_item_invalid_item)
@@ -395,8 +394,8 @@ BOOST_AUTO_TEST_CASE(test_create_plan_item_invalid_item)
     clearTable();
 
     auto planItem = createTestPlanItem(m_activePlanId, 99999, m_testUserId);
-    int64_t planItemId = m_planItemRepository->create(planItem);
-    BOOST_CHECK_EQUAL(planItemId, 0);
+    // Должно выбросить исключение из-за FOREIGN KEY constraint
+    BOOST_CHECK_THROW(m_planItemRepository->create(planItem), std::runtime_error);
 }
 
 // ============================================================
@@ -457,7 +456,7 @@ BOOST_AUTO_TEST_CASE(test_find_by_plan_id)
     }
 
     // Создаём элемент для черновика
-    auto draftItem = createTestPlanItem(m_draftPlanId, m_testItemIds[0], m_testUserId);
+    auto draftItem = createTestPlanItem(m_draftPlanId, m_testItemIds[3], m_testUserId);
     m_planItemRepository->create(draftItem);
 
     auto items = m_planItemRepository->findByPlanId(m_activePlanId);
@@ -526,12 +525,12 @@ BOOST_AUTO_TEST_CASE(test_find_all_with_pagination)
 {
     clearTable();
 
-    // Создаём 15 элементов плана
+    // Создаём 15 элементов плана с уникальными itemId
     for (int i = 0; i < 15; ++i)
     {
         auto planItem = createTestPlanItem(
             m_activePlanId,
-            m_testItemIds[i % m_testItemIds.size()],
+            m_testItemIds[i],
             m_testUserId,
             i + 1,
             i + 5
@@ -560,7 +559,7 @@ BOOST_AUTO_TEST_CASE(test_find_all_filter_by_plan_id)
     }
 
     // Создаём элемент для черновика
-    auto draftItem = createTestPlanItem(m_draftPlanId, m_testItemIds[0], m_testUserId);
+    auto draftItem = createTestPlanItem(m_draftPlanId, m_testItemIds[3], m_testUserId);
     m_planItemRepository->create(draftItem);
 
     auto [items, total] = m_planItemRepository->findAll(1, 20, m_activePlanId);
@@ -585,7 +584,7 @@ BOOST_AUTO_TEST_CASE(test_find_all_filter_by_user_id)
     }
 
     // Создаём элемент для второго пользователя
-    auto user2Item = createTestPlanItem(m_activePlanId, m_testItemIds[0], m_secondUserId);
+    auto user2Item = createTestPlanItem(m_activePlanId, m_testItemIds[3], m_secondUserId);
     m_planItemRepository->create(user2Item);
 
     auto [items, total] = m_planItemRepository->findAll(1, 20, std::nullopt, m_testUserId);
@@ -726,7 +725,7 @@ BOOST_AUTO_TEST_CASE(test_remove_by_plan_id)
     }
 
     // Создаём элемент для черновика
-    auto draftItem = createTestPlanItem(m_draftPlanId, m_testItemIds[0], m_testUserId);
+    auto draftItem = createTestPlanItem(m_draftPlanId, m_testItemIds[3], m_testUserId);
     m_planItemRepository->create(draftItem);
 
     int64_t deleted = m_planItemRepository->removeByPlanId(m_activePlanId);
