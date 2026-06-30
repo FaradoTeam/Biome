@@ -38,10 +38,13 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/rule_projects_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/rule_states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/rules_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/special_days_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/standard_days_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/team_messages_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/teams_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_actions_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_days_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_notifications_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_team_roles_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_todos_handler.cpp
@@ -127,11 +130,14 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_rule_projects_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_rule_states_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_rules_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_special_days_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_standard_days_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_states_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_team_messages_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_teams_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_token_expiration.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_user_actions_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_user_days_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_user_notifications_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_user_team_roles_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_user_todos_crud.cpp
