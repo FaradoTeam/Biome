@@ -45,10 +45,13 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rule_projects_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rule_states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/rules_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/special_days_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/standard_days_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/team_messages_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/teams_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_actions_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_days_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_notifications_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_team_roles_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/handlers/user_todos_handler.cpp
@@ -83,10 +86,13 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_project_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/rule_state_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/special_day_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/standard_day_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/state_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_message_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/team_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_action_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_day_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_notification_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/logic/impl/user_team_role_service.cpp
@@ -121,10 +127,13 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_rule_state_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_special_day_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_standard_day_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_message_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_action_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_day_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_notification_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/repo/sqlite/sqlite_user_team_role_repository.cpp
