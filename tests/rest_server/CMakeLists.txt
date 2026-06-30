@@ -41,8 +41,10 @@ set(SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/states_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/team_messages_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/teams_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_actions_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_notifications_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_team_roles_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/user_todos_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/users_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/api/handlers/workflows_handler.cpp
 )
@@ -129,8 +131,10 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_team_messages_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_teams_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_token_expiration.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_user_actions_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_user_notifications_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_user_team_roles_crud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_user_todos_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_users_crud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_workflows_crud.cpp
 )

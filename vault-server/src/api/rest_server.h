@@ -49,8 +49,10 @@ class IRuleProjectService;
 class IRuleItemTypeService;
 class IRuleStateService;
 class IRoleMenuItemService;
+class IUserActionService;
 class IUserNotificationService;
 class IUserTeamRoleService;
+class IUserTodoService;
 }
 
 /**
@@ -137,8 +139,10 @@ public:
     void setRuleItemTypeService(std::shared_ptr<services::IRuleItemTypeService> service);
     void setRuleStateService(std::shared_ptr<services::IRuleStateService> service);
     void setRoleMenuItemService(std::shared_ptr<services::IRoleMenuItemService> service);
+    void setUserActionService(std::shared_ptr<services::IUserActionService> service);
     void setUserNotificationService(std::shared_ptr<services::IUserNotificationService> service);
     void setUserTeamRoleService(std::shared_ptr<services::IUserTeamRoleService> service);
+    void setUserTodoService(std::shared_ptr<services::IUserTodoService> service);
 
 private:
     /**
@@ -310,8 +314,10 @@ private:
     std::shared_ptr<services::IRuleItemTypeService> m_ruleItemTypeService;
     std::shared_ptr<services::IRuleStateService> m_ruleStateService;
     std::shared_ptr<services::IRoleMenuItemService> m_roleMenuItemService;
+    std::shared_ptr<services::IUserActionService> m_userActionService;
     std::shared_ptr<services::IUserNotificationService> m_userNotificationService;
     std::shared_ptr<services::IUserTeamRoleService> m_userTeamRoleService;
+    std::shared_ptr<services::IUserTodoService> m_userTodoService;
 };
 
 } // namespace server
