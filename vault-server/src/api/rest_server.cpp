@@ -36,8 +36,10 @@
 #include "api/handlers/states_handler.h"
 #include "api/handlers/team_messages_handler.h"
 #include "api/handlers/teams_handler.h"
+#include "api/handlers/user_actions_handler.h"
 #include "api/handlers/user_notifications_handler.h"
 #include "api/handlers/user_team_roles_handler.h"
+#include "api/handlers/user_todos_handler.h"
 #include "api/handlers/users_handler.h"
 #include "api/handlers/workflows_handler.h"
 
@@ -299,6 +301,11 @@ void RestServer::setRoleMenuItemService(std::shared_ptr<services::IRoleMenuItemS
     m_roleMenuItemService = std::move(service);
 }
 
+void RestServer::setUserActionService(std::shared_ptr<services::IUserActionService> service)
+{
+    m_userActionService = std::move(service);
+}
+
 void RestServer::setUserNotificationService(std::shared_ptr<services::IUserNotificationService> service)
 {
     m_userNotificationService = std::move(service);
@@ -307,6 +314,11 @@ void RestServer::setUserNotificationService(std::shared_ptr<services::IUserNotif
 void RestServer::setUserTeamRoleService(std::shared_ptr<services::IUserTeamRoleService> service)
 {
     m_userTeamRoleService = std::move(service);
+}
+
+void RestServer::setUserTodoService(std::shared_ptr<services::IUserTodoService> service)
+{
+    m_userTodoService = std::move(service);
 }
 
 void RestServer::registerRoutes()
@@ -2086,6 +2098,99 @@ void RestServer::registerRoutes()
             [handler](const auto& request, const auto& userId)
             {
                 handler->handleGetCommentsByDocument(request, userId);
+            }
+        );
+    }
+
+    // ===== Действия пользователей (UserActions) =====
+    if (m_userActionService)
+    {
+        auto userActionsHandler = std::make_shared<handlers::UserActionsHandler>(m_userActionService);
+
+        // GET /user-actions - список действий с пагинацией и фильтрацией
+        addRouteGet(
+            "/user-actions",
+            [userActionsHandler](const auto& request, const auto& userId)
+            {
+                userActionsHandler->handleGetActions(request, userId);
+            }
+        );
+
+        // POST /user-actions - создание действия
+        addRoutePost(
+            "/user-actions",
+            [userActionsHandler](const auto& request, const auto& userId)
+            {
+                userActionsHandler->handleCreateAction(request, userId);
+            }
+        );
+
+        // GET /user-actions/{id} - получение действия по ID
+        addRouteGet(
+            R"(/user-actions/(\d+))",
+            [userActionsHandler](const auto& request, const auto& userId)
+            {
+                userActionsHandler->handleGetAction(request, userId);
+            }
+        );
+
+        // DELETE /user-actions/{id} - удаление действия
+        addRouteDel(
+            R"(/user-actions/(\d+))",
+            [userActionsHandler](const auto& request, const auto& userId)
+            {
+                userActionsHandler->handleDeleteAction(request, userId);
+            }
+        );
+    }
+
+    // ===== Личные задачи (UserTodos) =====
+    if (m_userTodoService)
+    {
+        auto userTodosHandler = std::make_shared<handlers::UserTodosHandler>(m_userTodoService);
+
+        // GET /user-todos - список задач с пагинацией и фильтрацией
+        addRouteGet(
+            "/user-todos",
+            [userTodosHandler](const auto& request, const auto& userId)
+            {
+                userTodosHandler->handleGetTodos(request, userId);
+            }
+        );
+
+        // POST /user-todos - создание задачи
+        addRoutePost(
+            "/user-todos",
+            [userTodosHandler](const auto& request, const auto& userId)
+            {
+                userTodosHandler->handleCreateTodo(request, userId);
+            }
+        );
+
+        // GET /user-todos/{id} - получение задачи по ID
+        addRouteGet(
+            R"(/user-todos/(\d+))",
+            [userTodosHandler](const auto& request, const auto& userId)
+            {
+                userTodosHandler->handleGetTodo(request, userId);
+            }
+        );
+
+        // PUT /user-todos/{id} - обновление задачи
+        addRoutePut(
+            R"(/user-todos/(\d+))",
+            [userTodosHandler](const auto& request, const auto& userId)
+            {
+                userTodosHandler->handleUpdateTodo(request, userId);
+            }
+        );
+
+        // DELETE /user-todos/{id} - удаление задачи
+        addRouteDel(
+            R"(/user-todos/(\d+))",
+            [userTodosHandler](const auto& request, const auto& userId)
+            {
+                userTodosHandler->handleDeleteTodo(request, userId);
             }
         );
     }

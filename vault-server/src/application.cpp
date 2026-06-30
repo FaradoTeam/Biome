@@ -41,9 +41,11 @@
 #include "logic/impl/state_service.h"
 #include "logic/impl/team_message_service.h"
 #include "logic/impl/team_service.h"
+#include "logic/impl/user_action_service.h"
 #include "logic/impl/user_notification_service.h"
 #include "logic/impl/user_service.h"
 #include "logic/impl/user_team_role_service.h"
+#include "logic/impl/user_todo_service.h"
 #include "logic/impl/workflow_service.h"
 
 #include "repo/sqlite/sqlite_board_column_repository.h"
@@ -77,9 +79,11 @@
 #include "repo/sqlite/sqlite_state_repository.h"
 #include "repo/sqlite/sqlite_team_message_repository.h"
 #include "repo/sqlite/sqlite_team_repository.h"
+#include "repo/sqlite/sqlite_user_action_repository.h"
 #include "repo/sqlite/sqlite_user_notification_repository.h"
 #include "repo/sqlite/sqlite_user_repository.h"
 #include "repo/sqlite/sqlite_user_team_role_repository.h"
+#include "repo/sqlite/sqlite_user_todo_repository.h"
 #include "repo/sqlite/sqlite_workflow_repository.h"
 
 #include "storage/database_factory.h"
@@ -152,8 +156,10 @@ bool Application::initialize()
     auto teamRepository = std::make_shared<repositories::SqliteTeamRepository>(m_database);
     auto teamMessageRepository = std::make_shared<repositories::SqliteTeamMessageRepository>(m_database);
     auto userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
+    auto userActionRepository = std::make_shared<repositories::SqliteUserActionRepository>(m_database);
     auto userNotificationRepository = std::make_shared<repositories::SqliteUserNotificationRepository>(m_database);
     auto userTeamRoleRepository = std::make_shared<repositories::SqliteUserTeamRoleRepository>(m_database);
+    auto userTodoRepository = std::make_shared<repositories::SqliteUserTodoRepository>(m_database);
     auto workflowRepository = std::make_shared<repositories::SqliteWorkflowRepository>(m_database);
 
     // === Создаем сервисы ===
@@ -210,6 +216,14 @@ bool Application::initialize()
     );
     auto userService = std::make_shared<services::UserService>(
         userRepository,
+        authorizationService
+    );
+    auto userActionService = std::make_shared<services::UserActionService>(
+        userActionRepository,
+        authorizationService
+    );
+    auto userTodoService = std::make_shared<services::UserTodoService>(
+        userTodoRepository,
         authorizationService
     );
     auto linkTypeService = std::make_shared<services::LinkTypeService>(
@@ -381,8 +395,10 @@ bool Application::initialize()
     m_restServer->setTeamService(teamService);
     m_restServer->setTeamMessageService(teamMessageService);
     m_restServer->setUserService(userService);
+    m_restServer->setUserActionService(userActionService);
     m_restServer->setUserNotificationService(userNotificationService);
     m_restServer->setUserTeamRoleService(userTeamRoleService);
+    m_restServer->setUserTodoService(userTodoService);
     m_restServer->setWorkflowService(workflowService);
 
     if (!m_restServer->initialize())
