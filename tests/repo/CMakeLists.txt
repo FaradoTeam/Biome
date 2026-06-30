@@ -45,10 +45,13 @@ set(SERVER_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_rule_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_rule_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_rule_state_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_special_day_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_standard_day_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_team_message_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_action_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_day_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_notification_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../vault-server/src/repo/sqlite/sqlite_user_team_role_repository.cpp
@@ -86,10 +89,13 @@ set(TEST_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_project_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_rule_state_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_special_day_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_standard_day_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_state_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_team_message_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_team_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_action_repository.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_day_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_notification_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_repository.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sqlite_user_team_role_repository.cpp
