@@ -34,9 +34,12 @@
 #include "api/handlers/rule_states_handler.h"
 #include "api/handlers/rules_handler.h"
 #include "api/handlers/states_handler.h"
+#include "api/handlers/special_days_handler.h"
+#include "api/handlers/standard_days_handler.h"
 #include "api/handlers/team_messages_handler.h"
 #include "api/handlers/teams_handler.h"
 #include "api/handlers/user_actions_handler.h"
+#include "api/handlers/user_days_handler.h"
 #include "api/handlers/user_notifications_handler.h"
 #include "api/handlers/user_team_roles_handler.h"
 #include "api/handlers/user_todos_handler.h"
@@ -256,6 +259,16 @@ void RestServer::setStateService(std::shared_ptr<services::IStateService> servic
     m_stateService = std::move(service);
 }
 
+void RestServer::setSpecialDayService(std::shared_ptr<services::ISpecialDayService> service)
+{
+    m_specialDayService = std::move(service);
+}
+
+void RestServer::setStandardDayService(std::shared_ptr<services::IStandardDayService> service)
+{
+    m_standardDayService = std::move(service);
+}
+
 void RestServer::setWorkflowService(std::shared_ptr<services::IWorkflowService> service)
 {
     m_workflowService = std::move(service);
@@ -304,6 +317,11 @@ void RestServer::setRoleMenuItemService(std::shared_ptr<services::IRoleMenuItemS
 void RestServer::setUserActionService(std::shared_ptr<services::IUserActionService> service)
 {
     m_userActionService = std::move(service);
+}
+
+void RestServer::setUserDayService(std::shared_ptr<services::IUserDayService> service)
+{
+    m_userDayService = std::move(service);
 }
 
 void RestServer::setUserNotificationService(std::shared_ptr<services::IUserNotificationService> service)
@@ -2191,6 +2209,159 @@ void RestServer::registerRoutes()
             [userTodosHandler](const auto& request, const auto& userId)
             {
                 userTodosHandler->handleDeleteTodo(request, userId);
+            }
+        );
+    }
+
+    // ===== Стандартные дни (Standard Days) =====
+    if (m_standardDayService)
+    {
+        auto handler = std::make_shared<handlers::StandardDaysHandler>(m_standardDayService);
+
+        // GET /standard-days - список всех стандартных дней
+        addRouteGet(
+            "/standard-days",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetStandardDays(request, userId);
+            }
+        );
+
+        // GET /standard-days/{weekDayNumber} - получение дня по номеру
+        addRouteGet(
+            R"(/standard-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetStandardDay(request, userId);
+            }
+        );
+
+        // PUT /standard-days/{weekDayNumber} - обновление дня
+        addRoutePut(
+            R"(/standard-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleUpdateStandardDay(request, userId);
+            }
+        );
+    }
+
+    // ===== Особые дни (Special Days) =====
+    if (m_specialDayService)
+    {
+        auto handler = std::make_shared<handlers::SpecialDaysHandler>(m_specialDayService);
+
+        // GET /special-days - список с пагинацией и фильтрацией
+        addRouteGet(
+            "/special-days",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetSpecialDays(request, userId);
+            }
+        );
+
+        // POST /special-days - создание особого дня
+        addRoutePost(
+            "/special-days",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateSpecialDay(request, userId);
+            }
+        );
+
+        // GET /special-days/{id} - получение по ID
+        addRouteGet(
+            R"(/special-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetSpecialDay(request, userId);
+            }
+        );
+
+        // PUT /special-days/{id} - обновление
+        addRoutePut(
+            R"(/special-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleUpdateSpecialDay(request, userId);
+            }
+        );
+
+        // DELETE /special-days/{id} - удаление
+        addRouteDel(
+            R"(/special-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteSpecialDay(request, userId);
+            }
+        );
+    }
+
+    // ===== Пользовательские дни (User Days) =====
+    if (m_userDayService)
+    {
+        auto handler = std::make_shared<handlers::UserDaysHandler>(m_userDayService);
+
+        // GET /user-days - список с пагинацией и фильтрацией
+        addRouteGet(
+            "/user-days",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetUserDays(request, userId);
+            }
+        );
+
+        // POST /user-days - создание пользовательского дня
+        addRoutePost(
+            "/user-days",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleCreateUserDay(request, userId);
+            }
+        );
+
+        // GET /user-days/{id} - получение по ID
+        addRouteGet(
+            R"(/user-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetUserDay(request, userId);
+            }
+        );
+
+        // PUT /user-days/{id} - обновление
+        addRoutePut(
+            R"(/user-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleUpdateUserDay(request, userId);
+            }
+        );
+
+        // DELETE /user-days/{id} - удаление
+        addRouteDel(
+            R"(/user-days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteUserDay(request, userId);
+            }
+        );
+
+        // GET /users/{userId}/days/{date} - получение дня пользователя по дате
+        addRouteGet(
+            R"(/users/(\d+)/days/(\d+))",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleGetUserDayByUserAndDate(request, userId);
+            }
+        );
+
+        // DELETE /users/{userId}/days - удаление всех дней пользователя
+        addRouteDel(
+            R"(/users/(\d+)/days)",
+            [handler](const auto& request, const auto& userId)
+            {
+                handler->handleDeleteUserDaysByUser(request, userId);
             }
         );
     }

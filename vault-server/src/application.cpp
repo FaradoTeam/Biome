@@ -38,10 +38,13 @@
 #include "logic/impl/rule_project_service.h"
 #include "logic/impl/rule_service.h"
 #include "logic/impl/rule_state_service.h"
+#include "logic/impl/special_day_service.h"
+#include "logic/impl/standard_day_service.h"
 #include "logic/impl/state_service.h"
 #include "logic/impl/team_message_service.h"
 #include "logic/impl/team_service.h"
 #include "logic/impl/user_action_service.h"
+#include "logic/impl/user_day_service.h"
 #include "logic/impl/user_notification_service.h"
 #include "logic/impl/user_service.h"
 #include "logic/impl/user_team_role_service.h"
@@ -76,10 +79,13 @@
 #include "repo/sqlite/sqlite_rule_project_repository.h"
 #include "repo/sqlite/sqlite_rule_repository.h"
 #include "repo/sqlite/sqlite_rule_state_repository.h"
+#include "repo/sqlite/sqlite_special_day_repository.h"
+#include "repo/sqlite/sqlite_standard_day_repository.h"
 #include "repo/sqlite/sqlite_state_repository.h"
 #include "repo/sqlite/sqlite_team_message_repository.h"
 #include "repo/sqlite/sqlite_team_repository.h"
 #include "repo/sqlite/sqlite_user_action_repository.h"
+#include "repo/sqlite/sqlite_user_day_repository.h"
 #include "repo/sqlite/sqlite_user_notification_repository.h"
 #include "repo/sqlite/sqlite_user_repository.h"
 #include "repo/sqlite/sqlite_user_team_role_repository.h"
@@ -153,10 +159,13 @@ bool Application::initialize()
     auto ruleProjectRepository = std::make_shared<repositories::SqliteRuleProjectRepository>(m_database);
     auto ruleStateRepository = std::make_shared<repositories::SqliteRuleStateRepository>(m_database);
     auto stateRepository = std::make_shared<repositories::SqliteStateRepository>(m_database);
+    auto standardDayRepository = std::make_shared<repositories::SqliteStandardDayRepository>(m_database);
+    auto specialDayRepository = std::make_shared<repositories::SqliteSpecialDayRepository>(m_database);
     auto teamRepository = std::make_shared<repositories::SqliteTeamRepository>(m_database);
     auto teamMessageRepository = std::make_shared<repositories::SqliteTeamMessageRepository>(m_database);
     auto userRepository = std::make_shared<repositories::SqliteUserRepository>(m_database);
     auto userActionRepository = std::make_shared<repositories::SqliteUserActionRepository>(m_database);
+    auto userDayRepository = std::make_shared<repositories::SqliteUserDayRepository>(m_database);
     auto userNotificationRepository = std::make_shared<repositories::SqliteUserNotificationRepository>(m_database);
     auto userTeamRoleRepository = std::make_shared<repositories::SqliteUserTeamRoleRepository>(m_database);
     auto userTodoRepository = std::make_shared<repositories::SqliteUserTodoRepository>(m_database);
@@ -348,6 +357,19 @@ bool Application::initialize()
         itemRepository,
         authorizationService
     );
+    auto standardDayService = std::make_shared<services::StandardDayService>(
+        standardDayRepository,
+        authorizationService
+    );
+    auto specialDayService = std::make_shared<services::SpecialDayService>(
+        specialDayRepository,
+        authorizationService
+    );
+    auto userDayService = std::make_shared<services::UserDayService>(
+        userDayRepository,
+        userRepository,
+        authorizationService
+    );
     // TODO: Вынести секретный ключ в конфиг
     auto authMiddleware = std::make_shared<AuthMiddleware>(
         "your-very-long-secret-key-that-is-at-least-32-bytes-long!"
@@ -392,10 +414,13 @@ bool Application::initialize()
     m_restServer->setRuleProjectService(ruleProjectService);
     m_restServer->setRuleStateService(ruleStateService);
     m_restServer->setStateService(stateService);
+    m_restServer->setSpecialDayService(specialDayService);
+    m_restServer->setStandardDayService(standardDayService);
     m_restServer->setTeamService(teamService);
     m_restServer->setTeamMessageService(teamMessageService);
     m_restServer->setUserService(userService);
     m_restServer->setUserActionService(userActionService);
+    m_restServer->setUserDayService(userDayService);
     m_restServer->setUserNotificationService(userNotificationService);
     m_restServer->setUserTeamRoleService(userTeamRoleService);
     m_restServer->setUserTodoService(userTodoService);
