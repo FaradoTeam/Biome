@@ -156,7 +156,8 @@ BOOST_AUTO_TEST_CASE(test_get_teams_with_search)
     services::TeamsPage emptyPage;
     mockTeamService->setGetTeamsResult(emptyPage);
 
-    auto response = makeGetRequest("/api/v1/teams?searchCaption=search").get();
+    // В OpenAPI параметр называется "caption", а не "searchCaption"
+    auto response = makeGetRequest("/api/v1/teams?caption=search").get();
     BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
     BOOST_CHECK_EQUAL(mockTeamService->getLastGetTeamsSearch(), "search");
 }

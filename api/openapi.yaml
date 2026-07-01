@@ -438,10 +438,6 @@ components:
       properties:
         caption: { type: string, description: Название нового плана }
         description: { type: string, description: Описание нового плана }
-        # TODO : Добавить и сохранить причину если это потребуется:
-        # reasonCode: { type: string, enum: [BUSINESS_REQUEST, UNDER_ESTIMATE, OVER_ESTIMATE, RESOURCE_LOSS, RESOURCE_GAIN, TECH_DEBT, NEW_REQUIREMENT, OTHER], description: Код причины создания новой версии }
-        # reasonDetails: { type: string, description: Свободное пояснение причины }
-        # decisionMakerUserId: { type: integer, description: Кто принял решение о создании новой версии }
     ActivatePlanRequest:
       type: object
       required: [activatedByUserId]
@@ -599,15 +595,15 @@ paths:
         - name: login
           in: query
           schema: { type: string }
-          description: Фильтр по логину
+          description: Фильтр по логину (частичное совпадение)
         - name: name
           in: query
           schema: { type: string }
-          description: Фильтр по ФИО
+          description: Фильтр по ФИО (частичное совпадение)
         - name: email
           in: query
           schema: { type: string }
-          description: Фильтр по email
+          description: Фильтр по email (частичное совпадение)
         - name: isBlocked
           in: query
           schema: { type: boolean }
@@ -807,7 +803,7 @@ paths:
         - name: caption
           in: query
           schema: { type: string }
-          description: Фильтр по названию
+          description: Фильтр по названию (частичное совпадение)
       responses:
         '200':
           description: Успешный ответ
@@ -2391,10 +2387,98 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: Элемент не найден }
 
+  /items/{id}/restore:
+    post:
+      tags: [Items]
+      summary: Восстановить элемент из мягкого удаления
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Элемент восстановлен }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+
+  /items/{id}/fields:
+    get:
+      tags: [Items]
+      summary: Получить значения всех полей элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemField'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+
+  /items/{id}/fields/{fieldTypeId}:
+    put:
+      tags: [Items]
+      summary: Установить значение поля элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: fieldTypeId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: { type: string, description: Значение поля }
+      responses:
+        '200':
+          description: Значение поля установлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemField'
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент или тип поля не найден }
+    delete:
+      tags: [Items]
+      summary: Удалить значение поля элемента
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: fieldTypeId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Значение поля удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Значение поля не найдено }
+
   /item-fields:
     get:
-      tags: [ItemFields]
-      summary: Получить список значений полей элементов
+      tags: [Items]
+      summary: Получить список значений полей элементов (с фильтрацией)
       parameters:
         - name: page
           in: query
@@ -2425,72 +2509,10 @@ paths:
                         items: { $ref: '#/components/schemas/ItemField' }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
-    post:
-      tags: [ItemFields]
-      summary: Создать значение поля элемента
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ItemField'
-      responses:
-        '201': { description: Значение создано, content: { application/json: { schema: { $ref: '#/components/schemas/ItemField' } } } }
-        '400': { description: Некорректный запрос }
-        '401': { description: Не авторизован }
-        '403': { description: Доступ запрещен }
-        '409': { description: Конфликт (поле уже имеет значение для этого элемента) }
-  /item-fields/{id}:
-    get:
-      tags: [ItemFields]
-      summary: Получить значение поля по ID
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemField' } } } }
-        '401': { description: Не авторизован }
-        '403': { description: Доступ запрещен }
-        '404': { description: Значение не найдено }
-    put:
-      tags: [ItemFields]
-      summary: Обновить значение поля
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ItemField'
-      responses:
-        '200': { description: Значение обновлено, content: { application/json: { schema: { $ref: '#/components/schemas/ItemField' } } } }
-        '400': { description: Некорректный запрос }
-        '401': { description: Не авторизован }
-        '403': { description: Доступ запрещен }
-        '404': { description: Значение не найдено }
-    delete:
-      tags: [ItemFields]
-      summary: Удалить значение поля
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema: { type: integer }
-      responses:
-        '204': { description: Значение удалено }
-        '401': { description: Не авторизован }
-        '403': { description: Доступ запрещен }
-        '404': { description: Значение не найдено }
 
   /item-histories:
     get:
-      tags: [ItemHistories]
+      tags: [Items]
       summary: Получить историю изменений элементов
       parameters:
         - name: page
@@ -2507,6 +2529,14 @@ paths:
           in: query
           schema: { type: integer }
           description: Фильтр по пользователю
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата начала периода
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата окончания периода
       responses:
         '200':
           description: Успешный ответ
@@ -2522,9 +2552,56 @@ paths:
                         items: { $ref: '#/components/schemas/ItemHistory' }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
+
+  /items/{itemId}/histories/last:
+    get:
+      tags: [Items]
+      summary: Получить последнюю запись истории для элемента
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemHistory'
+        '404': { description: История не найдена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+
+  /items/{itemId}/histories:
+    post:
+      tags: [Items]
+      summary: Создать запись истории для элемента
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemHistory'
+      responses:
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemHistory'
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+
   /item-histories/{id}:
     get:
-      tags: [ItemHistories]
+      tags: [Items]
       summary: Получить запись истории по ID
       parameters:
         - name: id
@@ -2532,14 +2609,32 @@ paths:
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemHistory' } } } }
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemHistory'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Запись не найдена }
+    delete:
+      tags: [Items]
+      summary: Удалить запись истории
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Запись удалена }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
         '404': { description: Запись не найдена }
 
   /item-user-states:
     get:
-      tags: [ItemUserStates]
+      tags: [Items]
       summary: Получить историю состояний по пользователям
       parameters:
         - name: page
@@ -2571,9 +2666,36 @@ paths:
                         items: { $ref: '#/components/schemas/ItemUserState' }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
+
+  /items/{itemId}/user-states/last:
+    get:
+      tags: [Items]
+      summary: Получить последнюю запись истории состояний для элемента
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemUserState'
+        '404': { description: История состояний не найдена }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+
+  /items/{itemId}/user-states:
     post:
-      tags: [ItemUserStates]
-      summary: Создать запись о переходе состояния
+      tags: [Items]
+      summary: Создать запись о переходе состояния для элемента
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
       requestBody:
         required: true
         content:
@@ -2581,27 +2703,38 @@ paths:
             schema:
               $ref: '#/components/schemas/ItemUserState'
       responses:
-        '201': { description: Запись создана, content: { application/json: { schema: { $ref: '#/components/schemas/ItemUserState' } } } }
+        '201':
+          description: Запись создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemUserState'
         '400': { description: Некорректный запрос }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
+
   /item-user-states/{id}:
     get:
-      tags: [ItemUserStates]
-      summary: Получить запись по ID
+      tags: [Items]
+      summary: Получить запись истории состояний по ID
       parameters:
         - name: id
           in: path
           required: true
           schema: { type: integer }
       responses:
-        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/ItemUserState' } } } }
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemUserState'
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
         '404': { description: Запись не найдена }
     delete:
-      tags: [ItemUserStates]
-      summary: Удалить запись
+      tags: [Items]
+      summary: Удалить запись истории состояний
       parameters:
         - name: id
           in: path
@@ -2969,6 +3102,50 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: Связь не найдена }
 
+  /items/{itemId}/documents:
+    get:
+      tags: [ItemDocuments]
+      summary: Получить все документы, привязанные к элементу
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemDocument'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+
+  /documents/{documentId}/items:
+    get:
+      tags: [ItemDocuments]
+      summary: Получить все элементы, привязанные к документу
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemDocument'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Документ не найден }
+
   /comments:
     get:
       tags: [Comments]
@@ -2988,6 +3165,14 @@ paths:
           in: query
           schema: { type: integer }
           description: Фильтр по автору
+        - name: dateFrom
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата начала периода
+        - name: dateTo
+          in: query
+          schema: { type: string, format: date-time }
+          description: Дата окончания периода
       responses:
         '200':
           description: Успешный ответ
@@ -3065,6 +3250,28 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: Комментарий не найден }
 
+  /items/{itemId}/comments:
+    get:
+      tags: [Comments]
+      summary: Получить все комментарии для элемента
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+
   /comment-documents:
     get:
       tags: [CommentDocuments]
@@ -3124,6 +3331,50 @@ paths:
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
         '404': { description: Связь не найдена }
+
+  /comments/{commentId}/documents:
+    get:
+      tags: [CommentDocuments]
+      summary: Получить все документы, привязанные к комментарию
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentDocument'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Комментарий не найден }
+
+  /documents/{documentId}/comments:
+    get:
+      tags: [CommentDocuments]
+      summary: Получить все комментарии, привязанные к документу
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommentDocument'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Документ не найден }
 
   # =====================================================
   # 8. ДОСКИ (Kanban Boards)
@@ -3228,6 +3479,50 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: Доска не найдена }
 
+  /projects/{projectId}/boards:
+    get:
+      tags: [Boards]
+      summary: Получить доски для проекта
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Board'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Проект не найден }
+
+  /phases/{phaseId}/boards:
+    get:
+      tags: [Boards]
+      summary: Получить доски для фазы
+      parameters:
+        - name: phaseId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Board'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Фаза не найдена }
+
   /board-columns:
     get:
       tags: [BoardColumns]
@@ -3324,6 +3619,50 @@ paths:
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
         '404': { description: Колонка не найдена }
+
+  /boards/{boardId}/columns:
+    get:
+      tags: [BoardColumns]
+      summary: Получить все колонки для доски
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BoardColumn'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Доска не найдена }
+
+  /boards/{boardId}/columns:
+    post:
+      tags: [BoardColumns]
+      summary: Создать колонку для доски
+      parameters:
+        - name: boardId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BoardColumn'
+      responses:
+        '201': { description: Колонка создана, content: { application/json: { schema: { $ref: '#/components/schemas/BoardColumn' } } } }
+        '400': { description: Некорректный запрос }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '409': { description: Конфликт (состояние уже используется на этой доске) }
 
   # =====================================================
   # 9. КАЛЕНДАРЬ И РАБОЧЕЕ ВРЕМЯ (Calendar and Working Time)
@@ -3576,6 +3915,21 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: День не найден }
 
+  /users/{userId}/days:
+    delete:
+      tags: [Calendar]
+      summary: Удалить все пользовательские дни для указанного пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Дни удалены }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Пользователь не найден }
+
   # =====================================================
   # 10. СООБЩЕНИЯ И УВЕДОМЛЕНИЯ (Messages and Notifications)
   # =====================================================
@@ -3677,6 +4031,44 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: Сообщение не найдено }
 
+  /private-messages/conversation/{userId}:
+    get:
+      tags: [Messages]
+      summary: Получить переписку с пользователем
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PrivateMessage'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Пользователь не найден }
+
+  /private-messages/unviewed/count:
+    get:
+      tags: [Messages]
+      summary: Получить количество непрочитанных сообщений
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+        '401': { description: Не авторизован }
+
   /team-messages:
     get:
       tags: [Messages]
@@ -3749,6 +4141,28 @@ paths:
         '403': { description: Доступ запрещен }
         '404': { description: Сообщение не найдено }
 
+  /teams/{teamId}/messages:
+    get:
+      tags: [Messages]
+      summary: Получить все сообщения в команде
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamMessage'
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Команда не найдена }
+
   /user-notifications:
     get:
       tags: [Notifications]
@@ -3799,6 +4213,19 @@ paths:
         '403': { description: Доступ запрещен }
         '409': { description: Конфликт (подписка уже существует) }
   /user-notifications/{id}:
+    get:
+      tags: [Notifications]
+      summary: Получить подписку по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/UserNotification' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Подписка не найдена }
     delete:
       tags: [Notifications]
       summary: Отписаться от элемента
@@ -3812,6 +4239,51 @@ paths:
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
         '404': { description: Подписка не найдена }
+
+  /items/{itemId}/subscribers:
+    get:
+      tags: [Notifications]
+      summary: Получить подписчиков элемента
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
+
+  /items/{itemId}/subscribed:
+    get:
+      tags: [Notifications]
+      summary: Проверить, подписан ли текущий пользователь на элемент
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscribed:
+                    type: boolean
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Элемент не найден }
 
   # =====================================================
   # 11. ДЕЙСТВИЯ И ЗАДАЧИ (Actions and Tasks)
@@ -3852,6 +4324,50 @@ paths:
                       items:
                         type: array
                         items: { $ref: '#/components/schemas/UserAction' }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+
+  /user-actions/{id}:
+    get:
+      tags: [Audit]
+      summary: Получить действие по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Успешный ответ, content: { application/json: { schema: { $ref: '#/components/schemas/UserAction' } } } }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Действие не найдено }
+    delete:
+      tags: [Audit]
+      summary: Удалить действие
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Действие удалено }
+        '401': { description: Не авторизован }
+        '403': { description: Доступ запрещен }
+        '404': { description: Действие не найдено }
+
+  /user-actions:
+    post:
+      tags: [Audit]
+      summary: Создать действие
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAction'
+      responses:
+        '201': { description: Действие создано, content: { application/json: { schema: { $ref: '#/components/schemas/UserAction' } } } }
+        '400': { description: Некорректный запрос }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
 
@@ -4325,4 +4841,27 @@ paths:
         '204': { description: Пункт меню удален }
         '401': { description: Не авторизован }
         '403': { description: Доступ запрещен }
-        '404': { description: Пункт меню не найдем }
+        '404': { description: Пункт меню не найден }
+
+  # =====================================================
+  # HEALTH CHECK (Работоспособность)
+  # =====================================================
+  /health:
+    get:
+      tags: [System]
+      summary: Проверка работоспособности сервера
+      description: Публичный эндпоинт для проверки статуса сервера
+      responses:
+        '200':
+          description: Сервер работает
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: integer
+                    description: Unix timestamp

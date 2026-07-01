@@ -38,32 +38,74 @@ void TeamsHandler::handleGetTeams(
 
     int page = 1;
     if (params.count("page"))
-        page = std::stoi(params["page"]);
+    {
+        try
+        {
+            page = std::stoi(params["page"]);
+            if (page < 1)
+                page = 1;
+        }
+        catch (const std::exception& e)
+        {
+            LOG_WARN << "handleGetTeams: неверный параметр page: " << params["page"];
+        }
+    }
 
     int pageSize = 20;
     if (params.count("pageSize"))
-        pageSize = std::stoi(params["pageSize"]);
-
-    std::string searchCaption;
-    if (params.count("searchCaption"))
-        searchCaption = params["searchCaption"];
-
-    auto teamsPage = m_teamService->getTeams(page, pageSize, userId, searchCaption);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < teamsPage.teams.size(); ++i)
     {
-        items[i] = dto::toWebJson(teamsPage.teams[i].toJson());
+        try
+        {
+            pageSize = std::stoi(params["pageSize"]);
+            if (pageSize < 1)
+                pageSize = 1;
+            if (pageSize > 100)
+                pageSize = 100;
+        }
+        catch (const std::exception& e)
+        {
+            LOG_WARN << "handleGetTeams: неверный параметр pageSize: " << params["pageSize"];
+        }
     }
 
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(teamsPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
+    // Фильтр по названию
+    std::string searchCaption;
+    if (params.count("caption"))
+    {
+        searchCaption = params["caption"];
+    }
 
-    request.reply(web::http::status_codes::OK, response);
+    LOG_DEBUG
+        << "GET /teams: user=" << userId
+        << ", page=" << page << ", pageSize=" << pageSize
+        << ", searchCaption=" << searchCaption;
+
+    try
+    {
+        auto teamsPage = m_teamService->getTeams(page, pageSize, userId, searchCaption);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < teamsPage.teams.size(); ++i)
+        {
+            items[i] = dto::toWebJson(teamsPage.teams[i].toJson());
+        }
+
+        response["items"] = items;
+        response["totalCount"] = web::json::value::number(teamsPage.totalCount);
+        response["page"] = web::json::value::number(page);
+        response["pageSize"] = web::json::value::number(pageSize);
+
+        request.reply(web::http::status_codes::OK, response);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка команд: " << e.what();
+        web::http::http_response resp(web::http::status_codes::InternalError);
+        sendErrorResponse(resp, 500, "Internal server error");
+        request.reply(resp);
+    }
 }
 
 void TeamsHandler::handleGetTeam(

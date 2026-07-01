@@ -27,16 +27,24 @@ public:
     virtual ~IUserService() = default;
 
     /**
-     * @brief Получает список пользователей с пагинацией.
+     * @brief Получает список пользователей с пагинацией и фильтрацией.
      * @param page Номер страницы (начиная с 1)
      * @param pageSize Количество записей на странице
      * @param userId ID пользователя для проверки прав
+     * @param login Фильтр по логину (частичное совпадение)
+     * @param name Фильтр по ФИО (частичное совпадение)
+     * @param email Фильтр по email (частичное совпадение)
+     * @param isBlocked Фильтр по статусу блокировки
      * @return Страница с пользователями
      */
     virtual UsersPage users(
         int page,
         int pageSize,
-        int64_t userId
+        int64_t userId,
+        const std::string& login = "",
+        const std::string& name = "",
+        const std::string& email = "",
+        std::optional<bool> isBlocked = std::nullopt
     ) = 0;
 
     /**

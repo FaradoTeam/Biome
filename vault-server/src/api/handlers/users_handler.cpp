@@ -36,30 +36,98 @@ void UsersHandler::handleGetUsers(
 
     auto params = extractQueryParams(request);
 
+    // Параметры пагинации
     int page = 1;
     if (params.count("page"))
-        page = std::stoi(params["page"]);
+    {
+        try
+        {
+            page = std::stoi(params["page"]);
+            if (page < 1)
+                page = 1;
+        }
+        catch (const std::exception& e)
+        {
+            LOG_WARN << "handleGetUsers: неверный параметр page: " << params["page"];
+        }
+    }
 
     int pageSize = 20;
     if (params.count("pageSize"))
-        pageSize = std::stoi(params["pageSize"]);
-
-    auto usersPage = m_userService->users(page, pageSize, userId);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < usersPage.users.size(); ++i)
     {
-        items[i] = dto::toWebJson(usersPage.users[i].toJson());
+        try
+        {
+            pageSize = std::stoi(params["pageSize"]);
+            if (pageSize < 1)
+                pageSize = 1;
+            if (pageSize > 100)
+                pageSize = 100;
+        }
+        catch (const std::exception& e)
+        {
+            LOG_WARN << "handleGetUsers: неверный параметр pageSize: " << params["pageSize"];
+        }
     }
 
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(usersPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
+    // Параметры фильтрации
+    std::string login;
+    if (params.count("login"))
+    {
+        login = params["login"];
+    }
 
-    request.reply(web::http::status_codes::OK, response);
+    std::string name;
+    if (params.count("name"))
+    {
+        name = params["name"];
+    }
+
+    std::string email;
+    if (params.count("email"))
+    {
+        email = params["email"];
+    }
+
+    std::optional<bool> isBlocked;
+    if (params.count("isBlocked"))
+    {
+        isBlocked = parseBool(params["isBlocked"]);
+    }
+
+    LOG_DEBUG
+        << "GET /users: user=" << userId
+        << ", page=" << page << ", pageSize=" << pageSize
+        << ", login=" << login
+        << ", name=" << name
+        << ", email=" << email
+        << ", isBlocked=" << (isBlocked.has_value() ? (*isBlocked ? "true" : "false") : "none");
+
+    try
+    {
+        auto usersPage = m_userService->users(page, pageSize, userId, login, name, email, isBlocked);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < usersPage.users.size(); ++i)
+        {
+            items[i] = dto::toWebJson(usersPage.users[i].toJson());
+        }
+
+        response["items"] = items;
+        response["totalCount"] = web::json::value::number(usersPage.totalCount);
+        response["page"] = web::json::value::number(page);
+        response["pageSize"] = web::json::value::number(pageSize);
+
+        request.reply(web::http::status_codes::OK, response);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка пользователей: " << e.what();
+        web::http::http_response resp(web::http::status_codes::InternalError);
+        sendErrorResponse(resp, 500, "Internal server error");
+        request.reply(resp);
+    }
 }
 
 void UsersHandler::handleGetUser(
