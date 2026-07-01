@@ -29,14 +29,29 @@ UserService::UserService(
     }
 }
 
-UsersPage UserService::users(int page, int pageSize, int64_t /*userId*/)
+UsersPage UserService::users(
+    int page,
+    int pageSize,
+    int64_t userId,
+    const std::string& login,
+    const std::string& name,
+    const std::string& email,
+    std::optional<bool> isBlocked
+)
 {
     if (page < 1)
         page = 1;
     if (pageSize < 1)
         pageSize = 20;
 
-    auto [users, total] = m_userRepo->findAll(page, pageSize);
+    // Только супер-админ может просматривать список пользователей
+    if (!m_authzService->isSuperAdmin(userId))
+    {
+        LOG_WARN << "users: пользователь " << userId << " не имеет прав на просмотр списка пользователей";
+        return { {}, 0 };
+    }
+
+    auto [users, total] = m_userRepo->findAll(page, pageSize, login, name, email, isBlocked);
     return { users, total };
 }
 

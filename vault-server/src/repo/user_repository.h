@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "common/dto/user.h"
 
@@ -71,12 +72,23 @@ public:
     virtual bool existsByLogin(const std::string& login) = 0;
 
     /**
-     * @brief Получает список пользователей с пагинацией.
+     * @brief Получает список пользователей с пагинацией и фильтрацией.
      * @param page Номер страницы (начиная с 1)
      * @param pageSize Количество записей на странице
+     * @param login Фильтр по логину (частичное совпадение)
+     * @param name Фильтр по ФИО (частичное совпадение)
+     * @param email Фильтр по email (частичное совпадение)
+     * @param isBlocked Фильтр по статусу блокировки
      * @return Пара: вектор DTO пользователей и общее количество пользователей.
      */
-    virtual std::pair<std::vector<dto::User>, int64_t> findAll(int page, int pageSize) = 0;
+    virtual std::pair<std::vector<dto::User>, int64_t> findAll(
+        int page,
+        int pageSize,
+        const std::string& login = "",
+        const std::string& name = "",
+        const std::string& email = "",
+        std::optional<bool> isBlocked = std::nullopt
+    ) = 0;
 
     /**
      * @brief Обновляет данные пользователя.

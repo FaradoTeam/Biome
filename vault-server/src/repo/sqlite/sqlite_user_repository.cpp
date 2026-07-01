@@ -295,7 +295,14 @@ bool SqliteUserRepository::existsByLogin(const std::string& login)
     }
 }
 
-std::pair<std::vector<dto::User>, int64_t> SqliteUserRepository::findAll(int page, int pageSize)
+std::pair<std::vector<dto::User>, int64_t> SqliteUserRepository::findAll(
+    int page,
+    int pageSize,
+    const std::string& login,
+    const std::string& name,
+    const std::string& email,
+    std::optional<bool> isBlocked
+)
 {
     std::vector<dto::User> users;
     int64_t totalCount = 0;
@@ -304,30 +311,82 @@ std::pair<std::vector<dto::User>, int64_t> SqliteUserRepository::findAll(int pag
     {
         auto conn = m_database->connection();
 
+        // Строим динамический SQL с условиями фильтрации
+        std::vector<std::string> whereClauses;
+
+        if (!login.empty())
+        {
+            whereClauses.push_back("login LIKE '%' || :login || '%'");
+        }
+
+        if (!name.empty())
+        {
+            // Поиск по ФИО (firstName, middleName, lastName)
+            whereClauses.push_back(
+                "(firstName || ' ' || middleName || ' ' || lastName) LIKE '%' || :name || '%'"
+            );
+        }
+
+        if (!email.empty())
+        {
+            whereClauses.push_back("email LIKE '%' || :email || '%'");
+        }
+
+        if (isBlocked.has_value())
+        {
+            whereClauses.push_back("isBlocked = :isBlocked");
+        }
+
+        std::string whereClause;
+        if (!whereClauses.empty())
+        {
+            whereClause = " WHERE " + boost::algorithm::join(whereClauses, " AND ");
+        }
+
         // 1. Получаем общее количество пользователей
-        auto countStmt = conn->prepareStatement("SELECT COUNT(*) FROM User");
+        auto countStmt = conn->prepareStatement("SELECT COUNT(*) FROM User" + whereClause);
+
+        if (!login.empty())
+            countStmt->bindString("login", login);
+        if (!name.empty())
+            countStmt->bindString("name", name);
+        if (!email.empty())
+            countStmt->bindString("email", email);
+        if (isBlocked.has_value())
+            countStmt->bindInt64("isBlocked", isBlocked.value() ? 1 : 0);
+
         auto countRs = countStmt->executeQuery();
         if (countRs->next())
         {
             totalCount = countRs->valueInt64(0);
         }
 
-        if (totalCount == 0)
+        if (totalCount == 0 || (page - 1) * pageSize >= totalCount)
         {
             return { users, totalCount };
         }
 
         // 2. Получаем страницу с пользователями
-        // SQLite использует LIMIT и OFFSET для пагинации.
         const int offset = (page - 1) * pageSize;
         auto stmt = conn->prepareStatement(
             "SELECT id, login, firstName, middleName, lastName, email, "
             "needChangePassword, isBlocked, isSuperAdmin, isHidden "
-            "FROM User ORDER BY id LIMIT :limit OFFSET :offset"
+            "FROM User"
+            + whereClause + " ORDER BY login LIMIT :limit OFFSET :offset"
         );
+
+        if (!login.empty())
+            stmt->bindString("login", login);
+        if (!name.empty())
+            stmt->bindString("name", name);
+        if (!email.empty())
+            stmt->bindString("email", email);
+        if (isBlocked.has_value())
+            stmt->bindInt64("isBlocked", isBlocked.value() ? 1 : 0);
 
         stmt->bindInt64("limit", pageSize);
         stmt->bindInt64("offset", offset);
+
         auto rs = stmt->executeQuery();
 
         while (rs->next())

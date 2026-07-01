@@ -53,7 +53,7 @@ public:
 
     // Callback-и для кастомной логики
     void setGetUsersCallback(
-        std::function<UsersPage(int, int, int64_t)> callback
+        std::function<UsersPage(int, int, int64_t, const std::string&, const std::string&, const std::string&, std::optional<bool>)> callback
     )
     {
         m_getUsersCallback = std::move(callback);
@@ -87,24 +87,31 @@ public:
         m_deleteUserCallback = std::move(callback);
     }
 
-    // Реализация интерфейса IUserService
+    // Реализация интерфейса IUserService с новыми параметрами
     services::UsersPage users(
         int page,
         int pageSize,
-        int64_t userId
+        int64_t userId,
+        const std::string& login = "",
+        const std::string& name = "",
+        const std::string& email = "",
+        std::optional<bool> isBlocked = std::nullopt
     ) override
     {
         m_lastGetUsersPage = page;
         m_lastGetUsersPageSize = pageSize;
         m_lastGetUsersUserId = userId;
+        m_lastGetUsersLogin = login;
+        m_lastGetUsersName = name;
+        m_lastGetUsersEmail = email;
+        m_lastGetUsersIsBlocked = isBlocked;
         m_getUsersCallCount++;
 
         if (m_getUsersCallback)
         {
-            return m_getUsersCallback(page, pageSize, userId);
+            return m_getUsersCallback(page, pageSize, userId, login, name, email, isBlocked);
         }
 
-        // Любой авторизованный пользователь может получить список пользователей
         // Возвращаем результат независимо от userId
         return m_getUsersResult;
     }
@@ -123,8 +130,6 @@ public:
             return m_getUserCallback(id, userId);
         }
 
-        // Любой авторизованный пользователь может получить информацию о пользователе
-        // Возвращаем результат независимо от userId
         if (m_getUserResult.has_value() && m_getUserResult->id.has_value())
         {
             if (*m_getUserResult->id == id)
@@ -149,12 +154,6 @@ public:
         if (m_createUserCallback)
         {
             return m_createUserCallback(user, password, userId);
-        }
-
-        // Только супер-админ (userId=1) может создавать пользователей
-        if (userId != 1)
-        {
-            return std::nullopt;
         }
 
         if (m_createUserResult.has_value())
@@ -182,12 +181,6 @@ public:
             return m_updateUserCallback(user, userId);
         }
 
-        // Только супер-админ (userId=1) может обновлять пользователей
-        if (userId != 1)
-        {
-            return std::nullopt;
-        }
-
         return m_updateUserResult;
     }
 
@@ -205,12 +198,6 @@ public:
             return m_deleteUserCallback(id, userId);
         }
 
-        // Только супер-админ (userId=1) может удалять пользователей
-        if (userId != 1)
-        {
-            return false;
-        }
-
         return m_deleteUserResult;
     }
 
@@ -224,6 +211,11 @@ public:
     int getLastGetUsersPage() const { return m_lastGetUsersPage; }
     int getLastGetUsersPageSize() const { return m_lastGetUsersPageSize; }
     int64_t getLastGetUsersUserId() const { return m_lastGetUsersUserId; }
+    const std::string& getLastGetUsersLogin() const { return m_lastGetUsersLogin; }
+    const std::string& getLastGetUsersName() const { return m_lastGetUsersName; }
+    const std::string& getLastGetUsersEmail() const { return m_lastGetUsersEmail; }
+    std::optional<bool> getLastGetUsersIsBlocked() const { return m_lastGetUsersIsBlocked; }
+
     int64_t getLastGetUserId() const { return m_lastGetUserId; }
     int64_t getLastGetUserRequestUserId() const { return m_lastGetUserRequestUserId; }
     const dto::User& getLastCreatedUser() const { return m_lastCreatedUser; }
@@ -245,6 +237,11 @@ public:
         m_lastGetUsersPage = 0;
         m_lastGetUsersPageSize = 0;
         m_lastGetUsersUserId = 0;
+        m_lastGetUsersLogin.clear();
+        m_lastGetUsersName.clear();
+        m_lastGetUsersEmail.clear();
+        m_lastGetUsersIsBlocked = std::nullopt;
+
         m_lastGetUserId = 0;
         m_lastGetUserRequestUserId = 0;
         m_lastCreatedUser = dto::User {};
@@ -277,7 +274,7 @@ private:
     bool m_deleteUserResult = false;
 
     // Callback-и
-    std::function<services::UsersPage(int, int, int64_t)> m_getUsersCallback;
+    std::function<services::UsersPage(int, int, int64_t, const std::string&, const std::string&, const std::string&, std::optional<bool>)> m_getUsersCallback;
     std::function<std::optional<dto::User>(int64_t, int64_t)> m_getUserCallback;
     std::function<std::optional<dto::User>(const dto::User&, const std::string&, int64_t)> m_createUserCallback;
     std::function<std::optional<dto::User>(const dto::User&, int64_t)> m_updateUserCallback;
@@ -294,6 +291,11 @@ private:
     int m_lastGetUsersPage = 0;
     int m_lastGetUsersPageSize = 0;
     int64_t m_lastGetUsersUserId = 0;
+    std::string m_lastGetUsersLogin;
+    std::string m_lastGetUsersName;
+    std::string m_lastGetUsersEmail;
+    std::optional<bool> m_lastGetUsersIsBlocked;
+
     int64_t m_lastGetUserId = 0;
     int64_t m_lastGetUserRequestUserId = 0;
     dto::User m_lastCreatedUser;

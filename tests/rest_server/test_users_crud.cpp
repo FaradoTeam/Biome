@@ -231,6 +231,41 @@ BOOST_AUTO_TEST_CASE(test_get_users_requires_auth)
     BOOST_CHECK_EQUAL(mockUserService->getGetUsersCallCount(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(test_get_users_with_filters)
+{
+    // Настраиваем результат
+    services::UsersPage emptyPage;
+    mockUserService->setGetUsersResult(emptyPage);
+
+    // Тест с фильтром по логину
+    auto response = makeGetRequest("/api/v1/users?login=admin").get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
+    BOOST_CHECK_EQUAL(mockUserService->getLastGetUsersLogin(), "admin");
+
+    // Тест с фильтром по имени
+    response = makeGetRequest("/api/v1/users?name=John").get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
+    BOOST_CHECK_EQUAL(mockUserService->getLastGetUsersName(), "John");
+
+    // Тест с фильтром по email
+    response = makeGetRequest("/api/v1/users?email=test@example.com").get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
+    BOOST_CHECK_EQUAL(mockUserService->getLastGetUsersEmail(), "test@example.com");
+
+    // Тест с фильтром по isBlocked
+    response = makeGetRequest("/api/v1/users?isBlocked=true").get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
+    BOOST_REQUIRE(mockUserService->getLastGetUsersIsBlocked().has_value());
+    BOOST_CHECK(mockUserService->getLastGetUsersIsBlocked().value());
+
+    // Тест с комбинированными фильтрами
+    response = makeGetRequest("/api/v1/users?login=admin&isBlocked=false").get();
+    BOOST_CHECK_EQUAL(response.status_code(), status_codes::OK);
+    BOOST_CHECK_EQUAL(mockUserService->getLastGetUsersLogin(), "admin");
+    BOOST_REQUIRE(mockUserService->getLastGetUsersIsBlocked().has_value());
+    BOOST_CHECK(!mockUserService->getLastGetUsersIsBlocked().value());
+}
+
 // ============================================================
 // GET /api/v1/users/{id} — Получение пользователя по ID
 // ============================================================

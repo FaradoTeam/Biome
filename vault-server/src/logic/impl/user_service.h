@@ -30,7 +30,11 @@ public:
     UsersPage users(
         int page,
         int pageSize,
-        int64_t userId
+        int64_t userId,
+        const std::string& login = "",
+        const std::string& name = "",
+        const std::string& email = "",
+        std::optional<bool> isBlocked = std::nullopt
     ) override;
 
     std::optional<dto::User> user(
