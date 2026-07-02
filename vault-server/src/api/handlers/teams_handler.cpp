@@ -25,11 +25,10 @@ void TeamsHandler::handleGetTeams(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -92,19 +91,17 @@ void TeamsHandler::handleGetTeams(
             items[i] = dto::toWebJson(teamsPage.teams[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(teamsPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(teamsPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка команд: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -113,11 +110,10 @@ void TeamsHandler::handleGetTeam(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -125,25 +121,26 @@ void TeamsHandler::handleGetTeam(
     int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid team ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid team ID");
         return;
     }
 
-    auto team = m_teamService->getTeam(id, userId);
-    if (!team)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Team not found");
-        request.reply(resp);
-        return;
-    }
+        auto team = m_teamService->getTeam(id, userId);
+        if (!team)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Team not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(team->toJson())
-    );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(team->toJson()));
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении команды " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void TeamsHandler::handleCreateTeam(
@@ -151,14 +148,24 @@ void TeamsHandler::handleCreateTeam(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
+
+    // Только супер-админ может создавать команды
+    if (userId != 1)
+    {
+        sendErrorResponse(
+            request,
+            web::http::status_codes::Forbidden,
+            "Insufficient permissions to create team"
+        );
+        return;
+    }
 
     request
         .extract_json()
@@ -171,46 +178,42 @@ void TeamsHandler::handleCreateTeam(
                     auto nlohmannJson = dto::toNlohmannJson(jsonBody);
                     dto::Team team(nlohmannJson);
 
-                    if (!team.caption || team.caption->empty())
+                    if (!team.caption.has_value() || team.caption->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Caption is required");
-                        request.reply(resp);
-                        return;
-                    }
-
-                    // Только супер-админ может создавать команды
-                    if (userId != 1)
-                    {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to create team");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Caption is required");
                         return;
                     }
 
                     auto created = m_teamService->createTeam(team, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Failed to create team");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "Failed to create team"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " создал команду id=" << *created->id
+                        << ", caption=" << *created->caption;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при создании команды: " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -222,11 +225,10 @@ void TeamsHandler::handleUpdateTeam(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -234,18 +236,18 @@ void TeamsHandler::handleUpdateTeam(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid team ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid team ID");
         return;
     }
 
     // Только супер-админ может обновлять команды
     if (userId != 1)
     {
-        web::http::http_response resp(web::http::status_codes::Forbidden);
-        sendErrorResponse(resp, 403, "Insufficient permissions to update team");
-        request.reply(resp);
+        sendErrorResponse(
+            request,
+            web::http::status_codes::Forbidden,
+            "Insufficient permissions to update team"
+        );
         return;
     }
 
@@ -264,26 +266,32 @@ void TeamsHandler::handleUpdateTeam(
                     auto updated = m_teamService->updateTeam(team, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "Team not found");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::NotFound,
+                            "Team not found"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил команду id=" << id;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при обновлении команды " << id << ": " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -295,11 +303,10 @@ void TeamsHandler::handleDeleteTeam(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -307,30 +314,47 @@ void TeamsHandler::handleDeleteTeam(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid team ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid team ID");
         return;
     }
 
     // Только супер-админ может удалять команды
     if (userId != 1)
     {
-        web::http::http_response resp(web::http::status_codes::Forbidden);
-        sendErrorResponse(resp, 403, "Insufficient permissions to delete team");
-        request.reply(resp);
+        sendErrorResponse(
+            request,
+            web::http::status_codes::Forbidden,
+            "Insufficient permissions to delete team"
+        );
         return;
     }
 
-    if (m_teamService->deleteTeam(id, userId))
+    LOG_DEBUG << "DELETE /teams/" << id << " from user " << userId;
+
+    try
     {
-        request.reply(web::http::status_codes::NoContent);
+        if (m_teamService->deleteTeam(id, userId))
+        {
+            LOG_INFO
+                << "Пользователь " << userId
+                << " удалил команду id=" << id;
+
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
+        }
+        else
+        {
+            sendErrorResponse(
+                request,
+                web::http::status_codes::NotFound,
+                "Team not found"
+            );
+        }
     }
-    else
+    catch (const std::exception& e)
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Team not found");
-        request.reply(resp);
+        LOG_ERROR << "Ошибка при удалении команды " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

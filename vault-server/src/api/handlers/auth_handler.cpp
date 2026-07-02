@@ -42,53 +42,43 @@ void AuthHandler::handleLogin(const web::http::http_request& request)
                     }
                     catch (const std::exception& e)
                     {
-                        web::http::http_response response(
-                            web::http::status_codes::BadRequest
-                        );
                         sendErrorResponse(
-                            response,
-                            400,
+                            request,
+                            web::http::status_codes::BadRequest,
                             "Invalid JSON: " + std::string(e.what())
                         );
-                        request.reply(response);
                         return;
                     }
 
-                    // Используем DTO для парсинга запроса
                     dto::AuthRequest authRequest;
                     try
                     {
-                        // Преобразуем web::json::value в nlohmann::json
                         auto jsonStr = jsonBody.serialize();
-                        auto nlohmannJson = nlohmann::json::parse(jsonStr);
+                        auto nlohmannJson = nlohmann::json::parse(
+                            utility::conversions::to_utf8string(jsonStr)
+                        );
                         authRequest.fromJson(nlohmannJson);
                     }
                     catch (const std::exception& e)
                     {
-                        web::http::http_response response(
-                            web::http::status_codes::BadRequest
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "Invalid request format"
                         );
-                        sendErrorResponse(response, 400, "Invalid request format");
-                        request.reply(response);
                         return;
                     }
 
-                    // Валидация запроса
                     if (!authRequest.isValid())
                     {
-                        web::http::http_response response(
-                            web::http::status_codes::BadRequest
-                        );
                         sendErrorResponse(
-                            response,
-                            400,
+                            request,
+                            web::http::status_codes::BadRequest,
                             authRequest.validationError()
                         );
-                        request.reply(response);
                         return;
                     }
 
-                    // Вызываем сервис аутентификации
                     auto authResult = m_authService->login(
                         authRequest.login.value(),
                         authRequest.password.value()
@@ -96,28 +86,31 @@ void AuthHandler::handleLogin(const web::http::http_request& request)
 
                     if (!authResult.success)
                     {
-                        web::http::http_response response(
-                            static_cast<web::http::status_code>(authResult.errorCode)
-                        );
                         sendErrorResponse(
-                            response,
-                            authResult.errorCode,
+                            request,
+                            static_cast<web::http::status_code>(authResult.errorCode),
                             authResult.errorMessage
                         );
-                        request.reply(response);
                         return;
                     }
 
-                    // Формируем успешный ответ через DTO
-                    dto::AuthResponse authResponse;
-                    authResponse.accessToken = authResult.accessToken;
-
                     web::json::value responseJson;
-                    responseJson["access_token"] = web::json::value::string(authResult.accessToken);
-                    responseJson["token_type"] = web::json::value::string(authResult.tokenType);
-                    responseJson["expires_in"] = web::json::value::number(authResult.expiresIn);
+                    responseJson[U("access_token")] = web::json::value::string(
+                        utility::conversions::to_string_t(authResult.accessToken)
+                    );
+                    responseJson[U("token_type")] = web::json::value::string(
+                        utility::conversions::to_string_t(authResult.tokenType)
+                    );
+                    responseJson[U("expires_in")] = web::json::value::number(
+                        authResult.expiresIn
+                    );
 
-                    request.reply(web::http::status_codes::OK, responseJson);
+                    sendJsonResponse(
+                        request,
+                        web::http::status_codes::OK,
+                        responseJson
+                    );
+
                     LOG_INFO << "Пользователь успешно вошел в систему";
                 }
             )
@@ -125,13 +118,11 @@ void AuthHandler::handleLogin(const web::http::http_request& request)
     }
     catch (const std::exception& e)
     {
-        web::http::http_response response(web::http::status_codes::BadRequest);
         sendErrorResponse(
-            response,
-            400,
+            request,
+            web::http::status_codes::BadRequest,
             "Invalid request body: " + std::string(e.what())
         );
-        request.reply(response);
     }
 }
 
@@ -141,10 +132,11 @@ void AuthHandler::handleLogout(const web::http::http_request& request)
     if (authHeader == request.headers().end())
     {
         LOG_ERROR << "Нет заголовка авторизации в запросе на выход из системы";
-        web::json::value error;
-        error["code"] = web::json::value::number(401);
-        error["message"] = web::json::value::string("Missing Authorization header");
-        request.reply(web::http::status_codes::Unauthorized, error);
+        sendErrorResponse(
+            request,
+            web::http::status_codes::Unauthorized,
+            "Missing Authorization header"
+        );
         return;
     }
 
@@ -155,27 +147,30 @@ void AuthHandler::handleLogout(const web::http::http_request& request)
     {
         const std::string token = matches[1].str();
 
-        // Вызываем сервис для выхода
         if (m_authService->logout(token))
         {
-            request.reply(web::http::status_codes::NoContent);
+            // NoContent
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
             LOG_INFO << "Пользователь вышел из системы";
         }
         else
         {
-            web::json::value error;
-            error["code"] = web::json::value::number(500);
-            error["message"] = web::json::value::string("Failed to logout");
-            request.reply(web::http::status_codes::InternalError, error);
+            sendErrorResponse(
+                request,
+                web::http::status_codes::InternalError,
+                "Failed to logout"
+            );
         }
     }
     else
     {
         LOG_ERROR << "Недопустимый формат заголовка авторизации при выходе из системы";
-        web::json::value error;
-        error["code"] = web::json::value::number(400);
-        error["message"] = web::json::value::string("Invalid Authorization header format");
-        request.reply(web::http::status_codes::BadRequest, error);
+        sendErrorResponse(
+            request,
+            web::http::status_codes::BadRequest,
+            "Invalid Authorization header format"
+        );
     }
 }
 
@@ -186,9 +181,11 @@ void AuthHandler::handleChangePassword(
 {
     if (userId.empty())
     {
-        web::http::http_response response(web::http::status_codes::Unauthorized);
-        sendErrorResponse(response, 401, "User not authenticated");
-        request.reply(response);
+        sendErrorResponse(
+            request,
+            web::http::status_codes::Unauthorized,
+            "User not authenticated"
+        );
         return;
     }
 
@@ -206,52 +203,43 @@ void AuthHandler::handleChangePassword(
                     }
                     catch (const std::exception& e)
                     {
-                        web::http::http_response response(
-                            web::http::status_codes::BadRequest
-                        );
                         sendErrorResponse(
-                            response,
-                            400,
+                            request,
+                            web::http::status_codes::BadRequest,
                             "Invalid JSON: " + std::string(e.what())
                         );
-                        request.reply(response);
                         return;
                     }
 
-                    // Парсим запрос через DTO
                     dto::ChangePasswordRequest changeRequest;
                     try
                     {
                         auto jsonStr = jsonBody.serialize();
-                        auto nlohmannJson = nlohmann::json::parse(jsonStr);
+                        auto nlohmannJson = nlohmann::json::parse(
+                            utility::conversions::to_utf8string(jsonStr)
+                        );
                         changeRequest.fromJson(nlohmannJson);
                     }
                     catch (const std::exception& e)
                     {
-                        web::http::http_response response(
-                            web::http::status_codes::BadRequest
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "Invalid request format"
                         );
-                        sendErrorResponse(response, 400, "Invalid request format");
-                        request.reply(response);
                         return;
                     }
 
-                    // Валидация запроса
                     if (!changeRequest.isValid())
                     {
-                        web::http::http_response response(
-                            web::http::status_codes::BadRequest
-                        );
                         sendErrorResponse(
-                            response,
-                            400,
+                            request,
+                            web::http::status_codes::BadRequest,
                             changeRequest.validationError()
                         );
-                        request.reply(response);
                         return;
                     }
 
-                    // Конвертируем userId из строки в число
                     int64_t userIdInt;
                     try
                     {
@@ -259,15 +247,14 @@ void AuthHandler::handleChangePassword(
                     }
                     catch (const std::exception& e)
                     {
-                        web::http::http_response response(
-                            web::http::status_codes::BadRequest
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "Invalid user ID"
                         );
-                        sendErrorResponse(response, 400, "Invalid user ID");
-                        request.reply(response);
                         return;
                     }
 
-                    // Вызываем сервис смены пароля
                     auto result = m_authService->changePassword(
                         userIdInt,
                         changeRequest.oldPassword.value(),
@@ -276,19 +263,18 @@ void AuthHandler::handleChangePassword(
 
                     if (!result.success)
                     {
-                        web::http::http_response response(
-                            static_cast<web::http::status_code>(result.errorCode)
-                        );
                         sendErrorResponse(
-                            response,
-                            result.errorCode,
+                            request,
+                            static_cast<web::http::status_code>(result.errorCode),
                             result.errorMessage
                         );
-                        request.reply(response);
                         return;
                     }
 
-                    request.reply(web::http::status_codes::NoContent);
+                    // NoContent
+                    web::http::http_response response(web::http::status_codes::NoContent);
+                    sendResponse(request, response);
+
                     LOG_INFO << "Пароль изменен для пользователя " << userId;
                 }
             )
@@ -296,13 +282,11 @@ void AuthHandler::handleChangePassword(
     }
     catch (const std::exception& e)
     {
-        web::http::http_response response(web::http::status_codes::BadRequest);
         sendErrorResponse(
-            response,
-            400,
+            request,
+            web::http::status_codes::BadRequest,
             "Invalid request body: " + std::string(e.what())
         );
-        request.reply(response);
     }
 }
 

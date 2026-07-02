@@ -20,9 +20,16 @@ RolesHandler::RolesHandler(std::shared_ptr<services::IRoleService> roleService)
 
 void RolesHandler::handleGetRoles(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    auto userIdOpt = parseUserId(userIdStr);
+    if (!userIdOpt.has_value())
+    {
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
+        return;
+    }
+
     auto params = extractQueryParams(request);
 
     int page = 1;
@@ -37,51 +44,71 @@ void RolesHandler::handleGetRoles(
     if (params.count("searchCaption"))
         searchCaption = params["searchCaption"];
 
-    auto rolesPage = m_roleService->getRoles(page, pageSize, searchCaption);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < rolesPage.roles.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(rolesPage.roles[i].toJson());
+        auto rolesPage = m_roleService->getRoles(page, pageSize, searchCaption);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < rolesPage.roles.size(); ++i)
+        {
+            items[i] = dto::toWebJson(rolesPage.roles[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(rolesPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(rolesPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка ролей: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void RolesHandler::handleGetRole(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    auto userIdOpt = parseUserId(userIdStr);
+    if (!userIdOpt.has_value())
+    {
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
+        return;
+    }
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid role ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid role ID");
         return;
     }
 
-    auto role = m_roleService->getRole(id);
-    if (!role)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Role not found");
-        request.reply(resp);
-        return;
-    }
+        auto role = m_roleService->getRole(id);
+        if (!role)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Role not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(role->toJson())
-    );
+        sendJsonResponse(
+            request,
+            web::http::status_codes::OK,
+            dto::toWebJson(role->toJson())
+        );
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении роли " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void RolesHandler::handleCreateRole(
@@ -89,14 +116,13 @@ void RolesHandler::handleCreateRole(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     request
         .extract_json()
@@ -109,37 +135,42 @@ void RolesHandler::handleCreateRole(
                     auto nlohmannJson = dto::toNlohmannJson(jsonBody);
                     dto::Role role(nlohmannJson);
 
-                    if (!role.caption || role.caption->empty())
+                    if (!role.caption.has_value() || role.caption->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Caption is required");
                         return;
                     }
 
                     auto created = m_roleService->createRole(role, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to create role");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to create role"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " создал роль id=" << *created->id
+                        << ", caption=" << *created->caption;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при создании роли: " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -151,21 +182,18 @@ void RolesHandler::handleUpdateRole(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid role ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid role ID");
         return;
     }
 
@@ -184,26 +212,32 @@ void RolesHandler::handleUpdateRole(
                     auto updated = m_roleService->updateRole(role, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "Role not found or insufficient permissions");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::NotFound,
+                            "Role not found or insufficient permissions"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил роль id=" << id;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при обновлении роли " << id << ": " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -215,33 +249,47 @@ void RolesHandler::handleDeleteRole(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid role ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid role ID");
         return;
     }
 
-    if (m_roleService->deleteRole(id, userId))
+    LOG_DEBUG << "DELETE /roles/" << id << " from user " << userId;
+
+    try
     {
-        request.reply(web::http::status_codes::NoContent);
+        if (m_roleService->deleteRole(id, userId))
+        {
+            LOG_INFO
+                << "Пользователь " << userId
+                << " удалил роль id=" << id;
+
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
+        }
+        else
+        {
+            sendErrorResponse(
+                request,
+                web::http::status_codes::NotFound,
+                "Role not found or insufficient permissions"
+            );
+        }
     }
-    else
+    catch (const std::exception& e)
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Role not found or insufficient permissions");
-        request.reply(resp);
+        LOG_ERROR << "Ошибка при удалении роли " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

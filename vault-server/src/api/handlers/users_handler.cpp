@@ -25,11 +25,10 @@ void UsersHandler::handleGetUsers(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -114,19 +113,17 @@ void UsersHandler::handleGetUsers(
             items[i] = dto::toWebJson(usersPage.users[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(usersPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(usersPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка пользователей: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -135,11 +132,10 @@ void UsersHandler::handleGetUser(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -147,25 +143,26 @@ void UsersHandler::handleGetUser(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid user ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid user ID");
         return;
     }
 
-    auto user = m_userService->user(id, userId);
-    if (!user)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "User not found");
-        request.reply(resp);
-        return;
-    }
+        auto user = m_userService->user(id, userId);
+        if (!user)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "User not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(user->toJson())
-    );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(user->toJson()));
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении пользователя " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void UsersHandler::handleCreateUser(
@@ -173,11 +170,10 @@ void UsersHandler::handleCreateUser(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -185,13 +181,11 @@ void UsersHandler::handleCreateUser(
     // Только супер-админ может создавать пользователей
     if (userId != 1)
     {
-        web::http::http_response resp(web::http::status_codes::Forbidden);
         sendErrorResponse(
-            resp,
-            403,
+            request,
+            web::http::status_codes::Forbidden,
             "Insufficient permissions to create user"
         );
-        request.reply(resp);
         return;
     }
 
@@ -216,17 +210,17 @@ void UsersHandler::handleCreateUser(
                     }
 
                     // Валидация обязательных полей
-                    if (!user.login || !user.email || password.empty())
+                    if (!user.login.has_value()
+                        || !user.email.has_value()
+                        || user.login->empty()
+                        || user.email->empty()
+                        || password.empty())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
-                        );
                         sendErrorResponse(
-                            resp,
-                            400,
+                            request,
+                            web::http::status_codes::BadRequest,
                             "Login, email and password are required"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -234,34 +228,33 @@ void UsersHandler::handleCreateUser(
                     if (!created)
                     {
                         // Конфликт (дубликат)
-                        web::http::http_response resp(
-                            web::http::status_codes::Conflict
-                        );
                         sendErrorResponse(
-                            resp,
-                            409,
+                            request,
+                            web::http::status_codes::Conflict,
                             "User with this login or email already exists"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " создал пользователя id=" << *created->id
+                        << ", login=" << *created->login;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при создании пользователя: " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -273,11 +266,10 @@ void UsersHandler::handleUpdateUser(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -285,22 +277,18 @@ void UsersHandler::handleUpdateUser(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid user ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid user ID");
         return;
     }
 
     // Только супер-админ может обновлять пользователей
     if (userId != 1)
     {
-        web::http::http_response resp(web::http::status_codes::Forbidden);
         sendErrorResponse(
-            resp,
-            403,
+            request,
+            web::http::status_codes::Forbidden,
             "Insufficient permissions to update user"
         );
-        request.reply(resp);
         return;
     }
 
@@ -319,25 +307,30 @@ void UsersHandler::handleUpdateUser(
                     auto updated = m_userService->updateUser(user, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "User not found");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::NotFound,
+                            "User not found"
+                        );
                         return;
                     }
 
-                    request.reply(web::http::status_codes::NoContent);
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил пользователя id=" << id;
+
+                    // Возвращаем NoContent вместо JSON
+                    web::http::http_response response(web::http::status_codes::NoContent);
+                    sendResponse(request, response);
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при обновлении пользователя " << id << ": " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -349,11 +342,10 @@ void UsersHandler::handleDeleteUser(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -361,34 +353,47 @@ void UsersHandler::handleDeleteUser(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid user ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid user ID");
         return;
     }
 
     // Только супер-админ может удалять пользователей
     if (userId != 1)
     {
-        web::http::http_response resp(web::http::status_codes::Forbidden);
         sendErrorResponse(
-            resp,
-            403,
+            request,
+            web::http::status_codes::Forbidden,
             "Insufficient permissions to delete user"
         );
-        request.reply(resp);
         return;
     }
 
-    if (m_userService->deleteUser(id, userId))
+    LOG_DEBUG << "DELETE /users/" << id << " from user " << userId;
+
+    try
     {
-        request.reply(web::http::status_codes::NoContent);
+        if (m_userService->deleteUser(id, userId))
+        {
+            LOG_INFO
+                << "Пользователь " << userId
+                << " удалил пользователя id=" << id;
+
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
+        }
+        else
+        {
+            sendErrorResponse(
+                request,
+                web::http::status_codes::NotFound,
+                "User not found"
+            );
+        }
     }
-    else
+    catch (const std::exception& e)
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "User not found");
-        request.reply(resp);
+        LOG_ERROR << "Ошибка при удалении пользователя " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

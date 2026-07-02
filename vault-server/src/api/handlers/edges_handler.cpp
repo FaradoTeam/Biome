@@ -29,11 +29,10 @@ void EdgesHandler::handleGetEdges(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
@@ -55,22 +54,30 @@ void EdgesHandler::handleGetEdges(
     if (params.count("endStateId"))
         endStateId = std::stoll(params["endStateId"]);
 
-    auto edgesPage = m_edgeService->edges(page, pageSize, beginStateId, endStateId);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < edgesPage.edges.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(edgesPage.edges[i].toJson());
+        auto edgesPage = m_edgeService->edges(page, pageSize, beginStateId, endStateId);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < edgesPage.edges.size(); ++i)
+        {
+            items[i] = dto::toWebJson(edgesPage.edges[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(edgesPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(edgesPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка переходов: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void EdgesHandler::handleGetEdge(
@@ -78,36 +85,36 @@ void EdgesHandler::handleGetEdge(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid edge ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid edge ID");
         return;
     }
 
-    auto edge = m_edgeService->edge(id);
-    if (!edge)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Edge not found");
-        request.reply(resp);
-        return;
-    }
+        auto edge = m_edgeService->edge(id);
+        if (!edge)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Edge not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(edge->toJson())
-    );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(edge->toJson()));
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении перехода " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void EdgesHandler::handleCreateEdge(
@@ -115,11 +122,10 @@ void EdgesHandler::handleCreateEdge(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -136,60 +142,50 @@ void EdgesHandler::handleCreateEdge(
 
                     if (!edge.beginStateId || !edge.endStateId)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
-                        );
                         sendErrorResponse(
-                            resp, 400,
+                            request,
+                            web::http::status_codes::BadRequest,
                             "beginStateId and endStateId are required"
                         );
-                        request.reply(resp);
                         return;
                     }
 
                     auto edgesPage = m_edgeService->edges(1, 1, edge.beginStateId, edge.endStateId);
                     if (!edgesPage.edges.empty())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::Conflict
-                        );
                         sendErrorResponse(
-                            resp, 409,
+                            request,
+                            web::http::status_codes::Conflict,
                             "Edge already exists"
                         );
-                        request.reply(resp);
                         return;
                     }
 
                     auto created = m_edgeService->createEdge(edge, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::Forbidden
-                        );
                         sendErrorResponse(
-                            resp, 403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Insufficient permissions to create edge"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при создании перехода: " << e.what();
                     sendErrorResponse(
-                        resp, 400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -201,11 +197,10 @@ void EdgesHandler::handleDeleteEdge(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -213,24 +208,33 @@ void EdgesHandler::handleDeleteEdge(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid edge ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid edge ID");
         return;
     }
 
-    auto result = m_edgeService->deleteEdge(id, userId);
-    if (!result.success)
+    try
     {
-        web::http::http_response resp(
-            static_cast<web::http::status_code>(result.errorCode)
-        );
-        sendErrorResponse(resp, result.errorCode, result.errorMessage);
-        request.reply(resp);
-        return;
-    }
+        auto result = m_edgeService->deleteEdge(id, userId);
+        if (!result.success)
+        {
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
+            );
+            return;
+        }
 
-    request.reply(web::http::status_codes::NoContent);
+        LOG_INFO << "Переход удален: id=" << id << ", пользователь=" << userId;
+
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при удалении перехода " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void EdgesHandler::handleGetWorkflowEdges(
@@ -238,37 +242,42 @@ void EdgesHandler::handleGetWorkflowEdges(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
     const int64_t workflowId = extractIdFromPath(request);
     if (workflowId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid workflow ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid workflow ID");
         return;
     }
 
-    auto edges = m_edgeService->getWorkflowEdges(workflowId);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < edges.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(edges[i].toJson());
+        auto edges = m_edgeService->getWorkflowEdges(workflowId);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < edges.size(); ++i)
+        {
+            items[i] = dto::toWebJson(edges[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(edges.size());
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(edges.size());
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении переходов для рабочего процесса: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 } // namespace handlers

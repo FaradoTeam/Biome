@@ -27,11 +27,10 @@ void FieldTypePossibleValuesHandler::handleGetValues(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -109,19 +108,17 @@ void FieldTypePossibleValuesHandler::handleGetValues(
             items[i] = dto::toWebJson(pageData.values[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(pageData.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(pageData.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка возможных значений: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -130,11 +127,10 @@ void FieldTypePossibleValuesHandler::handleGetValue(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -142,9 +138,7 @@ void FieldTypePossibleValuesHandler::handleGetValue(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid value ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid value ID");
         return;
     }
 
@@ -155,23 +149,16 @@ void FieldTypePossibleValuesHandler::handleGetValue(
         auto value = m_service->getFieldTypePossibleValue(id, userId);
         if (!value)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Field type possible value not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Field type possible value not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(value->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(value->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении возможного значения " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -180,11 +167,10 @@ void FieldTypePossibleValuesHandler::handleCreateValue(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -205,29 +191,23 @@ void FieldTypePossibleValuesHandler::handleCreateValue(
                     // Валидация обязательных полей
                     if (!value.fieldTypeId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "fieldTypeId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "fieldTypeId is required");
                         return;
                     }
                     if (!value.value.has_value() || value.value->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "value is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "value is required");
                         return;
                     }
 
                     auto created = m_service->createFieldTypePossibleValue(value, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Insufficient permissions to create field type possible value"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -236,7 +216,8 @@ void FieldTypePossibleValuesHandler::handleCreateValue(
                         << " создал возможное значение для поля typeId="
                         << *created->fieldTypeId << ", value='" << *created->value << "'";
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -244,13 +225,11 @@ void FieldTypePossibleValuesHandler::handleCreateValue(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании возможного значения: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -262,11 +241,10 @@ void FieldTypePossibleValuesHandler::handleUpdateValue(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -274,9 +252,7 @@ void FieldTypePossibleValuesHandler::handleUpdateValue(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid value ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid value ID");
         return;
     }
 
@@ -297,9 +273,7 @@ void FieldTypePossibleValuesHandler::handleUpdateValue(
                     // Валидация: value не может быть пустым
                     if (value.value.has_value() && value.value->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "value cannot be empty");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "value cannot be empty");
                         return;
                     }
 
@@ -310,19 +284,15 @@ void FieldTypePossibleValuesHandler::handleUpdateValue(
                         auto existing = m_service->getFieldTypePossibleValue(id, userId);
                         if (!existing)
                         {
-                            web::http::http_response resp(web::http::status_codes::NotFound);
-                            sendErrorResponse(resp, 404, "Field type possible value not found");
-                            request.reply(resp);
+                            sendErrorResponse(request, web::http::status_codes::NotFound, "Field type possible value not found");
                             return;
                         }
 
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Insufficient permissions to update this value"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -330,7 +300,8 @@ void FieldTypePossibleValuesHandler::handleUpdateValue(
                         << "Пользователь " << userId
                         << " обновил возможное значение id=" << id;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -340,13 +311,11 @@ void FieldTypePossibleValuesHandler::handleUpdateValue(
                     LOG_ERROR
                         << "Ошибка при обновлении возможного значения " << id
                         << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -358,11 +327,10 @@ void FieldTypePossibleValuesHandler::handleDeleteValue(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -370,9 +338,7 @@ void FieldTypePossibleValuesHandler::handleDeleteValue(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid value ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid value ID");
         return;
     }
 
@@ -383,23 +349,23 @@ void FieldTypePossibleValuesHandler::handleDeleteValue(
         auto result = m_service->deleteFieldTypePossibleValue(id, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
         LOG_INFO << "Пользователь " << userId << " удалил возможное значение id=" << id;
-        request.reply(web::http::status_codes::NoContent);
+
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении возможного значения " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -408,11 +374,10 @@ void FieldTypePossibleValuesHandler::handleGetValuesByFieldType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -420,9 +385,7 @@ void FieldTypePossibleValuesHandler::handleGetValuesByFieldType(
     const int64_t fieldTypeId = extractIdFromPath(request);
     if (fieldTypeId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid field type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid field type ID");
         return;
     }
 
@@ -440,16 +403,14 @@ void FieldTypePossibleValuesHandler::handleGetValuesByFieldType(
             response[i] = dto::toWebJson(values[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR
             << "Ошибка при получении значений для типа поля "
             << fieldTypeId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

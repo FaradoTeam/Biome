@@ -18,9 +18,16 @@ RulesHandler::RulesHandler(std::shared_ptr<services::IRuleService> ruleService)
 
 void RulesHandler::handleGetRules(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    auto userIdOpt = parseUserId(userIdStr);
+    if (!userIdOpt.has_value())
+    {
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
+        return;
+    }
+
     auto params = extractQueryParams(request);
 
     int page = 1;
@@ -35,51 +42,71 @@ void RulesHandler::handleGetRules(
     if (params.count("roleId"))
         roleId = std::stoll(params["roleId"]);
 
-    auto pageData = m_ruleService->getRules(page, pageSize, roleId);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < pageData.rules.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(pageData.rules[i].toJson());
+        auto pageData = m_ruleService->getRules(page, pageSize, roleId);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < pageData.rules.size(); ++i)
+        {
+            items[i] = dto::toWebJson(pageData.rules[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(pageData.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = pageData.totalCount;
-    response["page"] = page;
-    response["pageSize"] = pageSize;
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка правил: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void RulesHandler::handleGetRule(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    auto userIdOpt = parseUserId(userIdStr);
+    if (!userIdOpt.has_value())
+    {
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
+        return;
+    }
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid rule ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid rule ID");
         return;
     }
 
-    auto rule = m_ruleService->getRule(id);
-    if (!rule)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Rule not found");
-        request.reply(resp);
-        return;
-    }
+        auto rule = m_ruleService->getRule(id);
+        if (!rule)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Rule not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(rule->toJson())
-    );
+        sendJsonResponse(
+            request,
+            web::http::status_codes::OK,
+            dto::toWebJson(rule->toJson())
+        );
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении правила " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void RulesHandler::handleCreateRule(
@@ -87,14 +114,13 @@ void RulesHandler::handleCreateRule(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     request
         .extract_json()
@@ -108,35 +134,44 @@ void RulesHandler::handleCreateRule(
 
                     if (!rule.roleId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "roleId is required");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "roleId is required"
+                        );
                         return;
                     }
 
                     auto created = m_ruleService->createRule(rule, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to create rule");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to create rule"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " создал правило id=" << *created->id
+                        << ", roleId=" << *created->roleId;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при создании правила: " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -148,11 +183,10 @@ void RulesHandler::handleUpdateRule(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -160,9 +194,7 @@ void RulesHandler::handleUpdateRule(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid rule ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid rule ID");
         return;
     }
 
@@ -181,26 +213,32 @@ void RulesHandler::handleUpdateRule(
                     auto updated = m_ruleService->updateRule(rule, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "Rule not found or insufficient permissions");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::NotFound,
+                            "Rule not found or insufficient permissions"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил правило id=" << id;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при обновлении правила " << id << ": " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -212,11 +250,10 @@ void RulesHandler::handleDeleteRule(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -224,21 +261,36 @@ void RulesHandler::handleDeleteRule(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid rule ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid rule ID");
         return;
     }
 
-    if (m_ruleService->deleteRule(id, userId))
+    LOG_DEBUG << "DELETE /rules/" << id << " from user " << userId;
+
+    try
     {
-        request.reply(web::http::status_codes::NoContent);
+        if (m_ruleService->deleteRule(id, userId))
+        {
+            LOG_INFO
+                << "Пользователь " << userId
+                << " удалил правило id=" << id;
+
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
+        }
+        else
+        {
+            sendErrorResponse(
+                request,
+                web::http::status_codes::NotFound,
+                "Rule not found or insufficient permissions"
+            );
+        }
     }
-    else
+    catch (const std::exception& e)
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Rule not found or insufficient permissions");
-        request.reply(resp);
+        LOG_ERROR << "Ошибка при удалении правила " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

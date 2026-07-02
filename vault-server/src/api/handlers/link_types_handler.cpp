@@ -27,11 +27,10 @@ void LinkTypesHandler::handleGetLinkTypes(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
@@ -73,19 +72,17 @@ void LinkTypesHandler::handleGetLinkTypes(
             items[i] = dto::toWebJson(linkTypesPage.linkTypes[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(linkTypesPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(linkTypesPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка типов связей: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -94,20 +91,17 @@ void LinkTypesHandler::handleGetLinkType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid link type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid link type ID");
         return;
     }
 
@@ -118,23 +112,16 @@ void LinkTypesHandler::handleGetLinkType(
         auto linkType = m_linkTypeService->getLinkType(id);
         if (!linkType)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Link type not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Link type not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(linkType->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(linkType->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении типа связи " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -143,11 +130,10 @@ void LinkTypesHandler::handleCreateLinkType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -167,38 +153,30 @@ void LinkTypesHandler::handleCreateLinkType(
 
                     if (!linkType.caption.has_value() || linkType.caption->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Caption is required");
                         return;
                     }
 
                     if (!linkType.sourceItemTypeId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "sourceItemTypeId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "sourceItemTypeId is required");
                         return;
                     }
 
                     if (!linkType.destinationItemTypeId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "destinationItemTypeId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "destinationItemTypeId is required");
                         return;
                     }
 
                     auto created = m_linkTypeService->createLinkType(linkType, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Insufficient permissions to create link type"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -206,7 +184,8 @@ void LinkTypesHandler::handleCreateLinkType(
                         << "Пользователь " << userId
                         << " создал тип связи id=" << *created->id;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -214,13 +193,11 @@ void LinkTypesHandler::handleCreateLinkType(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании типа связи: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -232,11 +209,10 @@ void LinkTypesHandler::handleUpdateLinkType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -244,9 +220,7 @@ void LinkTypesHandler::handleUpdateLinkType(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid link type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid link type ID");
         return;
     }
 
@@ -267,13 +241,11 @@ void LinkTypesHandler::handleUpdateLinkType(
                     auto updated = m_linkTypeService->updateLinkType(linkType, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(web::http::status_codes::NotFound);
                         sendErrorResponse(
-                            resp,
-                            404,
+                            request,
+                            web::http::status_codes::NotFound,
                             "Link type not found or insufficient permissions"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -281,7 +253,8 @@ void LinkTypesHandler::handleUpdateLinkType(
                         << "Пользователь " << userId
                         << " обновил тип связи id=" << id;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -289,13 +262,11 @@ void LinkTypesHandler::handleUpdateLinkType(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении типа связи " << id << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -307,11 +278,10 @@ void LinkTypesHandler::handleDeleteLinkType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -319,9 +289,7 @@ void LinkTypesHandler::handleDeleteLinkType(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid link type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid link type ID");
         return;
     }
 
@@ -332,21 +300,23 @@ void LinkTypesHandler::handleDeleteLinkType(
         if (m_linkTypeService->deleteLinkType(id, userId))
         {
             LOG_INFO << "Пользователь " << userId << " удалил тип связи id=" << id;
-            request.reply(web::http::status_codes::NoContent);
+
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
         }
         else
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Link type not found or insufficient permissions");
-            request.reply(resp);
+            sendErrorResponse(
+                request,
+                web::http::status_codes::NotFound,
+                "Link type not found or insufficient permissions"
+            );
         }
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении типа связи " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

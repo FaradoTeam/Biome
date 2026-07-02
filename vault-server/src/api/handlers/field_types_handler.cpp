@@ -29,11 +29,10 @@ void FieldTypesHandler::handleGetFieldTypes(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
@@ -59,28 +58,36 @@ void FieldTypesHandler::handleGetFieldTypes(
     if (params.count("searchCaption"))
         searchCaption = params["searchCaption"];
 
-    auto fieldTypesPage = m_fieldTypeService->fieldTypes(
-        page,
-        pageSize,
-        itemTypeId,
-        valueType,
-        searchCaption
-    );
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < fieldTypesPage.fieldTypes.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(fieldTypesPage.fieldTypes[i].toJson());
+        auto fieldTypesPage = m_fieldTypeService->fieldTypes(
+            page,
+            pageSize,
+            itemTypeId,
+            valueType,
+            searchCaption
+        );
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < fieldTypesPage.fieldTypes.size(); ++i)
+        {
+            items[i] = dto::toWebJson(fieldTypesPage.fieldTypes[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(fieldTypesPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(fieldTypesPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка типов полей: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void FieldTypesHandler::handleGetFieldType(
@@ -88,36 +95,36 @@ void FieldTypesHandler::handleGetFieldType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid field type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid field type ID");
         return;
     }
 
-    auto fieldType = m_fieldTypeService->fieldType(id);
-    if (!fieldType)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Field type not found");
-        request.reply(resp);
-        return;
-    }
+        auto fieldType = m_fieldTypeService->fieldType(id);
+        if (!fieldType)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Field type not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(fieldType->toJson())
-    );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(fieldType->toJson()));
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении типа поля " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void FieldTypesHandler::handleCreateFieldType(
@@ -125,14 +132,13 @@ void FieldTypesHandler::handleCreateFieldType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     request
         .extract_json()
@@ -147,63 +153,49 @@ void FieldTypesHandler::handleCreateFieldType(
 
                     if (!fieldType.caption.has_value() || fieldType.caption->empty())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
-                        );
-                        sendErrorResponse(resp, 400, "Caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Caption is required");
                         return;
                     }
 
                     if (!fieldType.itemTypeId.has_value())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
-                        );
-                        sendErrorResponse(resp, 400, "itemTypeId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "itemTypeId is required");
                         return;
                     }
 
                     if (!fieldType.valueType.has_value() || fieldType.valueType->empty())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
-                        );
-                        sendErrorResponse(resp, 400, "valueType is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "valueType is required");
                         return;
                     }
 
                     auto created = m_fieldTypeService->createFieldType(fieldType, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::Forbidden
-                        );
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Insufficient permissions to create field type"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO << "Создан новый тип поля с id=" << *created->id << ", пользователь=" << userId;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при создании типа поля: " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -215,11 +207,10 @@ void FieldTypesHandler::handleUpdateFieldType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -227,9 +218,7 @@ void FieldTypesHandler::handleUpdateFieldType(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid field type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid field type ID");
         return;
     }
 
@@ -248,34 +237,30 @@ void FieldTypesHandler::handleUpdateFieldType(
                     auto updated = m_fieldTypeService->updateFieldType(fieldType, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::NotFound
-                        );
                         sendErrorResponse(
-                            resp,
-                            404,
+                            request,
+                            web::http::status_codes::NotFound,
                             "Field type not found or insufficient permissions"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO << "Тип поля с id=" << id << " обновлен, пользователь=" << userId;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при обновлении типа поля " << id << ": " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -287,11 +272,10 @@ void FieldTypesHandler::handleDeleteFieldType(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -299,21 +283,32 @@ void FieldTypesHandler::handleDeleteFieldType(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid field type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid field type ID");
         return;
     }
 
-    if (m_fieldTypeService->deleteFieldType(id, userId))
+    try
     {
-        request.reply(web::http::status_codes::NoContent);
+        if (m_fieldTypeService->deleteFieldType(id, userId))
+        {
+            LOG_INFO << "Тип поля с id=" << id << " удален, пользователь=" << userId;
+
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
+        }
+        else
+        {
+            sendErrorResponse(
+                request,
+                web::http::status_codes::NotFound,
+                "Field type not found or insufficient permissions"
+            );
+        }
     }
-    else
+    catch (const std::exception& e)
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Field type not found or insufficient permissions");
-        request.reply(resp);
+        LOG_ERROR << "Ошибка при удалении типа поля " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

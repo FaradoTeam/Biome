@@ -22,20 +22,15 @@ BoardsHandler::BoardsHandler(
     }
 }
 
-// ============================================================
-// GET /boards
-// ============================================================
-
 void BoardsHandler::handleGetBoards(
     const web::http::http_request& request,
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -142,36 +137,29 @@ void BoardsHandler::handleGetBoards(
             items[i] = dto::toWebJson(boardsPage.boards[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(boardsPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(boardsPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка досок: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
-
-// ============================================================
-// GET /boards/{id}
-// ============================================================
 
 void BoardsHandler::handleGetBoard(
     const web::http::http_request& request,
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -179,9 +167,7 @@ void BoardsHandler::handleGetBoard(
     const int64_t boardId = extractIdFromPath(request);
     if (boardId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid board ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid board ID");
         return;
     }
 
@@ -192,44 +178,28 @@ void BoardsHandler::handleGetBoard(
         auto board = m_boardService->getBoard(boardId, userId);
         if (!board)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Board not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Board not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(board->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(board->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении доски " << boardId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
-
-// ============================================================
-// POST /boards
-// ============================================================
 
 void BoardsHandler::handleCreateBoard(
     const web::http::http_request& request,
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-
-    LOG_DEBUG << "POST /boards";
-    
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
-    LOG_DEBUG << "userIdOpt.has_value() " << userIdOpt.has_value();
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -247,41 +217,32 @@ void BoardsHandler::handleCreateBoard(
                     auto nlohmannJson = dto::toNlohmannJson(jsonBody);
                     dto::Board board(nlohmannJson);
 
-                    // Валидация обязательных полей
                     if (!board.caption.has_value() || board.caption->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Board caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Board caption is required");
                         return;
                     }
 
                     if (!board.workflowId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "workflowId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "workflowId is required");
                         return;
                     }
 
                     if (!board.projectId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "projectId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "projectId is required");
                         return;
                     }
 
                     auto created = m_boardService->createBoard(board, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create board: insufficient permissions or invalid data"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -289,7 +250,8 @@ void BoardsHandler::handleCreateBoard(
                         << "Пользователь " << userId
                         << " создал доску id=" << *created->id;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -297,29 +259,26 @@ void BoardsHandler::handleCreateBoard(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании доски: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
         .wait();
 }
 
-// ============================================================
-// PUT /boards/{id}
-// ============================================================
-
 void BoardsHandler::handleUpdateBoard(
     const web::http::http_request& request,
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -327,9 +286,7 @@ void BoardsHandler::handleUpdateBoard(
     const int64_t boardId = extractIdFromPath(request);
     if (boardId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid board ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid board ID");
         return;
     }
 
@@ -356,15 +313,15 @@ void BoardsHandler::handleUpdateBoard(
                         auto existing = m_boardService->getBoard(boardId, userId);
                         if (!existing)
                         {
-                            web::http::http_response resp(web::http::status_codes::NotFound);
-                            sendErrorResponse(resp, 404, "Board not found");
-                            request.reply(resp);
+                            sendErrorResponse(request, web::http::status_codes::NotFound, "Board not found");
                             return;
                         }
 
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to update this board");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to update this board"
+                        );
                         return;
                     }
 
@@ -372,7 +329,8 @@ void BoardsHandler::handleUpdateBoard(
                         << "Пользователь " << userId
                         << " обновил доску " << boardId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -380,29 +338,26 @@ void BoardsHandler::handleUpdateBoard(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении доски " << boardId << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
         .wait();
 }
 
-// ============================================================
-// DELETE /boards/{id}
-// ============================================================
-
 void BoardsHandler::handleDeleteBoard(
     const web::http::http_request& request,
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -410,9 +365,7 @@ void BoardsHandler::handleDeleteBoard(
     const int64_t boardId = extractIdFromPath(request);
     if (boardId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid board ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid board ID");
         return;
     }
 
@@ -423,11 +376,11 @@ void BoardsHandler::handleDeleteBoard(
         auto result = m_boardService->deleteBoard(boardId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -435,31 +388,25 @@ void BoardsHandler::handleDeleteBoard(
             << "Пользователь " << userId
             << " удалил доску " << boardId;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении доски " << boardId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
-
-// ============================================================
-// GET /projects/{projectId}/boards
-// ============================================================
 
 void BoardsHandler::handleGetBoardsByProject(
     const web::http::http_request& request,
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -478,18 +425,14 @@ void BoardsHandler::handleGetBoardsByProject(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid project ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid project ID");
             return;
         }
     }
 
     if (projectId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid project ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid project ID");
         return;
     }
 
@@ -505,31 +448,24 @@ void BoardsHandler::handleGetBoardsByProject(
             response[i] = dto::toWebJson(boards[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении досок проекта " << projectId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
-
-// ============================================================
-// GET /phases/{phaseId}/boards
-// ============================================================
 
 void BoardsHandler::handleGetBoardsByPhase(
     const web::http::http_request& request,
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -548,18 +484,14 @@ void BoardsHandler::handleGetBoardsByPhase(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid phase ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
             return;
         }
     }
 
     if (phaseId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid phase ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
         return;
     }
 
@@ -575,14 +507,12 @@ void BoardsHandler::handleGetBoardsByPhase(
             response[i] = dto::toWebJson(boards[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении досок фазы " << phaseId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

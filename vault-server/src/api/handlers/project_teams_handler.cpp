@@ -25,11 +25,10 @@ void ProjectTeamsHandler::handleGetItems(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
@@ -69,19 +68,17 @@ void ProjectTeamsHandler::handleGetItems(
             items[i] = dto::toWebJson(pageData.items[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(pageData.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(pageData.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка ProjectTeam: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -90,20 +87,17 @@ void ProjectTeamsHandler::handleGetItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid ID");
         return;
     }
 
@@ -116,13 +110,12 @@ void ProjectTeamsHandler::handleGetItem(
         auto item = m_service->getProjectTeam(id);
         if (!item)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "ProjectTeam not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "ProjectTeam not found");
             return;
         }
 
-        request.reply(
+        sendJsonResponse(
+            request,
             web::http::status_codes::OK,
             dto::toWebJson(item->toJson())
         );
@@ -130,9 +123,7 @@ void ProjectTeamsHandler::handleGetItem(
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении ProjectTeam " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -141,11 +132,10 @@ void ProjectTeamsHandler::handleCreateItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -164,11 +154,11 @@ void ProjectTeamsHandler::handleCreateItem(
 
                     if (!item.projectId.has_value() || !item.teamId.has_value())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "projectId and teamId are required"
                         );
-                        sendErrorResponse(resp, 400, "projectId and teamId are required");
-                        request.reply(resp);
                         return;
                     }
 
@@ -176,15 +166,11 @@ void ProjectTeamsHandler::handleCreateItem(
                     if (!created)
                     {
                         // Конфликт или недостаточно прав
-                        web::http::http_response resp(
-                            web::http::status_codes::Forbidden
-                        );
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "ProjectTeam already exists or insufficient permissions"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -193,7 +179,8 @@ void ProjectTeamsHandler::handleCreateItem(
                         << " создал ProjectTeam: projectId=" << *created->projectId
                         << ", teamId=" << *created->teamId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -201,13 +188,11 @@ void ProjectTeamsHandler::handleCreateItem(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании ProjectTeam: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -219,11 +204,10 @@ void ProjectTeamsHandler::handleDeleteItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -231,9 +215,7 @@ void ProjectTeamsHandler::handleDeleteItem(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid ID");
         return;
     }
 
@@ -246,11 +228,11 @@ void ProjectTeamsHandler::handleDeleteItem(
         auto result = m_service->deleteProjectTeam(id, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -258,14 +240,13 @@ void ProjectTeamsHandler::handleDeleteItem(
             << "Пользователь " << userId
             << " удалил ProjectTeam id=" << id;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении ProjectTeam " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

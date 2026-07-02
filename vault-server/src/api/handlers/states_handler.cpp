@@ -27,11 +27,10 @@ void StatesHandler::handleGetStates(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
@@ -49,22 +48,30 @@ void StatesHandler::handleGetStates(
     if (params.count("workflowId"))
         workflowId = std::stoll(params["workflowId"]);
 
-    auto statesPage = m_stateService->states(page, pageSize, workflowId);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < statesPage.states.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(statesPage.states[i].toJson());
+        auto statesPage = m_stateService->states(page, pageSize, workflowId);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < statesPage.states.size(); ++i)
+        {
+            items[i] = dto::toWebJson(statesPage.states[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(statesPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(statesPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка состояний: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void StatesHandler::handleGetState(
@@ -72,36 +79,36 @@ void StatesHandler::handleGetState(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid state ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid state ID");
         return;
     }
 
-    auto state = m_stateService->state(id);
-    if (!state)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "State not found");
-        request.reply(resp);
-        return;
-    }
+        auto state = m_stateService->state(id);
+        if (!state)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "State not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(state->toJson())
-    );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(state->toJson()));
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении состояния " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void StatesHandler::handleCreateState(
@@ -109,14 +116,13 @@ void StatesHandler::handleCreateState(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     request
         .extract_json()
@@ -128,48 +134,46 @@ void StatesHandler::handleCreateState(
                     auto jsonBody = task.get();
                     dto::State state(dto::toNlohmannJson(jsonBody));
 
-                    if (!state.workflowId || !state.caption || state.caption->empty())
+                    if (!state.workflowId.has_value() || !state.caption.has_value() || state.caption->empty())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
-                        );
                         sendErrorResponse(
-                            resp, 400,
+                            request,
+                            web::http::status_codes::BadRequest,
                             "workflowId and caption are required"
                         );
-                        request.reply(resp);
                         return;
                     }
 
                     auto created = m_stateService->createState(state, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::Forbidden
-                        );
                         sendErrorResponse(
-                            resp, 403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Insufficient permissions to create state"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " создал состояние id=" << *created->id
+                        << ", caption=" << *created->caption;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при создании состояния: " << e.what();
                     sendErrorResponse(
-                        resp, 400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -181,11 +185,10 @@ void StatesHandler::handleUpdateState(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -193,9 +196,7 @@ void StatesHandler::handleUpdateState(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid state ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid state ID");
         return;
     }
 
@@ -214,32 +215,32 @@ void StatesHandler::handleUpdateState(
                     auto updated = m_stateService->updateState(state, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::NotFound
-                        );
                         sendErrorResponse(
-                            resp, 404,
+                            request,
+                            web::http::status_codes::NotFound,
                             "State not found or insufficient permissions"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил состояние id=" << id;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при обновлении состояния " << id << ": " << e.what();
                     sendErrorResponse(
-                        resp, 400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -251,11 +252,10 @@ void StatesHandler::handleDeleteState(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -263,24 +263,37 @@ void StatesHandler::handleDeleteState(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid state ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid state ID");
         return;
     }
 
-    auto result = m_stateService->deleteState(id, userId);
-    if (!result.success)
+    LOG_DEBUG << "DELETE /states/" << id << " from user " << userId;
+
+    try
     {
-        web::http::http_response resp(
-            static_cast<web::http::status_code>(result.errorCode)
-        );
-        sendErrorResponse(resp, result.errorCode, result.errorMessage);
-        request.reply(resp);
-        return;
-    }
+        auto result = m_stateService->deleteState(id, userId);
+        if (!result.success)
+        {
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
+            );
+            return;
+        }
 
-    request.reply(web::http::status_codes::NoContent);
+        LOG_INFO
+            << "Пользователь " << userId
+            << " удалил состояние id=" << id;
+
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при удалении состояния " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 } // namespace handlers

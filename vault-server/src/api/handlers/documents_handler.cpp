@@ -34,11 +34,10 @@ void DocumentsHandler::handleGetDocuments(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -124,19 +123,17 @@ void DocumentsHandler::handleGetDocuments(
             items[i] = dto::toWebJson(documentsPage.documents[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(documentsPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(documentsPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка документов: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -149,11 +146,10 @@ void DocumentsHandler::handleGetDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -161,9 +157,7 @@ void DocumentsHandler::handleGetDocument(
     const int64_t documentId = extractIdFromPath(request);
     if (documentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid document ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid document ID");
         return;
     }
 
@@ -174,23 +168,16 @@ void DocumentsHandler::handleGetDocument(
         auto document = m_documentService->getDocument(documentId, userId);
         if (!document)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Document not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Document not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(document->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(document->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении документа " << documentId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -203,11 +190,10 @@ void DocumentsHandler::handleCreateDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -232,38 +218,30 @@ void DocumentsHandler::handleCreateDocument(
                     // Валидация обязательных полей
                     if (!document.caption.has_value() || document.caption->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Document caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Document caption is required");
                         return;
                     }
 
                     if (!document.path.has_value() || document.path->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "File path is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "File path is required");
                         return;
                     }
 
                     if (!document.filename.has_value() || document.filename->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Filename is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Filename is required");
                         return;
                     }
 
                     auto created = m_documentService->createDocument(document, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create document: insufficient permissions or invalid data"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -272,7 +250,8 @@ void DocumentsHandler::handleCreateDocument(
                         << " загрузил документ id=" << *created->id
                         << ", filename=" << *created->filename;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -280,9 +259,11 @@ void DocumentsHandler::handleCreateDocument(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании документа: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -298,11 +279,10 @@ void DocumentsHandler::handleDownloadDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -310,9 +290,7 @@ void DocumentsHandler::handleDownloadDocument(
     const int64_t documentId = extractIdFromPath(request);
     if (documentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid document ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid document ID");
         return;
     }
 
@@ -323,17 +301,13 @@ void DocumentsHandler::handleDownloadDocument(
         auto document = m_documentService->getDocument(documentId, userId);
         if (!document)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Document not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Document not found");
             return;
         }
 
         if (!document->path.has_value())
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Document file not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Document file not found");
             return;
         }
 
@@ -341,9 +315,7 @@ void DocumentsHandler::handleDownloadDocument(
         std::ifstream file(*document->path, std::ios::binary);
         if (!file.is_open())
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "File not found on server");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "File not found on server");
             return;
         }
 
@@ -361,7 +333,7 @@ void DocumentsHandler::handleDownloadDocument(
             // Создаём ответ с бинарным содержимым
             web::http::http_response response(web::http::status_codes::OK);
 
-            // Устанавливаем тело ответа - используем set_body с vector<char>
+            // Устанавливаем тело ответа
             response.set_body(
                 std::vector<unsigned char>(
                     reinterpret_cast<unsigned char*>(buffer.data()),
@@ -369,7 +341,7 @@ void DocumentsHandler::handleDownloadDocument(
                 )
             );
 
-            // Устанавливаем заголовки - используем utility::conversions
+            // Устанавливаем заголовки
             response.headers().set_content_type(
                 utility::conversions::to_string_t(mimeType)
             );
@@ -381,21 +353,17 @@ void DocumentsHandler::handleDownloadDocument(
                 utility::conversions::to_string_t(disposition)
             );
 
-            request.reply(response);
+            sendResponse(request, response);
         }
         else
         {
-            web::http::http_response resp(web::http::status_codes::InternalError);
-            sendErrorResponse(resp, 500, "Failed to read file");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::InternalError, "Failed to read file");
         }
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при скачивании документа " << documentId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -408,11 +376,10 @@ void DocumentsHandler::handleUpdateDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -420,9 +387,7 @@ void DocumentsHandler::handleUpdateDocument(
     const int64_t documentId = extractIdFromPath(request);
     if (documentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid document ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid document ID");
         return;
     }
 
@@ -442,9 +407,6 @@ void DocumentsHandler::handleUpdateDocument(
                     nlohmannJson["id"] = documentId;
                     dto::Document document(nlohmannJson);
 
-                    // Не позволяем менять uploadedByUserId и uploadedAt
-                    // Они должны остаться из существующего документа
-
                     auto updated = m_documentService->updateDocument(document, userId);
                     if (!updated)
                     {
@@ -452,15 +414,15 @@ void DocumentsHandler::handleUpdateDocument(
                         auto existing = m_documentService->getDocument(documentId, userId);
                         if (!existing)
                         {
-                            web::http::http_response resp(web::http::status_codes::NotFound);
-                            sendErrorResponse(resp, 404, "Document not found");
-                            request.reply(resp);
+                            sendErrorResponse(request, web::http::status_codes::NotFound, "Document not found");
                             return;
                         }
 
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to update this document");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to update this document"
+                        );
                         return;
                     }
 
@@ -468,7 +430,8 @@ void DocumentsHandler::handleUpdateDocument(
                         << "Пользователь " << userId
                         << " обновил документ " << documentId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -476,9 +439,11 @@ void DocumentsHandler::handleUpdateDocument(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении документа " << documentId << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -494,11 +459,10 @@ void DocumentsHandler::handleDeleteDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -506,9 +470,7 @@ void DocumentsHandler::handleDeleteDocument(
     const int64_t documentId = extractIdFromPath(request);
     if (documentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid document ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid document ID");
         return;
     }
 
@@ -519,11 +481,11 @@ void DocumentsHandler::handleDeleteDocument(
         auto result = m_documentService->deleteDocument(documentId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -531,14 +493,13 @@ void DocumentsHandler::handleDeleteDocument(
             << "Пользователь " << userId
             << " удалил документ " << documentId;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении документа " << documentId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

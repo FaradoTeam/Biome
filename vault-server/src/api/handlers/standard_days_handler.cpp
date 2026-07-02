@@ -33,11 +33,10 @@ void StandardDaysHandler::handleGetStandardDays(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -54,14 +53,12 @@ void StandardDaysHandler::handleGetStandardDays(
             response[i] = dto::toWebJson(days[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка стандартных дней: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -74,11 +71,10 @@ void StandardDaysHandler::handleGetStandardDay(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -97,18 +93,14 @@ void StandardDaysHandler::handleGetStandardDay(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid week day number");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid week day number");
             return;
         }
     }
 
     if (weekDayNumber < 0 || weekDayNumber > 6)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Week day number must be between 0 and 6");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Week day number must be between 0 and 6");
         return;
     }
 
@@ -119,23 +111,16 @@ void StandardDaysHandler::handleGetStandardDay(
         auto day = m_standardDayService->getStandardDayByWeekDay(weekDayNumber, userId);
         if (!day)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Standard day not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Standard day not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(day->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(day->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении стандартного дня " << weekDayNumber << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -148,11 +133,10 @@ void StandardDaysHandler::handleUpdateStandardDay(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -171,18 +155,14 @@ void StandardDaysHandler::handleUpdateStandardDay(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid week day number");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid week day number");
             return;
         }
     }
 
     if (weekDayNumber < 0 || weekDayNumber > 6)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Week day number must be between 0 and 6");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Week day number must be between 0 and 6");
         return;
     }
 
@@ -205,11 +185,11 @@ void StandardDaysHandler::handleUpdateStandardDay(
                     auto result = m_standardDayService->updateStandardDay(standardDay, userId);
                     if (!result.success)
                     {
-                        web::http::http_response resp(
-                            static_cast<web::http::status_code>(result.errorCode)
+                        sendErrorResponse(
+                            request,
+                            static_cast<web::http::status_code>(result.errorCode),
+                            result.errorMessage
                         );
-                        sendErrorResponse(resp, result.errorCode, result.errorMessage);
-                        request.reply(resp);
                         return;
                     }
 
@@ -217,14 +197,17 @@ void StandardDaysHandler::handleUpdateStandardDay(
                         << "Пользователь " << userId
                         << " обновил стандартный день " << weekDayNumber;
 
-                    request.reply(web::http::status_codes::NoContent);
+                    web::http::http_response response(web::http::status_codes::NoContent);
+                    sendResponse(request, response);
                 }
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении стандартного дня " << weekDayNumber << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
