@@ -44,26 +44,10 @@ std::map<std::string, std::string> BaseHandler::extractQueryParams(
     return params;
 }
 
-void BaseHandler::sendErrorResponse(
-    web::http::http_response& response,
-    int code,
-    const std::string& message
-)
-{
-    web::json::value error;
-    error["code"] = web::json::value::number(code);
-    error["message"] = web::json::value::string(message);
-    response.set_body(error);
-}
-
-std::optional<int64_t> BaseHandler::parseUserId(
-    const std::string& userIdStr,
-    web::http::http_response& response
-)
+std::optional<int64_t> BaseHandler::parseUserId(const std::string& userIdStr)
 {
     if (userIdStr.empty())
     {
-        sendErrorResponse(response, 401, "User not authenticated");
         return std::nullopt;
     }
 
@@ -72,14 +56,12 @@ std::optional<int64_t> BaseHandler::parseUserId(
         int64_t userId = std::stoll(userIdStr);
         if (userId <= 0)
         {
-            sendErrorResponse(response, 400, "Invalid user ID");
             return std::nullopt;
         }
         return userId;
     }
     catch (const std::exception&)
     {
-        sendErrorResponse(response, 400, "Invalid user ID format");
         return std::nullopt;
     }
 }
@@ -183,6 +165,43 @@ std::string BaseHandler::parseStringParam(
         return defaultValue;
     }
     return it->second;
+}
+
+void BaseHandler::sendResponse(
+    const web::http::http_request& request,
+    web::http::http_response& response
+)
+{
+    // Добавляем CORS-заголовки
+    response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+    response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+    response.headers().add(U("Access-Control-Allow-Headers"), U("Authorization, Content-Type"));
+    response.headers().add(U("Access-Control-Max-Age"), U("86400"));
+
+    const_cast<web::http::http_request&>(request).reply(response);
+}
+
+void BaseHandler::sendJsonResponse(
+    const web::http::http_request& request,
+    web::http::status_code status,
+    const web::json::value& body
+)
+{
+    web::http::http_response response(status);
+    response.set_body(body);
+    sendResponse(request, response);
+}
+
+void BaseHandler::sendErrorResponse(
+    const web::http::http_request& request,
+    web::http::status_code status,
+    const std::string& message
+)
+{
+    web::json::value error;
+    error[U("code")] = web::json::value::number(static_cast<int>(status));
+    error[U("message")] = web::json::value::string(message);
+    sendJsonResponse(request, status, error);
 }
 
 } // namespace handlers

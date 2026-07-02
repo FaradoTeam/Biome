@@ -27,11 +27,10 @@ void WorkflowsHandler::handleGetWorkflows(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
@@ -45,22 +44,30 @@ void WorkflowsHandler::handleGetWorkflows(
     if (params.count("pageSize"))
         pageSize = std::stoi(params["pageSize"]);
 
-    auto workflowsPage = m_workflowService->workflows(page, pageSize);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < workflowsPage.workflows.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(workflowsPage.workflows[i].toJson());
+        auto workflowsPage = m_workflowService->workflows(page, pageSize);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < workflowsPage.workflows.size(); ++i)
+        {
+            items[i] = dto::toWebJson(workflowsPage.workflows[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(workflowsPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = web::json::value::number(workflowsPage.totalCount);
-    response["page"] = web::json::value::number(page);
-    response["pageSize"] = web::json::value::number(pageSize);
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка рабочих процессов: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void WorkflowsHandler::handleGetWorkflow(
@@ -68,36 +75,36 @@ void WorkflowsHandler::handleGetWorkflow(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
 
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid workflow ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid workflow ID");
         return;
     }
 
-    auto workflow = m_workflowService->workflow(id);
-    if (!workflow)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "Workflow not found");
-        request.reply(resp);
-        return;
-    }
+        auto workflow = m_workflowService->workflow(id);
+        if (!workflow)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Workflow not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(workflow->toJson())
-    );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(workflow->toJson()));
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении рабочего процесса " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void WorkflowsHandler::handleCreateWorkflow(
@@ -105,11 +112,10 @@ void WorkflowsHandler::handleCreateWorkflow(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -124,13 +130,13 @@ void WorkflowsHandler::handleCreateWorkflow(
                     auto jsonBody = task.get();
                     dto::Workflow workflow(dto::toNlohmannJson(jsonBody));
 
-                    if (!workflow.caption || workflow.caption->empty())
+                    if (!workflow.caption.has_value() || workflow.caption->empty())
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::BadRequest
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "Caption is required"
                         );
-                        sendErrorResponse(resp, 400, "Caption is required");
-                        request.reply(resp);
                         return;
                     }
 
@@ -138,7 +144,7 @@ void WorkflowsHandler::handleCreateWorkflow(
                     bool exists = false;
                     for (const auto& wf : workflowsPage.workflows)
                     {
-                        if (wf.caption == workflow.caption)
+                        if (wf.caption.has_value() && *wf.caption == *workflow.caption)
                         {
                             exists = true;
                             break;
@@ -147,46 +153,44 @@ void WorkflowsHandler::handleCreateWorkflow(
 
                     if (exists)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::Conflict
-                        );
                         sendErrorResponse(
-                            resp, 409,
+                            request,
+                            web::http::status_codes::Conflict,
                             "Workflow with this caption already exists"
                         );
-                        request.reply(resp);
                         return;
                     }
 
                     auto created = m_workflowService->createWorkflow(workflow, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::Forbidden
-                        );
                         sendErrorResponse(
-                            resp, 403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Insufficient permissions to create workflow"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " создал рабочий процесс id=" << *created->id
+                        << ", caption=" << *created->caption;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при создании рабочего процесса: " << e.what();
                     sendErrorResponse(
-                        resp, 400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -198,11 +202,10 @@ void WorkflowsHandler::handleUpdateWorkflow(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -210,9 +213,7 @@ void WorkflowsHandler::handleUpdateWorkflow(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid workflow ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid workflow ID");
         return;
     }
 
@@ -231,32 +232,32 @@ void WorkflowsHandler::handleUpdateWorkflow(
                     auto updated = m_workflowService->updateWorkflow(workflow, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(
-                            web::http::status_codes::NotFound
-                        );
                         sendErrorResponse(
-                            resp, 404,
+                            request,
+                            web::http::status_codes::NotFound,
                             "Workflow not found or insufficient permissions"
                         );
-                        request.reply(resp);
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил рабочий процесс id=" << id;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(
-                        web::http::status_codes::BadRequest
-                    );
+                    LOG_ERROR << "Ошибка при обновлении рабочего процесса " << id << ": " << e.what();
                     sendErrorResponse(
-                        resp, 400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -268,11 +269,10 @@ void WorkflowsHandler::handleDeleteWorkflow(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -280,24 +280,37 @@ void WorkflowsHandler::handleDeleteWorkflow(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid workflow ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid workflow ID");
         return;
     }
 
-    auto result = m_workflowService->deleteWorkflow(id, userId);
-    if (!result.success)
+    LOG_DEBUG << "DELETE /workflows/" << id << " from user " << userId;
+
+    try
     {
-        web::http::http_response resp(
-            static_cast<web::http::status_code>(result.errorCode)
-        );
-        sendErrorResponse(resp, result.errorCode, result.errorMessage);
-        request.reply(resp);
-        return;
-    }
+        auto result = m_workflowService->deleteWorkflow(id, userId);
+        if (!result.success)
+        {
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
+            );
+            return;
+        }
 
-    request.reply(web::http::status_codes::NoContent);
+        LOG_INFO
+            << "Пользователь " << userId
+            << " удалил рабочий процесс id=" << id;
+
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при удалении рабочего процесса " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 } // namespace handlers

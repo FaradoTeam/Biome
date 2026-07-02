@@ -33,11 +33,10 @@ void BoardColumnsHandler::handleGetBoardColumns(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -128,19 +127,17 @@ void BoardColumnsHandler::handleGetBoardColumns(
             items[i] = dto::toWebJson(columnsPage.columns[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(columnsPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(columnsPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка колонок досок: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -153,11 +150,10 @@ void BoardColumnsHandler::handleGetBoardColumn(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -165,9 +161,7 @@ void BoardColumnsHandler::handleGetBoardColumn(
     const int64_t columnId = extractIdFromPath(request);
     if (columnId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid column ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid column ID");
         return;
     }
 
@@ -178,23 +172,16 @@ void BoardColumnsHandler::handleGetBoardColumn(
         auto column = m_boardColumnService->getBoardColumn(columnId, userId);
         if (!column)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Board column not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Board column not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(column->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(column->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении колонки доски " << columnId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -207,11 +194,10 @@ void BoardColumnsHandler::handleGetColumnsByBoard(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -230,18 +216,14 @@ void BoardColumnsHandler::handleGetColumnsByBoard(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid board ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid board ID");
             return;
         }
     }
 
     if (boardId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid board ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid board ID");
         return;
     }
 
@@ -257,14 +239,12 @@ void BoardColumnsHandler::handleGetColumnsByBoard(
             response[i] = dto::toWebJson(columns[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении колонок доски " << boardId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -277,11 +257,10 @@ void BoardColumnsHandler::handleCreateBoardColumn(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -300,18 +279,14 @@ void BoardColumnsHandler::handleCreateBoardColumn(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid board ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid board ID");
             return;
         }
     }
 
     if (boardId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid board ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid board ID");
         return;
     }
 
@@ -334,30 +309,24 @@ void BoardColumnsHandler::handleCreateBoardColumn(
                     // Валидация обязательных полей
                     if (!column.stateId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "stateId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "stateId is required");
                         return;
                     }
 
                     if (!column.orderNumber.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "orderNumber is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "orderNumber is required");
                         return;
                     }
 
                     auto created = m_boardColumnService->createBoardColumn(column, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create board column: insufficient permissions, duplicate, or invalid data"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -366,7 +335,8 @@ void BoardColumnsHandler::handleCreateBoardColumn(
                         << " создал колонку доски id=" << *created->id
                         << " для доски " << boardId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -374,9 +344,11 @@ void BoardColumnsHandler::handleCreateBoardColumn(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании колонки доски: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -392,11 +364,10 @@ void BoardColumnsHandler::handleUpdateBoardColumn(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -404,9 +375,7 @@ void BoardColumnsHandler::handleUpdateBoardColumn(
     const int64_t columnId = extractIdFromPath(request);
     if (columnId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid column ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid column ID");
         return;
     }
 
@@ -433,19 +402,15 @@ void BoardColumnsHandler::handleUpdateBoardColumn(
                         auto existing = m_boardColumnService->getBoardColumn(columnId, userId);
                         if (!existing)
                         {
-                            web::http::http_response resp(web::http::status_codes::NotFound);
-                            sendErrorResponse(resp, 404, "Board column not found");
-                            request.reply(resp);
+                            sendErrorResponse(request, web::http::status_codes::NotFound, "Board column not found");
                             return;
                         }
 
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot update column: insufficient permissions, duplicate, or invalid data"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -453,7 +418,8 @@ void BoardColumnsHandler::handleUpdateBoardColumn(
                         << "Пользователь " << userId
                         << " обновил колонку доски " << columnId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -461,9 +427,11 @@ void BoardColumnsHandler::handleUpdateBoardColumn(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении колонки доски " << columnId << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -479,11 +447,10 @@ void BoardColumnsHandler::handleDeleteBoardColumn(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -491,9 +458,7 @@ void BoardColumnsHandler::handleDeleteBoardColumn(
     const int64_t columnId = extractIdFromPath(request);
     if (columnId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid column ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid column ID");
         return;
     }
 
@@ -504,11 +469,11 @@ void BoardColumnsHandler::handleDeleteBoardColumn(
         auto result = m_boardColumnService->deleteBoardColumn(columnId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -516,14 +481,13 @@ void BoardColumnsHandler::handleDeleteBoardColumn(
             << "Пользователь " << userId
             << " удалил колонку доски " << columnId;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении колонки доски " << columnId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

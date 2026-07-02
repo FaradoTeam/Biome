@@ -31,11 +31,10 @@ void PrivateMessagesHandler::handleGetMessages(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -117,19 +116,17 @@ void PrivateMessagesHandler::handleGetMessages(
             items[i] = dto::toWebJson(pageData.messages[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(pageData.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(pageData.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка личных сообщений: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -142,11 +139,10 @@ void PrivateMessagesHandler::handleGetMessage(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -154,9 +150,7 @@ void PrivateMessagesHandler::handleGetMessage(
     const int64_t messageId = extractIdFromPath(request);
     if (messageId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid message ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid message ID");
         return;
     }
 
@@ -167,23 +161,16 @@ void PrivateMessagesHandler::handleGetMessage(
         auto message = m_service->getMessage(messageId, userId);
         if (!message)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Message not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Message not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(message->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(message->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении сообщения " << messageId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -196,11 +183,10 @@ void PrivateMessagesHandler::handleGetConversation(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -219,18 +205,14 @@ void PrivateMessagesHandler::handleGetConversation(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid user ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid user ID");
             return;
         }
     }
 
     if (otherUserId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid user ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid user ID");
         return;
     }
 
@@ -246,14 +228,12 @@ void PrivateMessagesHandler::handleGetConversation(
             response[i] = dto::toWebJson(messages[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении переписки: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -266,11 +246,10 @@ void PrivateMessagesHandler::handleSendMessage(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -294,39 +273,31 @@ void PrivateMessagesHandler::handleSendMessage(
                     // Валидация обязательных полей
                     if (!message.receiverUserId.has_value() || *message.receiverUserId <= 0)
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "receiverUserId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "receiverUserId is required");
                         return;
                     }
 
                     if (!message.content.has_value() || message.content->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "content is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "content is required");
                         return;
                     }
 
                     // Нельзя отправить сообщение самому себе
                     if (*message.receiverUserId == userId)
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Cannot send message to yourself");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Cannot send message to yourself");
                         return;
                     }
 
                     auto created = m_service->sendMessage(message, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot send message: invalid data or recipient not found"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -334,7 +305,8 @@ void PrivateMessagesHandler::handleSendMessage(
                         << "Пользователь " << userId
                         << " отправил сообщение пользователю " << *message.receiverUserId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -342,9 +314,11 @@ void PrivateMessagesHandler::handleSendMessage(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при отправке сообщения: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -360,11 +334,10 @@ void PrivateMessagesHandler::handleMarkAsViewed(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -372,9 +345,7 @@ void PrivateMessagesHandler::handleMarkAsViewed(
     const int64_t messageId = extractIdFromPath(request);
     if (messageId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid message ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid message ID");
         return;
     }
 
@@ -385,24 +356,23 @@ void PrivateMessagesHandler::handleMarkAsViewed(
         auto result = m_service->markAsViewed(messageId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
         LOG_INFO << "Пользователь " << userId << " отметил сообщение " << messageId << " как прочитанное";
 
-        request.reply(web::http::status_codes::OK);
+        web::http::http_response response(web::http::status_codes::OK);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при отметке сообщения как прочитанного: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -415,11 +385,10 @@ void PrivateMessagesHandler::handleDeleteMessage(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -427,9 +396,7 @@ void PrivateMessagesHandler::handleDeleteMessage(
     const int64_t messageId = extractIdFromPath(request);
     if (messageId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid message ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid message ID");
         return;
     }
 
@@ -440,24 +407,23 @@ void PrivateMessagesHandler::handleDeleteMessage(
         auto result = m_service->deleteMessage(messageId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
         LOG_INFO << "Пользователь " << userId << " удалил сообщение " << messageId;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении сообщения " << messageId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -470,11 +436,10 @@ void PrivateMessagesHandler::handleCountUnviewed(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -488,14 +453,12 @@ void PrivateMessagesHandler::handleCountUnviewed(
         web::json::value response;
         response["count"] = web::json::value::number(count);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при подсчёте непрочитанных сообщений: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

@@ -27,11 +27,10 @@ void ItemLinksHandler::handleGetItemLinks(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -79,19 +78,17 @@ void ItemLinksHandler::handleGetItemLinks(
             items[i] = dto::toWebJson(linksPage.links[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(linksPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(linksPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка связей элементов: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -100,11 +97,10 @@ void ItemLinksHandler::handleGetItemLink(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -112,9 +108,7 @@ void ItemLinksHandler::handleGetItemLink(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid item link ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item link ID");
         return;
     }
 
@@ -125,23 +119,16 @@ void ItemLinksHandler::handleGetItemLink(
         auto link = m_itemLinkService->getItemLink(id, userId);
         if (!link)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Item link not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Item link not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(link->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(link->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении связи элемента " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -150,11 +137,10 @@ void ItemLinksHandler::handleGetItemLinksByItemId(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -173,18 +159,14 @@ void ItemLinksHandler::handleGetItemLinksByItemId(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid item ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item ID");
             return;
         }
     }
 
     if (itemId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid item ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item ID");
         return;
     }
 
@@ -200,14 +182,12 @@ void ItemLinksHandler::handleGetItemLinksByItemId(
             response[i] = dto::toWebJson(links[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении связей элемента " << itemId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -216,11 +196,10 @@ void ItemLinksHandler::handleGetItemLinksByLinkTypeId(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -239,18 +218,14 @@ void ItemLinksHandler::handleGetItemLinksByLinkTypeId(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid link type ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid link type ID");
             return;
         }
     }
 
     if (linkTypeId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid link type ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid link type ID");
         return;
     }
 
@@ -266,14 +241,12 @@ void ItemLinksHandler::handleGetItemLinksByLinkTypeId(
             response[i] = dto::toWebJson(links[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении связей для типа " << linkTypeId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -282,11 +255,10 @@ void ItemLinksHandler::handleCreateItemLink(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -306,38 +278,30 @@ void ItemLinksHandler::handleCreateItemLink(
 
                     if (!itemLink.linkTypeId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "linkTypeId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "linkTypeId is required");
                         return;
                     }
 
                     if (!itemLink.sourceItemId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "sourceItemId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "sourceItemId is required");
                         return;
                     }
 
                     if (!itemLink.destinationItemId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "destinationItemId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "destinationItemId is required");
                         return;
                     }
 
                     auto created = m_itemLinkService->createItemLink(itemLink, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create item link: insufficient permissions or duplicate link"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -348,7 +312,8 @@ void ItemLinksHandler::handleCreateItemLink(
                         << ", source=" << *created->sourceItemId
                         << ", dest=" << *created->destinationItemId << ")";
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -356,13 +321,11 @@ void ItemLinksHandler::handleCreateItemLink(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании связи элементов: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -374,11 +337,10 @@ void ItemLinksHandler::handleDeleteItemLink(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -386,9 +348,7 @@ void ItemLinksHandler::handleDeleteItemLink(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid item link ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item link ID");
         return;
     }
 
@@ -399,23 +359,23 @@ void ItemLinksHandler::handleDeleteItemLink(
         auto result = m_itemLinkService->deleteItemLink(id, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
         LOG_INFO << "Пользователь " << userId << " удалил связь элементов id=" << id;
-        request.reply(web::http::status_codes::NoContent);
+
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении связи элементов " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

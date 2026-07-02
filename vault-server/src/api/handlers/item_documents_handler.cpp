@@ -33,11 +33,10 @@ void ItemDocumentsHandler::handleGetItemDocuments(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -132,19 +131,17 @@ void ItemDocumentsHandler::handleGetItemDocuments(
             items[i] = dto::toWebJson(pageData.items[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(pageData.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(pageData.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка связей ItemDocument: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -157,11 +154,10 @@ void ItemDocumentsHandler::handleGetItemDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -169,9 +165,7 @@ void ItemDocumentsHandler::handleGetItemDocument(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid ID");
         return;
     }
 
@@ -182,13 +176,12 @@ void ItemDocumentsHandler::handleGetItemDocument(
         auto itemDocument = m_itemDocumentService->getItemDocument(id, userId);
         if (!itemDocument)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "ItemDocument not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "ItemDocument not found");
             return;
         }
 
-        request.reply(
+        sendJsonResponse(
+            request,
             web::http::status_codes::OK,
             dto::toWebJson(itemDocument->toJson())
         );
@@ -196,9 +189,7 @@ void ItemDocumentsHandler::handleGetItemDocument(
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении ItemDocument " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -211,11 +202,10 @@ void ItemDocumentsHandler::handleGetDocumentsByItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -234,18 +224,14 @@ void ItemDocumentsHandler::handleGetDocumentsByItem(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid item ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item ID");
             return;
         }
     }
 
     if (itemId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid item ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item ID");
         return;
     }
 
@@ -261,14 +247,12 @@ void ItemDocumentsHandler::handleGetDocumentsByItem(
             response[i] = dto::toWebJson(links[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении документов для элемента " << itemId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -281,11 +265,10 @@ void ItemDocumentsHandler::handleGetItemsByDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -304,18 +287,14 @@ void ItemDocumentsHandler::handleGetItemsByDocument(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid document ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid document ID");
             return;
         }
     }
 
     if (documentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid document ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid document ID");
         return;
     }
 
@@ -331,14 +310,12 @@ void ItemDocumentsHandler::handleGetItemsByDocument(
             response[i] = dto::toWebJson(links[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении элементов для документа " << documentId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -351,11 +328,10 @@ void ItemDocumentsHandler::handleCreateItemDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -376,30 +352,24 @@ void ItemDocumentsHandler::handleCreateItemDocument(
                     // Валидация обязательных полей
                     if (!itemDocument.itemId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "itemId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "itemId is required");
                         return;
                     }
 
                     if (!itemDocument.documentId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "documentId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "documentId is required");
                         return;
                     }
 
                     auto created = m_itemDocumentService->createItemDocument(itemDocument, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create item-document link: insufficient permissions or duplicate link"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -409,7 +379,8 @@ void ItemDocumentsHandler::handleCreateItemDocument(
                         << ", itemId=" << *created->itemId
                         << ", documentId=" << *created->documentId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -417,9 +388,11 @@ void ItemDocumentsHandler::handleCreateItemDocument(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании ItemDocument: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -435,11 +408,10 @@ void ItemDocumentsHandler::handleDeleteItemDocument(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -447,9 +419,7 @@ void ItemDocumentsHandler::handleDeleteItemDocument(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid ID");
         return;
     }
 
@@ -460,11 +430,11 @@ void ItemDocumentsHandler::handleDeleteItemDocument(
         auto result = m_itemDocumentService->deleteItemDocument(id, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -472,14 +442,13 @@ void ItemDocumentsHandler::handleDeleteItemDocument(
             << "Пользователь " << userId
             << " удалил связь ItemDocument id=" << id;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении ItemDocument " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

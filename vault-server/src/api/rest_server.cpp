@@ -2397,6 +2397,21 @@ void RestServer::setupListener()
         address
     );
 
+    // Регистрируем явный обработчик для OPTIONS
+    m_listener->support(
+        web::http::methods::OPTIONS,
+        [this](web::http::http_request request)
+        {
+            LOG_INFO << "OPTIONS запрос получен";
+            web::http::http_response response(web::http::status_codes::OK);
+            response.headers().add(U("Access-Control-Allow-Origin"), U("*"));
+            response.headers().add(U("Access-Control-Allow-Methods"), U("GET, POST, PUT, DELETE, OPTIONS"));
+            response.headers().add(U("Access-Control-Allow-Headers"), U("Authorization, Content-Type"));
+            response.headers().add(U("Access-Control-Max-Age"), U("86400"));
+            request.reply(response);
+        }
+    );
+
     // Устанавливаем универсальный обработчик всех запросов
     m_listener->support(
         [this](web::http::http_request request)

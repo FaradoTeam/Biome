@@ -33,11 +33,10 @@ void SpecialDaysHandler::handleGetSpecialDays(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -128,19 +127,17 @@ void SpecialDaysHandler::handleGetSpecialDays(
             items[i] = dto::toWebJson(pageData.days[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(pageData.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(pageData.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка особых дней: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -153,11 +150,10 @@ void SpecialDaysHandler::handleGetSpecialDay(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -165,9 +161,7 @@ void SpecialDaysHandler::handleGetSpecialDay(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid special day ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid special day ID");
         return;
     }
 
@@ -178,23 +172,16 @@ void SpecialDaysHandler::handleGetSpecialDay(
         auto day = m_specialDayService->getSpecialDay(id, userId);
         if (!day)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Special day not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Special day not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(day->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(day->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении особого дня " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -207,11 +194,10 @@ void SpecialDaysHandler::handleCreateSpecialDay(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -232,22 +218,18 @@ void SpecialDaysHandler::handleCreateSpecialDay(
                     // Валидация обязательных полей
                     if (!specialDay.date.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "date is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "date is required");
                         return;
                     }
 
                     auto created = m_specialDayService->createSpecialDay(specialDay, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create special day: insufficient permissions or invalid data"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -255,7 +237,8 @@ void SpecialDaysHandler::handleCreateSpecialDay(
                         << "Пользователь " << userId
                         << " создал особый день id=" << *created->id;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -263,9 +246,11 @@ void SpecialDaysHandler::handleCreateSpecialDay(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании особого дня: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -281,11 +266,10 @@ void SpecialDaysHandler::handleUpdateSpecialDay(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -293,9 +277,7 @@ void SpecialDaysHandler::handleUpdateSpecialDay(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid special day ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid special day ID");
         return;
     }
 
@@ -322,15 +304,15 @@ void SpecialDaysHandler::handleUpdateSpecialDay(
                         auto existing = m_specialDayService->getSpecialDay(id, userId);
                         if (!existing)
                         {
-                            web::http::http_response resp(web::http::status_codes::NotFound);
-                            sendErrorResponse(resp, 404, "Special day not found");
-                            request.reply(resp);
+                            sendErrorResponse(request, web::http::status_codes::NotFound, "Special day not found");
                             return;
                         }
 
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to update this special day");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to update this special day"
+                        );
                         return;
                     }
 
@@ -338,7 +320,8 @@ void SpecialDaysHandler::handleUpdateSpecialDay(
                         << "Пользователь " << userId
                         << " обновил особый день " << id;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -346,9 +329,11 @@ void SpecialDaysHandler::handleUpdateSpecialDay(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении особого дня " << id << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -364,11 +349,10 @@ void SpecialDaysHandler::handleDeleteSpecialDay(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -376,9 +360,7 @@ void SpecialDaysHandler::handleDeleteSpecialDay(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid special day ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid special day ID");
         return;
     }
 
@@ -389,11 +371,11 @@ void SpecialDaysHandler::handleDeleteSpecialDay(
         auto result = m_specialDayService->deleteSpecialDay(id, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -401,14 +383,13 @@ void SpecialDaysHandler::handleDeleteSpecialDay(
             << "Пользователь " << userId
             << " удалил особый день " << id;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении особого дня " << id << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

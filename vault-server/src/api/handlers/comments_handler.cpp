@@ -33,11 +33,10 @@ void CommentsHandler::handleGetComments(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -163,19 +162,17 @@ void CommentsHandler::handleGetComments(
             items[i] = dto::toWebJson(commentsPage.comments[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(commentsPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(commentsPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка комментариев: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -188,11 +185,10 @@ void CommentsHandler::handleGetComment(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -200,9 +196,7 @@ void CommentsHandler::handleGetComment(
     const int64_t commentId = extractIdFromPath(request);
     if (commentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid comment ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid comment ID");
         return;
     }
 
@@ -213,23 +207,16 @@ void CommentsHandler::handleGetComment(
         auto comment = m_commentService->getComment(commentId, userId);
         if (!comment)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Comment not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Comment not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(comment->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(comment->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении комментария " << commentId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -242,11 +229,10 @@ void CommentsHandler::handleGetCommentsByItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -265,18 +251,14 @@ void CommentsHandler::handleGetCommentsByItem(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid item ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item ID");
             return;
         }
     }
 
     if (itemId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid item ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid item ID");
         return;
     }
 
@@ -292,14 +274,12 @@ void CommentsHandler::handleGetCommentsByItem(
             response[i] = dto::toWebJson(comments[i].toJson());
         }
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении комментариев для элемента " << itemId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -312,11 +292,10 @@ void CommentsHandler::handleCreateComment(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -340,30 +319,24 @@ void CommentsHandler::handleCreateComment(
                     // Валидация обязательных полей
                     if (!comment.content.has_value() || comment.content->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Comment content is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Comment content is required");
                         return;
                     }
 
                     if (!comment.itemId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "itemId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "itemId is required");
                         return;
                     }
 
                     auto created = m_commentService->createComment(comment, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create comment: insufficient permissions or invalid data"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -372,7 +345,8 @@ void CommentsHandler::handleCreateComment(
                         << " создал комментарий id=" << *created->id
                         << " для элемента " << *created->itemId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -380,9 +354,11 @@ void CommentsHandler::handleCreateComment(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании комментария: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -398,11 +374,10 @@ void CommentsHandler::handleUpdateComment(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -410,9 +385,7 @@ void CommentsHandler::handleUpdateComment(
     const int64_t commentId = extractIdFromPath(request);
     if (commentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid comment ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid comment ID");
         return;
     }
 
@@ -432,9 +405,6 @@ void CommentsHandler::handleUpdateComment(
                     nlohmannJson["id"] = commentId;
                     dto::Comment comment(nlohmannJson);
 
-                    // Не позволяем менять userId, itemId и createdAt
-                    // Они должны остаться из существующего комментария
-
                     auto updated = m_commentService->updateComment(comment, userId);
                     if (!updated)
                     {
@@ -442,15 +412,15 @@ void CommentsHandler::handleUpdateComment(
                         auto existing = m_commentService->getComment(commentId, userId);
                         if (!existing)
                         {
-                            web::http::http_response resp(web::http::status_codes::NotFound);
-                            sendErrorResponse(resp, 404, "Comment not found");
-                            request.reply(resp);
+                            sendErrorResponse(request, web::http::status_codes::NotFound, "Comment not found");
                             return;
                         }
 
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to update this comment");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to update this comment"
+                        );
                         return;
                     }
 
@@ -458,7 +428,8 @@ void CommentsHandler::handleUpdateComment(
                         << "Пользователь " << userId
                         << " обновил комментарий " << commentId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -466,9 +437,11 @@ void CommentsHandler::handleUpdateComment(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении комментария " << commentId << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -484,11 +457,10 @@ void CommentsHandler::handleDeleteComment(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -496,9 +468,7 @@ void CommentsHandler::handleDeleteComment(
     const int64_t commentId = extractIdFromPath(request);
     if (commentId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid comment ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid comment ID");
         return;
     }
 
@@ -509,11 +479,11 @@ void CommentsHandler::handleDeleteComment(
         auto result = m_commentService->deleteComment(commentId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -521,14 +491,13 @@ void CommentsHandler::handleDeleteComment(
             << "Пользователь " << userId
             << " удалил комментарий " << commentId;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении комментария " << commentId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

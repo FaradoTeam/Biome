@@ -22,9 +22,16 @@ RoleMenuItemsHandler::RoleMenuItemsHandler(
 
 void RoleMenuItemsHandler::handleGetItems(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    auto userIdOpt = parseUserId(userIdStr);
+    if (!userIdOpt.has_value())
+    {
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
+        return;
+    }
+
     auto params = extractQueryParams(request);
 
     int page = 1;
@@ -39,51 +46,71 @@ void RoleMenuItemsHandler::handleGetItems(
     if (params.count("roleId"))
         roleId = std::stoll(params["roleId"]);
 
-    auto pageData = m_service->getRoleMenuItems(page, pageSize, roleId);
-
-    web::json::value response;
-    web::json::value items = web::json::value::array();
-
-    for (size_t i = 0; i < pageData.items.size(); ++i)
+    try
     {
-        items[i] = dto::toWebJson(pageData.items[i].toJson());
+        auto pageData = m_service->getRoleMenuItems(page, pageSize, roleId);
+
+        web::json::value response;
+        web::json::value items = web::json::value::array();
+
+        for (size_t i = 0; i < pageData.items.size(); ++i)
+        {
+            items[i] = dto::toWebJson(pageData.items[i].toJson());
+        }
+
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(pageData.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
+
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
-
-    response["items"] = items;
-    response["totalCount"] = pageData.totalCount;
-    response["page"] = page;
-    response["pageSize"] = pageSize;
-
-    request.reply(web::http::status_codes::OK, response);
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении списка RoleMenuItem: " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void RoleMenuItemsHandler::handleGetItem(
     const web::http::http_request& request,
-    const std::string& /*userId*/
+    const std::string& userIdStr
 )
 {
+    auto userIdOpt = parseUserId(userIdStr);
+    if (!userIdOpt.has_value())
+    {
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
+        return;
+    }
+
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid ID");
         return;
     }
 
-    auto item = m_service->getRoleMenuItem(id);
-    if (!item)
+    try
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "RoleMenuItem not found");
-        request.reply(resp);
-        return;
-    }
+        auto item = m_service->getRoleMenuItem(id);
+        if (!item)
+        {
+            sendErrorResponse(request, web::http::status_codes::NotFound, "RoleMenuItem not found");
+            return;
+        }
 
-    request.reply(
-        web::http::status_codes::OK,
-        dto::toWebJson(item->toJson())
-    );
+        sendJsonResponse(
+            request,
+            web::http::status_codes::OK,
+            dto::toWebJson(item->toJson())
+        );
+    }
+    catch (const std::exception& e)
+    {
+        LOG_ERROR << "Ошибка при получении RoleMenuItem " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
+    }
 }
 
 void RoleMenuItemsHandler::handleCreateItem(
@@ -91,14 +118,13 @@ void RoleMenuItemsHandler::handleCreateItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     request
         .extract_json()
@@ -116,35 +142,43 @@ void RoleMenuItemsHandler::handleCreateItem(
                         || !item.link.has_value()
                         || item.link->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "roleId, caption and link are required");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::BadRequest,
+                            "roleId, caption and link are required"
+                        );
                         return;
                     }
 
                     auto created = m_service->createRoleMenuItem(item, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to create RoleMenuItem");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to create RoleMenuItem"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " создал RoleMenuItem id=" << *created->id;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при создании RoleMenuItem: " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -156,11 +190,10 @@ void RoleMenuItemsHandler::handleUpdateItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -168,9 +201,7 @@ void RoleMenuItemsHandler::handleUpdateItem(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid ID");
         return;
     }
 
@@ -189,26 +220,32 @@ void RoleMenuItemsHandler::handleUpdateItem(
                     auto updated = m_service->updateRoleMenuItem(item, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(web::http::status_codes::NotFound);
-                        sendErrorResponse(resp, 404, "RoleMenuItem not found or insufficient permissions");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::NotFound,
+                            "RoleMenuItem not found or insufficient permissions"
+                        );
                         return;
                     }
 
-                    request.reply(
+                    LOG_INFO
+                        << "Пользователь " << userId
+                        << " обновил RoleMenuItem id=" << id;
+
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
                 }
                 catch (const std::exception& e)
                 {
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
+                    LOG_ERROR << "Ошибка при обновлении RoleMenuItem: " << e.what();
                     sendErrorResponse(
-                        resp,
-                        400,
+                        request,
+                        web::http::status_codes::BadRequest,
                         std::string("Invalid request: ") + e.what()
                     );
-                    request.reply(resp);
                 }
             }
         )
@@ -220,11 +257,10 @@ void RoleMenuItemsHandler::handleDeleteItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -232,21 +268,36 @@ void RoleMenuItemsHandler::handleDeleteItem(
     const int64_t id = extractIdFromPath(request);
     if (id <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid ID");
         return;
     }
 
-    if (m_service->deleteRoleMenuItem(id, userId))
+    LOG_DEBUG << "DELETE /role-menu-items/" << id << " from user " << userId;
+
+    try
     {
-        request.reply(web::http::status_codes::NoContent);
+        if (m_service->deleteRoleMenuItem(id, userId))
+        {
+            LOG_INFO
+                << "Пользователь " << userId
+                << " удалил RoleMenuItem id=" << id;
+
+            web::http::http_response response(web::http::status_codes::NoContent);
+            sendResponse(request, response);
+        }
+        else
+        {
+            sendErrorResponse(
+                request,
+                web::http::status_codes::NotFound,
+                "RoleMenuItem not found or insufficient permissions"
+            );
+        }
     }
-    else
+    catch (const std::exception& e)
     {
-        web::http::http_response resp(web::http::status_codes::NotFound);
-        sendErrorResponse(resp, 404, "RoleMenuItem not found or insufficient permissions");
-        request.reply(resp);
+        LOG_ERROR << "Ошибка при удалении RoleMenuItem " << id << ": " << e.what();
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

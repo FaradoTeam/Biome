@@ -27,11 +27,10 @@ void PhasesHandler::handleGetPhases(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -64,7 +63,7 @@ void PhasesHandler::handleGetPhases(
             if (pageSize < 1)
                 pageSize = 1;
             if (pageSize > 100)
-                pageSize = 100; // Ограничиваем максимальный размер страницы
+                pageSize = 100;
         }
         catch (const std::exception& e)
         {
@@ -120,19 +119,17 @@ void PhasesHandler::handleGetPhases(
             items[i] = dto::toWebJson(phasesPage.phases[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(phasesPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(phasesPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка фаз: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -141,11 +138,10 @@ void PhasesHandler::handleGetPhase(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -153,9 +149,7 @@ void PhasesHandler::handleGetPhase(
     const int64_t phaseId = extractIdFromPath(request);
     if (phaseId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid phase ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
         return;
     }
 
@@ -167,23 +161,16 @@ void PhasesHandler::handleGetPhase(
         auto phase = m_phaseService->phase(phaseId, userId);
         if (!phase)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Phase not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Phase not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(phase->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(phase->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении фазы " << phaseId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -192,14 +179,13 @@ void PhasesHandler::handleCreatePhase(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
-    int64_t userId = *userIdOpt;
+    const int64_t userId = *userIdOpt;
 
     LOG_DEBUG << "POST /phases from user " << userId;
 
@@ -214,20 +200,16 @@ void PhasesHandler::handleCreatePhase(
                     auto nlohmannJson = dto::toNlohmannJson(jsonBody);
                     dto::Phase phase(nlohmannJson);
 
-                    // Валидация обязательных полей (простая, основная валидация в сервисе)
+                    // Валидация обязательных полей
                     if (!phase.caption.has_value() || phase.caption->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Phase caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Phase caption is required");
                         return;
                     }
 
                     if (!phase.projectId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Project ID is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Project ID is required");
                         return;
                     }
 
@@ -235,13 +217,11 @@ void PhasesHandler::handleCreatePhase(
                     auto created = m_phaseService->createPhase(phase, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create phase: insufficient permissions or invalid data"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -250,7 +230,8 @@ void PhasesHandler::handleCreatePhase(
                         << " создал фазу id=" << *created->id
                         << " в проекте " << *created->projectId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -258,9 +239,11 @@ void PhasesHandler::handleCreatePhase(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании фазы: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -272,11 +255,10 @@ void PhasesHandler::handleUpdatePhase(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -284,9 +266,7 @@ void PhasesHandler::handleUpdatePhase(
     const int64_t phaseId = extractIdFromPath(request);
     if (phaseId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid phase ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
         return;
     }
 
@@ -314,15 +294,15 @@ void PhasesHandler::handleUpdatePhase(
                         auto existing = m_phaseService->phase(phaseId, userId);
                         if (!existing)
                         {
-                            web::http::http_response resp(web::http::status_codes::NotFound);
-                            sendErrorResponse(resp, 404, "Phase not found");
-                            request.reply(resp);
+                            sendErrorResponse(request, web::http::status_codes::NotFound, "Phase not found");
                             return;
                         }
 
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "Insufficient permissions to update this phase");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "Insufficient permissions to update this phase"
+                        );
                         return;
                     }
 
@@ -330,7 +310,8 @@ void PhasesHandler::handleUpdatePhase(
                         << "Пользователь " << userId
                         << " обновил фазу " << phaseId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -338,9 +319,11 @@ void PhasesHandler::handleUpdatePhase(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении фазы " << phaseId << ": " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -352,11 +335,10 @@ void PhasesHandler::handleDeletePhase(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -364,9 +346,7 @@ void PhasesHandler::handleDeletePhase(
     const int64_t phaseId = extractIdFromPath(request);
     if (phaseId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid phase ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
         return;
     }
 
@@ -378,9 +358,7 @@ void PhasesHandler::handleDeletePhase(
         auto existing = m_phaseService->phase(phaseId, userId);
         if (!existing)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Phase not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Phase not found");
             return;
         }
 
@@ -388,9 +366,11 @@ void PhasesHandler::handleDeletePhase(
         bool success = m_phaseService->archivePhase(phaseId, userId);
         if (!success)
         {
-            web::http::http_response resp(web::http::status_codes::Forbidden);
-            sendErrorResponse(resp, 403, "Insufficient permissions to archive this phase");
-            request.reply(resp);
+            sendErrorResponse(
+                request,
+                web::http::status_codes::Forbidden,
+                "Insufficient permissions to archive this phase"
+            );
             return;
         }
 
@@ -398,14 +378,13 @@ void PhasesHandler::handleDeletePhase(
             << "Пользователь " << userId
             << " архивировал фазу " << phaseId;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при архивации фазы " << phaseId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 

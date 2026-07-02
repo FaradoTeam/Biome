@@ -35,11 +35,10 @@ void PlansHandler::handleGetPlansByPhase(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -58,18 +57,14 @@ void PlansHandler::handleGetPlansByPhase(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid phase ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
             return;
         }
     }
 
     if (phaseId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid phase ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
         return;
     }
 
@@ -132,19 +127,17 @@ void PlansHandler::handleGetPlansByPhase(
             items[i] = dto::toWebJson(plansPage.plans[i].toJson());
         }
 
-        response["items"] = items;
-        response["totalCount"] = web::json::value::number(plansPage.totalCount);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = items;
+        response[U("totalCount")] = web::json::value::number(plansPage.totalCount);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении списка планов: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -157,11 +150,10 @@ void PlansHandler::handleCreateFirstPlan(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -180,18 +172,14 @@ void PlansHandler::handleCreateFirstPlan(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid phase ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
             return;
         }
     }
 
     if (phaseId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid phase ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid phase ID");
         return;
     }
 
@@ -215,9 +203,7 @@ void PlansHandler::handleCreateFirstPlan(
                     }
                     else
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Caption is required");
                         return;
                     }
 
@@ -239,13 +225,11 @@ void PlansHandler::handleCreateFirstPlan(
                     auto created = m_planService->createPlan(plan, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot create plan: phase already has a plan or insufficient permissions"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -254,7 +238,8 @@ void PlansHandler::handleCreateFirstPlan(
                         << " создал первый план id=" << *created->id
                         << " в фазе " << phaseId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -262,9 +247,11 @@ void PlansHandler::handleCreateFirstPlan(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при создании плана: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -280,11 +267,10 @@ void PlansHandler::handleGetPlan(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -292,9 +278,7 @@ void PlansHandler::handleGetPlan(
     const int64_t planId = extractIdFromPath(request);
     if (planId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
         return;
     }
 
@@ -305,23 +289,16 @@ void PlansHandler::handleGetPlan(
         auto plan = m_planService->plan(planId, userId);
         if (!plan)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Plan not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Plan not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(plan->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(plan->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении плана " << planId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -334,11 +311,10 @@ void PlansHandler::handleDeletePlan(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -346,9 +322,7 @@ void PlansHandler::handleDeletePlan(
     const int64_t planId = extractIdFromPath(request);
     if (planId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
         return;
     }
 
@@ -359,23 +333,23 @@ void PlansHandler::handleDeletePlan(
         auto result = m_planService->deletePlan(planId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
         LOG_INFO << "Пользователь " << userId << " удалил план " << planId;
-        request.reply(web::http::status_codes::NoContent);
+
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении плана " << planId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -388,11 +362,10 @@ void PlansHandler::handleForkPlan(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -400,9 +373,7 @@ void PlansHandler::handleForkPlan(
     const int64_t planId = extractIdFromPath(request);
     if (planId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
         return;
     }
 
@@ -421,9 +392,7 @@ void PlansHandler::handleForkPlan(
 
                     if (!forkRequest.caption.has_value() || forkRequest.caption->empty())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "Caption is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "Caption is required");
                         return;
                     }
 
@@ -436,13 +405,11 @@ void PlansHandler::handleForkPlan(
 
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot fork plan: insufficient permissions or plan is not active"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -451,7 +418,8 @@ void PlansHandler::handleForkPlan(
                         << " создал форк плана " << planId
                         << ", новый план id=" << *created->id;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -459,9 +427,11 @@ void PlansHandler::handleForkPlan(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при форке плана: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -477,11 +447,10 @@ void PlansHandler::handleActivatePlan(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -489,9 +458,7 @@ void PlansHandler::handleActivatePlan(
     const int64_t planId = extractIdFromPath(request);
     if (planId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
         return;
     }
 
@@ -510,29 +477,29 @@ void PlansHandler::handleActivatePlan(
 
                     if (!activateRequest.activatedByUserId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "activatedByUserId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "activatedByUserId is required");
                         return;
                     }
 
                     // Проверяем, что активирует тот же пользователь
                     if (*activateRequest.activatedByUserId != userId)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
-                        sendErrorResponse(resp, 403, "You can only activate plan for yourself");
-                        request.reply(resp);
+                        sendErrorResponse(
+                            request,
+                            web::http::status_codes::Forbidden,
+                            "You can only activate plan for yourself"
+                        );
                         return;
                     }
 
                     auto result = m_planService->activatePlan(planId, userId);
                     if (!result.success)
                     {
-                        web::http::http_response resp(
-                            static_cast<web::http::status_code>(result.errorCode)
+                        sendErrorResponse(
+                            request,
+                            static_cast<web::http::status_code>(result.errorCode),
+                            result.errorMessage
                         );
-                        sendErrorResponse(resp, result.errorCode, result.errorMessage);
-                        request.reply(resp);
                         return;
                     }
 
@@ -540,14 +507,17 @@ void PlansHandler::handleActivatePlan(
                         << "Пользователь " << userId
                         << " активировал план " << planId;
 
-                    request.reply(web::http::status_codes::OK);
+                    web::http::http_response response(web::http::status_codes::OK);
+                    sendResponse(request, response);
                 }
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при активации плана: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -563,11 +533,10 @@ void PlansHandler::handleGetPlanItems(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -586,18 +555,14 @@ void PlansHandler::handleGetPlanItems(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid plan ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
             return;
         }
     }
 
     if (planId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
         return;
     }
 
@@ -667,19 +632,17 @@ void PlansHandler::handleGetPlanItems(
             itemsArray[i] = dto::toWebJson(items[i].toJson());
         }
 
-        response["items"] = itemsArray;
-        response["totalCount"] = web::json::value::number(total);
-        response["page"] = web::json::value::number(page);
-        response["pageSize"] = web::json::value::number(pageSize);
+        response[U("items")] = itemsArray;
+        response[U("totalCount")] = web::json::value::number(total);
+        response[U("page")] = web::json::value::number(page);
+        response[U("pageSize")] = web::json::value::number(pageSize);
 
-        request.reply(web::http::status_codes::OK, response);
+        sendJsonResponse(request, web::http::status_codes::OK, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении элементов плана: " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -692,11 +655,10 @@ void PlansHandler::handleAddPlanItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -715,18 +677,14 @@ void PlansHandler::handleAddPlanItem(
         }
         catch (const std::exception& e)
         {
-            web::http::http_response resp(web::http::status_codes::BadRequest);
-            sendErrorResponse(resp, 400, "Invalid plan ID");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
             return;
         }
     }
 
     if (planId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan ID");
         return;
     }
 
@@ -748,38 +706,30 @@ void PlansHandler::handleAddPlanItem(
                     // Валидация
                     if (!planItem.itemId.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "itemId is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "itemId is required");
                         return;
                     }
 
                     if (!planItem.startDate.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "startDate is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "startDate is required");
                         return;
                     }
 
                     if (!planItem.endDate.has_value())
                     {
-                        web::http::http_response resp(web::http::status_codes::BadRequest);
-                        sendErrorResponse(resp, 400, "endDate is required");
-                        request.reply(resp);
+                        sendErrorResponse(request, web::http::status_codes::BadRequest, "endDate is required");
                         return;
                     }
 
                     auto created = m_planService->addPlanItem(planItem, userId);
                     if (!created)
                     {
-                        web::http::http_response resp(web::http::status_codes::Forbidden);
                         sendErrorResponse(
-                            resp,
-                            403,
+                            request,
+                            web::http::status_codes::Forbidden,
                             "Cannot add item to plan: plan is active, item already in plan, or dates invalid"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -788,7 +738,8 @@ void PlansHandler::handleAddPlanItem(
                         << " добавил элемент " << *planItem.itemId
                         << " в план " << planId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::Created,
                         dto::toWebJson(created->toJson())
                     );
@@ -796,9 +747,11 @@ void PlansHandler::handleAddPlanItem(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при добавлении элемента в план: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -814,11 +767,10 @@ void PlansHandler::handleGetPlanItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -826,9 +778,7 @@ void PlansHandler::handleGetPlanItem(
     const int64_t planItemId = extractIdFromPath(request);
     if (planItemId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan item ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan item ID");
         return;
     }
 
@@ -840,23 +790,16 @@ void PlansHandler::handleGetPlanItem(
         auto planItem = m_planService->getPlanItem(planItemId, userId);
         if (!planItem)
         {
-            web::http::http_response resp(web::http::status_codes::NotFound);
-            sendErrorResponse(resp, 404, "Plan item not found");
-            request.reply(resp);
+            sendErrorResponse(request, web::http::status_codes::NotFound, "Plan item not found");
             return;
         }
 
-        request.reply(
-            web::http::status_codes::OK,
-            dto::toWebJson(planItem->toJson())
-        );
+        sendJsonResponse(request, web::http::status_codes::OK, dto::toWebJson(planItem->toJson()));
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при получении элемента плана " << planItemId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
@@ -869,11 +812,10 @@ void PlansHandler::handleUpdatePlanItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -881,9 +823,7 @@ void PlansHandler::handleUpdatePlanItem(
     const int64_t planItemId = extractIdFromPath(request);
     if (planItemId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan item ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan item ID");
         return;
     }
 
@@ -905,13 +845,11 @@ void PlansHandler::handleUpdatePlanItem(
                     auto updated = m_planService->updatePlanItem(planItem, userId);
                     if (!updated)
                     {
-                        web::http::http_response resp(web::http::status_codes::NotFound);
                         sendErrorResponse(
-                            resp,
-                            404,
+                            request,
+                            web::http::status_codes::NotFound,
                             "Plan item not found or insufficient permissions"
                         );
-                        request.reply(resp);
                         return;
                     }
 
@@ -919,7 +857,8 @@ void PlansHandler::handleUpdatePlanItem(
                         << "Пользователь " << userId
                         << " обновил элемент плана " << planItemId;
 
-                    request.reply(
+                    sendJsonResponse(
+                        request,
                         web::http::status_codes::OK,
                         dto::toWebJson(updated->toJson())
                     );
@@ -927,9 +866,11 @@ void PlansHandler::handleUpdatePlanItem(
                 catch (const std::exception& e)
                 {
                     LOG_ERROR << "Ошибка при обновлении элемента плана: " << e.what();
-                    web::http::http_response resp(web::http::status_codes::BadRequest);
-                    sendErrorResponse(resp, 400, std::string("Invalid request: ") + e.what());
-                    request.reply(resp);
+                    sendErrorResponse(
+                        request,
+                        web::http::status_codes::BadRequest,
+                        std::string("Invalid request: ") + e.what()
+                    );
                 }
             }
         )
@@ -945,11 +886,10 @@ void PlansHandler::handleDeletePlanItem(
     const std::string& userIdStr
 )
 {
-    web::http::http_response errorResponse(web::http::status_codes::OK);
-    auto userIdOpt = parseUserId(userIdStr, errorResponse);
+    auto userIdOpt = parseUserId(userIdStr);
     if (!userIdOpt.has_value())
     {
-        request.reply(errorResponse);
+        sendErrorResponse(request, web::http::status_codes::Unauthorized, "User not authenticated");
         return;
     }
     const int64_t userId = *userIdOpt;
@@ -957,9 +897,7 @@ void PlansHandler::handleDeletePlanItem(
     const int64_t planItemId = extractIdFromPath(request);
     if (planItemId <= 0)
     {
-        web::http::http_response resp(web::http::status_codes::BadRequest);
-        sendErrorResponse(resp, 400, "Invalid plan item ID");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::BadRequest, "Invalid plan item ID");
         return;
     }
 
@@ -970,11 +908,11 @@ void PlansHandler::handleDeletePlanItem(
         auto result = m_planService->removePlanItem(planItemId, userId);
         if (!result.success)
         {
-            web::http::http_response resp(
-                static_cast<web::http::status_code>(result.errorCode)
+            sendErrorResponse(
+                request,
+                static_cast<web::http::status_code>(result.errorCode),
+                result.errorMessage
             );
-            sendErrorResponse(resp, result.errorCode, result.errorMessage);
-            request.reply(resp);
             return;
         }
 
@@ -982,14 +920,13 @@ void PlansHandler::handleDeletePlanItem(
             << "Пользователь " << userId
             << " удалил элемент плана " << planItemId;
 
-        request.reply(web::http::status_codes::NoContent);
+        web::http::http_response response(web::http::status_codes::NoContent);
+        sendResponse(request, response);
     }
     catch (const std::exception& e)
     {
         LOG_ERROR << "Ошибка при удалении элемента плана " << planItemId << ": " << e.what();
-        web::http::http_response resp(web::http::status_codes::InternalError);
-        sendErrorResponse(resp, 500, "Internal server error");
-        request.reply(resp);
+        sendErrorResponse(request, web::http::status_codes::InternalError, "Internal server error");
     }
 }
 
