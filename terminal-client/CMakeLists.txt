@@ -17,9 +17,11 @@ set(COMMON_SOURCES
 set(TERMINAL_CLIENT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/application.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/api_client.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/login_screen.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/main_menu_screen.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/api/api_client.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/app/navigation_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/auth_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/screens/login_screen.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/screens/main_menu_screen.cpp
 )
 
 add_executable(${PROJECT_NAME}

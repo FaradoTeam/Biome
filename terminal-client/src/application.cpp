@@ -1,28 +1,25 @@
-#include <cstdlib>
-
 #include "common/log/log.h"
 
+#include "screens/login_screen.h"
+#include "screens/main_menu_screen.h"
+
 #include "application.h"
-#include "login_screen.h"
-#include "main_menu_screen.h"
 
 namespace terminal
 {
 
-void Application::clearScreen()
-{
-#ifdef _WIN32
-    std::system("cls");
-#else
-    std::system("clear");
-#endif
-}
-
 Application::Application()
-    : m_screen(ftxui::ScreenInteractive::TerminalOutput())
-    , m_loggedIn(false)
-    , m_apiClient(std::make_unique<api::Client>("http://localhost:8090")) // TODO: брать из конфига или командной строки
+    : m_screen(ftxui::ScreenInteractive::Fullscreen())
 {
+    m_appState = std::make_shared<AppState>();
+    m_apiClient = std::make_shared<api::ApiClient>(
+        "http://localhost:8090" // TODO: брать из конфига/CLI.
+    );
+    m_authService = std::make_shared<services::AuthService>(
+        m_apiClient, m_appState
+    );
+    m_nav = std::make_shared<NavigationManager>(m_screen);
+
     LOG_INFO << "Application создан";
 }
 
@@ -35,77 +32,52 @@ int Application::run()
 {
     LOG_INFO << "Запуск приложения";
 
-    while (true)
+    // Начальный экран.
+    m_nav->replace(createLoginScreen());
+
+    // Основной цикл: прогоняем текущий экран, пока стек не пуст
+    // и пользователь не запросил выход.
+    while (m_nav->isActive())
     {
-        if (!m_loggedIn)
+        auto screen = m_nav->current();
+        if (!screen)
         {
-            LOG_INFO << "Показываем экран логина";
-            showLoginScreen();
-            if (!m_loggedIn)
-            {
-                LOG_INFO << "Вход не выполнен, завершаем";
-                break;
-            }
-        }
-        else
-        {
-            LOG_INFO << "Показываем главное меню";
-            showMainMenuScreen(m_token);
-            if (!m_loggedIn)
-            {
-                LOG_INFO << "Выход из системы, возврат к логину";
-                continue;
-            }
-            LOG_INFO << "Выход из приложения";
             break;
         }
+
+        m_screen.Loop(screen->component());
     }
 
     LOG_INFO << "Приложение завершено";
     return 0;
 }
 
-void Application::showLoginScreen()
+std::shared_ptr<screens::Screen> Application::createLoginScreen()
 {
-    screens::LoginScreen loginScreen(
+    return std::make_shared<screens::LoginScreen>(
         m_screen,
-        *m_apiClient,
-        [this](const std::string& token)
-        {
-            LOG_INFO << "Успешный вход, token получен";
-            m_token = token;
-            m_loggedIn = true;
-            m_screen.Exit();
-        }
-    );
-
-    auto component = loginScreen.component();
-    m_screen.Loop(component);
-    clearScreen();
-    LOG_INFO << "Экран логина завершён";
-}
-
-void Application::showMainMenuScreen(const std::string& token)
-{
-    screens::MainMenuScreen mainMenuScreen(
-        m_screen,
-        token,
-        *m_apiClient,
+        m_authService,
+        m_nav,
         [this]()
         {
-            LOG_INFO << "Выход из системы";
-            // Асинхронно вызываем logout, не дожидаясь ответа
-            m_apiClient->logout(m_token);
-            m_token.clear();
-            m_loggedIn = false;
-            m_screen.Exit();
+            // Вызывается из UI-потока после успешного входа.
+            m_nav->replace(createMainMenuScreen());
         }
     );
+}
 
-    auto component = mainMenuScreen.component();
-    m_screen.Loop(component);
-    clearScreen();
-    LOG_INFO << "Главное меню завершено";
+std::shared_ptr<screens::Screen> Application::createMainMenuScreen()
+{
+    return std::make_shared<screens::MainMenuScreen>(
+        m_screen,
+        m_authService,
+        m_nav,
+        [this]()
+        {
+            // Вызывается из UI-потока после выхода из системы.
+            m_nav->replace(createLoginScreen());
+        }
+    );
 }
 
 } // namespace terminal
