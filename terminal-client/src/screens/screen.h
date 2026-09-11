@@ -20,6 +20,9 @@ public:
 
     /// Возвращает ftxui-компонент для отображения.
     virtual ftxui::Component component() = 0;
+
+    /// Вызывается при возврате на экран после pop() — можно перезагрузить данные.
+    virtual void onResume() { }
 };
 
 } // namespace terminal::screens

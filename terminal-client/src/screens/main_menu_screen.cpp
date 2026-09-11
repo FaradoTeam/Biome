@@ -16,13 +16,16 @@ MainMenuScreen::MainMenuScreen(
     ftxui::ScreenInteractive& screen,
     std::shared_ptr<services::IAuthService> authService,
     std::shared_ptr<NavigationManager> nav,
-    LogoutCallback onLogout
+    LogoutCallback onLogout,
+    ScreenFactory usersScreenFactory
 )
+
     : m_screen(screen)
     , m_authService(std::move(authService))
     , m_nav(std::move(nav))
     , m_onLogout(std::move(onLogout))
-    , m_entries({ "Проекты", "Задачи", "Доски", "Команды", "Сообщения", "Уведомления", "Личные задачи", "Администрирование", "Выйти" })
+    , m_usersScreenFactory(std::move(usersScreenFactory))
+    , m_entries({ "Проекты", "Задачи", "Доски", "Команды", "Пользователи", "Сообщения", "Уведомления", "Личные задачи", "Администрирование", "Выйти" })
 {
     auto menu = Menu(&m_entries, &m_selected);
 
@@ -110,12 +113,20 @@ void MainMenuScreen::onMenuSelected(int index)
     if (entry == "Выйти")
     {
         doLogout();
+        return;
     }
-    else
+
+    if (entry == "Пользователи")
     {
-        // Заглушка: экраны разделов будут добавлены в дальнейшем.
-        m_status = "Раздел «" + entry + "» пока не реализован";
+        if (m_usersScreenFactory)
+        {
+            m_nav->push(m_usersScreenFactory());
+        }
+        return;
     }
+
+    // Заглушка: экраны разделов будут добавлены в дальнейшем.
+    m_status = "Раздел «" + entry + "» пока не реализован";
 }
 
 void MainMenuScreen::doLogout()

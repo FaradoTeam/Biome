@@ -21,6 +21,11 @@ void NavigationManager::pop()
     if (m_stack.size() > 1)
     {
         m_stack.pop_back();
+
+        if (auto screen = current())
+        {
+            screen->onResume();
+        }
     }
     m_screen.Exit();
 }

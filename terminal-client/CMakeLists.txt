@@ -20,8 +20,10 @@ set(TERMINAL_CLIENT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/api/api_client.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/app/navigation_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/services/auth_service.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services/user_service.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/screens/login_screen.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/screens/main_menu_screen.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/screens/users/user_list_screen.cpp
 )
 
 add_executable(${PROJECT_NAME}

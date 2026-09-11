@@ -6,6 +6,9 @@
 #include <cpprest/http_client.h>
 #include <cpprest/json.h>
 
+#include "models/page.h"
+#include "models/user.h"
+#include "models/user_query.h"
 namespace terminal::api
 {
 
@@ -40,6 +43,16 @@ struct LogoutResult final
 };
 
 /**
+ * @brief Результат запроса списка пользователей.
+ */
+struct UsersResult final
+{
+    bool success { false };
+    models::Page<models::User> page;
+    ApiError error;
+};
+
+/**
  * @brief HTTP-клиент для REST API «Биом».
  *
  * Содержит только базовые методы; для остальных эндпоинтов методы
@@ -61,6 +74,9 @@ public:
 
     /// Асинхронный выход из системы (аннулирование токена).
     std::future<LogoutResult> logout();
+
+    /// Асинхронный запрос списка пользователей с фильтрацией.
+    std::future<UsersResult> getUsers(const models::UserQuery& query);
 
 private:
     web::http::client::http_client m_client;

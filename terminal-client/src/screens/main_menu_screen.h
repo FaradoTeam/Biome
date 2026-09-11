@@ -15,25 +15,21 @@
 namespace terminal::screens
 {
 
-/**
- * @brief Главное меню. В текущей версии — заглушка: реализован только выход.
- */
 class MainMenuScreen final : public Screen
 {
 public:
     using LogoutCallback = std::function<void()>;
+    using ScreenFactory = std::function<std::shared_ptr<Screen>()>;
 
     MainMenuScreen(
         ftxui::ScreenInteractive& screen,
         std::shared_ptr<services::IAuthService> authService,
         std::shared_ptr<NavigationManager> nav,
-        LogoutCallback onLogout
+        LogoutCallback onLogout,
+        ScreenFactory usersScreenFactory // <-- НОВОЕ
     );
 
-    std::string title() const override
-    {
-        return "Главное меню";
-    }
+    std::string title() const override { return "Главное меню"; }
     ftxui::Component component() override;
 
 private:
@@ -45,6 +41,7 @@ private:
     std::shared_ptr<services::IAuthService> m_authService;
     std::shared_ptr<NavigationManager> m_nav;
     LogoutCallback m_onLogout;
+    ScreenFactory m_usersScreenFactory;
 
     std::vector<std::string> m_entries;
     int m_selected { 0 };
