@@ -36,8 +36,17 @@ std::map<std::string, std::string> BaseHandler::extractQueryParams(
 )
 {
     std::map<std::string, std::string> params;
-    auto query = web::uri::split_query(request.request_uri().query());
-    for (const auto& p : query)
+
+    // Берём именно относительный URI запроса и декодируем query,
+    // вручную прогоняя каждое значение через web::uri::decode.
+    // Это необходимо для корректной работы с кириллицей и другими
+    // не-ASCII символами, которые Dio отправляет percent-encoded.
+    const std::string rawQuery = web::uri::decode(
+        request.relative_uri().query()
+    );
+
+    auto parsed = web::uri::split_query(rawQuery);
+    for (const auto& p : parsed)
     {
         params[p.first] = p.second;
     }
