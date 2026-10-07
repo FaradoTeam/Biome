@@ -16,18 +16,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  // Фокусы
   final _usernameFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    // Проверяем статус при загрузке экрана
+    // ✅ Исправлено: проверяем mounted перед использованием ref
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).checkAuthStatus();
-      // Устанавливаем фокус на поле логина после построения виджета
-      _usernameFocusNode.requestFocus();
+      if (mounted) {
+        ref.read(authProvider.notifier).checkAuthStatus();
+        _usernameFocusNode.requestFocus();
+      }
     });
   }
 
@@ -42,7 +42,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _login() {
     if (_formKey.currentState!.validate()) {
-      // Убираем фокус с полей перед отправкой
       _usernameFocusNode.unfocus();
       _passwordFocusNode.unfocus();
       ref.read(authProvider.notifier).login(
@@ -55,9 +54,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Вход')),
+      appBar: AppBar(
+        title: const Text('Вход'),
+        backgroundColor: isDark ? Colors.grey[900] : null,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -69,11 +72,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 controller: _usernameController,
                 focusNode: _usernameFocusNode,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Логин',
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.person),
+                  border: const OutlineInputBorder(),
+                  filled: true,
+                  fillColor: isDark ? Colors.grey[800] : Colors.white,
                 ),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Введите логин';
@@ -81,7 +87,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   return null;
                 },
                 onFieldSubmitted: (_) {
-                  // Переключаем фокус на поле пароля
                   _passwordFocusNode.requestFocus();
                 },
               ),
@@ -107,7 +112,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                   ),
                   border: const OutlineInputBorder(),
+                  filled: true,
+                  fillColor: isDark ? Colors.grey[800] : Colors.white,
                 ),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Введите пароль';
@@ -118,7 +126,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   return null;
                 },
                 onFieldSubmitted: (_) {
-                  // При нажатии Enter (Done) вызываем логин
                   _login();
                 },
               ),

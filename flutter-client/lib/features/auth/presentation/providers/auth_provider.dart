@@ -6,6 +6,9 @@ import '../../../../data/repositories/auth_repository_impl.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../data/datasources/remote/auth_api.dart';
+import '../../../../data/datasources/remote/user_api.dart';
+import '../../../../data/repositories/user_repository_impl.dart';
+import '../../../../domain/repositories/user_repository.dart';
 
 // ---- Providers for dependencies ----
 final secureStorageProvider = Provider<SecureStorage>((ref) => SecureStorage());
@@ -19,6 +22,17 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final api = ref.watch(authApiProvider);
   final storage = ref.watch(secureStorageProvider);
   return AuthRepositoryImpl(api, storage);
+});
+
+// ---- Providers for User ----
+final userApiProvider = Provider<UserApi>((ref) {
+  final dio = DioClient.instance;
+  return UserApi(dio);
+});
+
+final userRepositoryProvider = Provider<UserRepository>((ref) {
+  final api = ref.watch(userApiProvider);
+  return UserRepositoryImpl(api);
 });
 
 // ---- State ----
@@ -55,13 +69,21 @@ class AuthStateError extends AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _authRepository;
 
-  AuthNotifier(this._authRepository) : super(const AuthStateInitial());
+  AuthNotifier(this._authRepository) : super(const AuthStateInitial()) {
+    // Автоматически проверяем статус при создании
+    checkAuthStatus();
+  }
 
   Future<void> checkAuthStatus() async {
-    final isAuth = await _authRepository.isAuthenticated();
-    if (isAuth) {
-      state = const AuthStateAuthenticated();
-    } else {
+    try {
+      final isAuth = await _authRepository.isAuthenticated();
+      if (isAuth) {
+        state = const AuthStateAuthenticated();
+      } else {
+        state = const AuthStateUnauthenticated();
+      }
+    } catch (e) {
+      await _authRepository.logout();
       state = const AuthStateUnauthenticated();
     }
   }
@@ -70,10 +92,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthStateLoading();
     try {
       await _authRepository.login(username, password);
-      // После сохранения токена принудительно проверяем статус
-      await checkAuthStatus();
+      state = const AuthStateAuthenticated();
     } catch (e) {
-      print('AuthNotifier.login: error: $e');
       state = AuthStateError(e.toString());
     }
   }
@@ -84,7 +104,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _authRepository.logout();
       state = const AuthStateUnauthenticated();
     } catch (e) {
-      state = AuthStateError(e.toString());
+      await _authRepository.logout();
+      state = const AuthStateUnauthenticated();
+    }
+  }
+
+  // Метод для обработки 401 ошибки
+  void onUnauthorized() {
+    if (state is AuthStateAuthenticated) {
+      _authRepository.logout();
+      state = const AuthStateUnauthenticated();
     }
   }
 }
