@@ -46,7 +46,10 @@ struct UserRepositoryFixture
                 needChangePassword INTEGER NOT NULL DEFAULT 1,
                 isBlocked INTEGER NOT NULL DEFAULT 0,
                 isSuperAdmin INTEGER NOT NULL DEFAULT 0,
-                isHidden INTEGER NOT NULL DEFAULT 0
+                isHidden INTEGER NOT NULL DEFAULT 0,
+                searchLogin TEXT,
+                searchName  TEXT,
+                searchEmail TEXT
             )
         )");
 

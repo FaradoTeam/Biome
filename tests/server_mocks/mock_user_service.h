@@ -52,9 +52,20 @@ public:
     }
 
     // Callback-и для кастомной логики
-    void setGetUsersCallback(
-        std::function<UsersPage(int, int, int64_t, const std::string&, const std::string&, const std::string&, std::optional<bool>)> callback
-    )
+    using GetUsersCallback = std::function<UsersPage(
+        int,
+        int,
+        int64_t,
+        const std::string&,
+        const std::string&,
+        const std::string&,
+        std::optional<bool>,
+        std::optional<int64_t>,
+        const std::string&,
+        bool
+    )>;
+
+    void setGetUsersCallback(GetUsersCallback callback)
     {
         m_getUsersCallback = std::move(callback);
     }
@@ -87,7 +98,7 @@ public:
         m_deleteUserCallback = std::move(callback);
     }
 
-    // Реализация интерфейса IUserService с новыми параметрами
+    // Реализация интерфейса IUserService с актуальной сигнатурой
     services::UsersPage users(
         int page,
         int pageSize,
@@ -95,7 +106,10 @@ public:
         const std::string& login = "",
         const std::string& name = "",
         const std::string& email = "",
-        std::optional<bool> isBlocked = std::nullopt
+        std::optional<bool> isBlocked = std::nullopt,
+        std::optional<int64_t> id = std::nullopt,
+        const std::string& sortField = "login",
+        bool sortAscending = true
     ) override
     {
         m_lastGetUsersPage = page;
@@ -105,11 +119,18 @@ public:
         m_lastGetUsersName = name;
         m_lastGetUsersEmail = email;
         m_lastGetUsersIsBlocked = isBlocked;
+        m_lastGetUsersId = id;
+        m_lastGetUsersSortField = sortField;
+        m_lastGetUsersSortAscending = sortAscending;
         m_getUsersCallCount++;
 
         if (m_getUsersCallback)
         {
-            return m_getUsersCallback(page, pageSize, userId, login, name, email, isBlocked);
+            return m_getUsersCallback(
+                page, pageSize, userId,
+                login, name, email, isBlocked,
+                id, sortField, sortAscending
+            );
         }
 
         // Возвращаем результат независимо от userId
@@ -215,6 +236,9 @@ public:
     const std::string& getLastGetUsersName() const { return m_lastGetUsersName; }
     const std::string& getLastGetUsersEmail() const { return m_lastGetUsersEmail; }
     std::optional<bool> getLastGetUsersIsBlocked() const { return m_lastGetUsersIsBlocked; }
+    std::optional<int64_t> getLastGetUsersId() const { return m_lastGetUsersId; }
+    const std::string& getLastGetUsersSortField() const { return m_lastGetUsersSortField; }
+    bool getLastGetUsersSortAscending() const { return m_lastGetUsersSortAscending; }
 
     int64_t getLastGetUserId() const { return m_lastGetUserId; }
     int64_t getLastGetUserRequestUserId() const { return m_lastGetUserRequestUserId; }
@@ -241,6 +265,9 @@ public:
         m_lastGetUsersName.clear();
         m_lastGetUsersEmail.clear();
         m_lastGetUsersIsBlocked = std::nullopt;
+        m_lastGetUsersId = std::nullopt;
+        m_lastGetUsersSortField = "login";
+        m_lastGetUsersSortAscending = true;
 
         m_lastGetUserId = 0;
         m_lastGetUserRequestUserId = 0;
@@ -274,7 +301,7 @@ private:
     bool m_deleteUserResult = false;
 
     // Callback-и
-    std::function<services::UsersPage(int, int, int64_t, const std::string&, const std::string&, const std::string&, std::optional<bool>)> m_getUsersCallback;
+    GetUsersCallback m_getUsersCallback;
     std::function<std::optional<dto::User>(int64_t, int64_t)> m_getUserCallback;
     std::function<std::optional<dto::User>(const dto::User&, const std::string&, int64_t)> m_createUserCallback;
     std::function<std::optional<dto::User>(const dto::User&, int64_t)> m_updateUserCallback;
@@ -295,6 +322,9 @@ private:
     std::string m_lastGetUsersName;
     std::string m_lastGetUsersEmail;
     std::optional<bool> m_lastGetUsersIsBlocked;
+    std::optional<int64_t> m_lastGetUsersId;
+    std::string m_lastGetUsersSortField = "login";
+    bool m_lastGetUsersSortAscending = true;
 
     int64_t m_lastGetUserId = 0;
     int64_t m_lastGetUserRequestUserId = 0;
