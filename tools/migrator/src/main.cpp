@@ -12,6 +12,7 @@
 
 #include "migrations_sqlite/v1_initial_schema.h"
 #include "migrations_sqlite/v2_default_data.h"
+#include "migrations_sqlite/v3_user_search_fields.h"
 
 namespace po = boost::program_options;
 
@@ -21,11 +22,9 @@ namespace po = boost::program_options;
  */
 void registerMigrations(db::MigrationManager& manager)
 {
-    // Регистрируем миграцию v1
     manager.registerMigration(std::make_unique<db::migrations::V1_InitialSchema>());
-
-    // Регистрируем миграцию v2 - дефолтные данные
     manager.registerMigration(std::make_unique<db::migrations::V2_DefaultData>());
+    manager.registerMigration(std::make_unique<db::migrations::V3_UserSearchFields>());
 }
 
 /**

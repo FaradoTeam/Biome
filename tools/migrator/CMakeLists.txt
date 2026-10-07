@@ -4,6 +4,7 @@ project(migrator)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(SQLite3 REQUIRED)
 find_package(OpenSSL REQUIRED)
+find_package(ICU REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
@@ -11,6 +12,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
 
 set(COMMON_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/log/log.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/helpers/string_helper.cpp
 )
 
 set(STORAGE_SOURCES
@@ -48,6 +50,7 @@ target_link_libraries(${PROJECT_NAME}
     SQLite::SQLite3
     OpenSSL::SSL
     OpenSSL::Crypto
+    icu::icu
 )
 
 set_target_properties(
