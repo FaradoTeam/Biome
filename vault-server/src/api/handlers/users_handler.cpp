@@ -93,6 +93,40 @@ void UsersHandler::handleGetUsers(
         isBlocked = parseBool(params["isBlocked"]);
     }
 
+    std::optional<int64_t> idFilter = std::nullopt;
+    if (params.count("id"))
+    {
+        try
+        {
+            int64_t v = std::stoll(params["id"]);
+            if (v > 0)
+                idFilter = v;
+        }
+        catch (const std::exception& e)
+        {
+            LOG_WARN << "handleGetUsers: неверный параметр id: " << params["id"];
+        }
+    }
+
+    std::string sortField = "login";
+    if (params.count("sortField"))
+    {
+        const std::string& s = params["sortField"];
+        if (s == "id" || s == "login" || s == "name"
+            || s == "email" || s == "status")
+        {
+            sortField = s;
+        }
+    }
+
+    bool sortAscending = true;
+    if (params.count("sortAscending"))
+    {
+        auto v = parseBool(params["sortAscending"]);
+        if (v.has_value())
+            sortAscending = *v;
+    }
+
     LOG_DEBUG
         << "GET /users: user=" << userId
         << ", page=" << page << ", pageSize=" << pageSize
@@ -103,7 +137,11 @@ void UsersHandler::handleGetUsers(
 
     try
     {
-        auto usersPage = m_userService->users(page, pageSize, userId, login, name, email, isBlocked);
+        auto usersPage = m_userService->users(
+            page, pageSize, userId,
+            login, name, email, isBlocked,
+            idFilter, sortField, sortAscending
+        );
 
         web::json::value response;
         web::json::value items = web::json::value::array();

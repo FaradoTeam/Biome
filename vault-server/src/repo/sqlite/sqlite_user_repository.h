@@ -36,7 +36,10 @@ public:
         const std::string& login = "",
         const std::string& name = "",
         const std::string& email = "",
-        std::optional<bool> isBlocked = std::nullopt
+        std::optional<bool> isBlocked = std::nullopt,
+        std::optional<int64_t> id = std::nullopt,
+        const std::string& sortField = "login",
+        bool sortAscending = true
     ) override;
     bool update(const dto::User& user) override;
     bool remove(int64_t id) override;

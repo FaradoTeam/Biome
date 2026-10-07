@@ -36,7 +36,10 @@ UsersPage UserService::users(
     const std::string& login,
     const std::string& name,
     const std::string& email,
-    std::optional<bool> isBlocked
+    std::optional<bool> isBlocked,
+    std::optional<int64_t> id,
+    const std::string& sortField,
+    bool sortAscending
 )
 {
     if (page < 1)
@@ -44,14 +47,18 @@ UsersPage UserService::users(
     if (pageSize < 1)
         pageSize = 20;
 
-    // Только супер-админ может просматривать список пользователей
     if (!m_authzService->isSuperAdmin(userId))
     {
-        LOG_WARN << "users: пользователь " << userId << " не имеет прав на просмотр списка пользователей";
+        LOG_WARN
+            << "users: пользователь " << userId
+            << " не имеет прав на просмотр списка пользователей";
         return { {}, 0 };
     }
 
-    auto [users, total] = m_userRepo->findAll(page, pageSize, login, name, email, isBlocked);
+    auto [users, total] = m_userRepo->findAll(
+        page, pageSize, login, name, email, isBlocked,
+        id, sortField, sortAscending
+    );
     return { users, total };
 }
 

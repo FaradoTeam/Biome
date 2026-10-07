@@ -2,6 +2,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "common/helpers/string_helper.h"
 #include "common/log/log.h"
 
 #include "storage/idatabase.h"
@@ -212,27 +213,51 @@ bool SqliteUserRepository::updateNeedChangePassword(int64_t userId, bool needCha
     }
 }
 
-int64_t SqliteUserRepository::create(const dto::User& user, const std::string& passwordHash)
+int64_t SqliteUserRepository::create(
+    const dto::User& user,
+    const std::string& passwordHash
+)
 {
-    // Проверка обязательных полей с учётом optional
-    if (!user.login.has_value()
-        || user.login->empty()
-        || !user.email.has_value()
-        || user.email->empty()
+    if (!user.login.has_value() || user.login->empty()
+        || !user.email.has_value() || user.email->empty()
         || passwordHash.empty())
     {
         LOG_WARN << "Создание пользователя: отсутствуют обязательные поля";
         return 0;
     }
 
+    // Нормализуем ФИО в том же порядке, что отображается в UI:
+    // lastName firstName middleName.
+    std::string fullName;
+    if (user.lastName.has_value() && !user.lastName->empty())
+        fullName += *user.lastName;
+    if (user.firstName.has_value() && !user.firstName->empty())
+    {
+        if (!fullName.empty())
+            fullName += ' ';
+        fullName += *user.firstName;
+    }
+    if (user.middleName.has_value() && !user.middleName->empty())
+    {
+        if (!fullName.empty())
+            fullName += ' ';
+        fullName += *user.middleName;
+    }
+
+    const std::string searchLogin = common::toLowerCase(*user.login);
+    const std::string searchName = common::toLowerCase(fullName);
+    const std::string searchEmail = common::toLowerCase(*user.email);
+
     try
     {
         auto conn = m_database->connection();
         auto stmt = conn->prepareStatement(
             "INSERT INTO User (login, firstName, middleName, lastName, email, "
-            "passwordHash, needChangePassword, isBlocked, isSuperAdmin, isHidden) "
+            "passwordHash, needChangePassword, isBlocked, isSuperAdmin, isHidden, "
+            "searchLogin, searchName, searchEmail) "
             "VALUES (:login, :firstName, :middleName, :lastName, :email, "
-            ":passwordHash, :needChangePassword, :isBlocked, :isSuperAdmin, :isHidden)"
+            ":passwordHash, :needChangePassword, :isBlocked, :isSuperAdmin, :isHidden, "
+            ":searchLogin, :searchName, :searchEmail)"
         );
 
         stmt->bindString("login", user.login.value());
@@ -241,12 +266,10 @@ int64_t SqliteUserRepository::create(const dto::User& user, const std::string& p
             stmt->bindString("firstName", *user.firstName);
         else
             stmt->bindNull("firstName");
-
         if (user.middleName.has_value())
             stmt->bindString("middleName", *user.middleName);
         else
             stmt->bindNull("middleName");
-
         if (user.lastName.has_value())
             stmt->bindString("lastName", *user.lastName);
         else
@@ -258,6 +281,10 @@ int64_t SqliteUserRepository::create(const dto::User& user, const std::string& p
         stmt->bindInt64("isBlocked", user.isBlocked.value_or(false) ? 1 : 0);
         stmt->bindInt64("isSuperAdmin", user.isSuperAdmin.value_or(false) ? 1 : 0);
         stmt->bindInt64("isHidden", user.isHidden.value_or(false) ? 1 : 0);
+
+        stmt->bindString("searchLogin", searchLogin);
+        stmt->bindString("searchName", searchName);
+        stmt->bindString("searchEmail", searchEmail);
 
         stmt->execute();
         return conn->lastInsertId();
@@ -301,7 +328,10 @@ std::pair<std::vector<dto::User>, int64_t> SqliteUserRepository::findAll(
     const std::string& login,
     const std::string& name,
     const std::string& email,
-    std::optional<bool> isBlocked
+    std::optional<bool> isBlocked,
+    std::optional<int64_t> id,
+    const std::string& sortField,
+    bool sortAscending
 )
 {
     std::vector<dto::User> users;
@@ -311,31 +341,33 @@ std::pair<std::vector<dto::User>, int64_t> SqliteUserRepository::findAll(
     {
         auto conn = m_database->connection();
 
-        // Строим динамический SQL с условиями фильтрации
+        // Все входные строки фильтра нормализуем в C++ через ICU.
+        // После этого регистр в SQLite-функциях не имеет значения —
+        // обе стороны сравнения уже в одном регистре.
+        const std::string loginLower = common::toLowerCase(login);
+        const std::string nameLower = common::toLowerCase(name);
+        const std::string emailLower = common::toLowerCase(email);
+
         std::vector<std::string> whereClauses;
 
-        if (!login.empty())
-        {
-            whereClauses.push_back("login LIKE '%' || :login || '%'");
-        }
+        if (id.has_value() && *id > 0)
+            whereClauses.push_back("id = :id");
 
-        if (!name.empty())
-        {
-            // Поиск по ФИО (firstName, middleName, lastName)
-            whereClauses.push_back(
-                "(firstName || ' ' || middleName || ' ' || lastName) LIKE '%' || :name || '%'"
-            );
-        }
+        // instr(X, Y) возвращает позицию подстроки Y в X (1-based).
+        // 0 — если Y не найдена. В отличие от LIKE, instr() не выполняет
+        // никаких регистровых преобразований и корректно работает
+        // с кириллицей, потому что обе строки уже нормализованы в C++.
+        if (!loginLower.empty())
+            whereClauses.push_back("instr(searchLogin, :login) > 0");
 
-        if (!email.empty())
-        {
-            whereClauses.push_back("email LIKE '%' || :email || '%'");
-        }
+        if (!nameLower.empty())
+            whereClauses.push_back("instr(searchName, :name) > 0");
+
+        if (!emailLower.empty())
+            whereClauses.push_back("instr(searchEmail, :email) > 0");
 
         if (isBlocked.has_value())
-        {
             whereClauses.push_back("isBlocked = :isBlocked");
-        }
 
         std::string whereClause;
         if (!whereClauses.empty())
@@ -343,44 +375,66 @@ std::pair<std::vector<dto::User>, int64_t> SqliteUserRepository::findAll(
             whereClause = " WHERE " + boost::algorithm::join(whereClauses, " AND ");
         }
 
-        // 1. Получаем общее количество пользователей
-        auto countStmt = conn->prepareStatement("SELECT COUNT(*) FROM User" + whereClause);
+        // ORDER BY. Для составного ключа (ФИО) направление разворачивается
+        // на каждый столбец — иначе ASC/DESC в SQLite применится
+        // только к последнему столбцу выражения.
+        const std::string dir = sortAscending ? "ASC" : "DESC";
+        std::string orderBy;
 
-        if (!login.empty())
-            countStmt->bindString("login", login);
-        if (!name.empty())
-            countStmt->bindString("name", name);
-        if (!email.empty())
-            countStmt->bindString("email", email);
+        if (sortField == "id")
+            orderBy = "id " + dir;
+        else if (sortField == "login")
+            orderBy = "login " + dir;
+        else if (sortField == "name")
+            orderBy = "lastName " + dir + ", firstName " + dir + ", middleName " + dir;
+        else if (sortField == "email")
+            orderBy = "email " + dir;
+        else if (sortField == "status")
+            orderBy = "isBlocked " + dir;
+        else
+            orderBy = "login " + dir;
+
+        // 1. COUNT
+        auto countStmt = conn->prepareStatement(
+            "SELECT COUNT(*) FROM User" + whereClause
+        );
+        if (id.has_value() && *id > 0)
+            countStmt->bindInt64("id", *id);
+        if (!loginLower.empty())
+            countStmt->bindString("login", loginLower);
+        if (!nameLower.empty())
+            countStmt->bindString("name", nameLower);
+        if (!emailLower.empty())
+            countStmt->bindString("email", emailLower);
         if (isBlocked.has_value())
             countStmt->bindInt64("isBlocked", isBlocked.value() ? 1 : 0);
 
         auto countRs = countStmt->executeQuery();
         if (countRs->next())
-        {
             totalCount = countRs->valueInt64(0);
-        }
 
         if (totalCount == 0 || (page - 1) * pageSize >= totalCount)
-        {
             return { users, totalCount };
-        }
 
-        // 2. Получаем страницу с пользователями
+        // 2. Страница
         const int offset = (page - 1) * pageSize;
         auto stmt = conn->prepareStatement(
             "SELECT id, login, firstName, middleName, lastName, email, "
             "needChangePassword, isBlocked, isSuperAdmin, isHidden "
             "FROM User"
-            + whereClause + " ORDER BY login LIMIT :limit OFFSET :offset"
+            + whereClause
+            + " ORDER BY " + orderBy
+            + " LIMIT :limit OFFSET :offset"
         );
 
-        if (!login.empty())
-            stmt->bindString("login", login);
-        if (!name.empty())
-            stmt->bindString("name", name);
-        if (!email.empty())
-            stmt->bindString("email", email);
+        if (id.has_value() && *id > 0)
+            stmt->bindInt64("id", *id);
+        if (!loginLower.empty())
+            stmt->bindString("login", loginLower);
+        if (!nameLower.empty())
+            stmt->bindString("name", nameLower);
+        if (!emailLower.empty())
+            stmt->bindString("email", emailLower);
         if (isBlocked.has_value())
             stmt->bindInt64("isBlocked", isBlocked.value() ? 1 : 0);
 
@@ -388,11 +442,8 @@ std::pair<std::vector<dto::User>, int64_t> SqliteUserRepository::findAll(
         stmt->bindInt64("offset", offset);
 
         auto rs = stmt->executeQuery();
-
         while (rs->next())
-        {
             users.push_back(mapRowToUser(*rs));
-        }
     }
     catch (const std::exception& e)
     {
@@ -414,12 +465,8 @@ bool SqliteUserRepository::update(const dto::User& user)
     try
     {
         auto conn = m_database->connection();
-        // Формируем SQL для обновления только тех полей, которые переданы
-        std::string sql = "UPDATE User SET ";
         std::vector<std::string> setClauses;
 
-        // Мы будем обновлять поля только если они есть в DTO,
-        // кроме пароля и login, которые требуют отдельных процедур.
         if (user.firstName.has_value())
             setClauses.push_back("firstName = :firstName");
         if (user.middleName.has_value())
@@ -440,15 +487,15 @@ bool SqliteUserRepository::update(const dto::User& user)
         if (setClauses.empty())
         {
             LOG_WARN << "update: нет полей для обновления";
-            return false; // Нечего обновлять
+            return false;
         }
 
-        sql += boost::algorithm::join(setClauses, ", ");
-        sql += " WHERE id = :id";
+        std::string sql = "UPDATE User SET "
+            + boost::algorithm::join(setClauses, ", ")
+            + " WHERE id = :id";
 
         auto stmt = conn->prepareStatement(sql);
 
-        // Биндим параметры
         if (user.firstName.has_value())
             stmt->bindString("firstName", *user.firstName);
         if (user.middleName.has_value())
@@ -468,8 +515,42 @@ bool SqliteUserRepository::update(const dto::User& user)
 
         stmt->bindInt64("id", *user.id);
 
-        int64_t affected = stmt->execute();
-        return affected > 0;
+        const int64_t affected = stmt->execute();
+        if (affected == 0)
+            return false;
+
+        // Пересчитываем нормализованные поля из актуального состояния БД.
+        auto current = findById(*user.id);
+        if (current.has_value())
+        {
+            std::string fullName;
+            if (current->lastName.has_value() && !current->lastName->empty())
+                fullName += *current->lastName;
+            if (current->firstName.has_value() && !current->firstName->empty())
+            {
+                if (!fullName.empty())
+                    fullName += ' ';
+                fullName += *current->firstName;
+            }
+            if (current->middleName.has_value() && !current->middleName->empty())
+            {
+                if (!fullName.empty())
+                    fullName += ' ';
+                fullName += *current->middleName;
+            }
+
+            auto updateSearch = conn->prepareStatement(
+                "UPDATE User SET searchLogin = :sl, searchName = :sn, "
+                "searchEmail = :se WHERE id = :id"
+            );
+            updateSearch->bindString("sl", common::toLowerCase(current->login.value_or("")));
+            updateSearch->bindString("sn", common::toLowerCase(fullName));
+            updateSearch->bindString("se", common::toLowerCase(current->email.value_or("")));
+            updateSearch->bindInt64("id", *current->id);
+            updateSearch->execute();
+        }
+
+        return true;
     }
     catch (const std::exception& e)
     {
